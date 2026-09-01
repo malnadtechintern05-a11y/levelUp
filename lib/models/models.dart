@@ -51,6 +51,34 @@ class UserProfile {
     );
   }
 
+  Map<String, dynamic> toMapSql() {
+    return {
+      'username': username,
+      'avatarId': avatarId,
+      'profileImagePath': profileImagePath,
+      'level': level,
+      'totalXP': totalXP,
+      'gold': gold,
+      'currentStreak': currentStreak,
+      'bestStreak': bestStreak,
+      'skills': json.encode(skills), // Store map as JSON string in SQLite
+    };
+  }
+
+  factory UserProfile.fromMapSql(Map<String, dynamic> map) {
+    return UserProfile(
+      username: map['username'] as String,
+      avatarId: map['avatarId'] as String,
+      profileImagePath: map['profileImagePath'] as String?,
+      level: map['level'] as int,
+      totalXP: map['totalXP'] as int,
+      gold: map['gold'] as int,
+      currentStreak: map['currentStreak'] as int,
+      bestStreak: map['bestStreak'] as int,
+      skills: Map<String, int>.from(json.decode(map['skills'] as String)),
+    );
+  }
+
   String toJson() => json.encode(toMap());
   factory UserProfile.fromJson(String source) => UserProfile.fromMap(json.decode(source));
 }
@@ -114,13 +142,49 @@ class RPGTask {
       category: map['category'] ?? 'Personal',
       xpReward: map['xpReward']?.toInt() ?? 10,
       isCompleted: map['isCompleted'] ?? false,
-      dueDate: DateTime.fromMillisecondsSinceEpoch(map['dueDate']),
+      dueDate: DateTime.fromMillisecondsSinceEpoch(map['dueDate'] ?? DateTime.now().millisecondsSinceEpoch),
       time: map['time'],
       timeSpentSeconds: map['timeSpentSeconds']?.toInt() ?? 0,
       durationMinutes: map['durationMinutes']?.toInt() ?? 0,
       remainingSeconds: map['remainingSeconds']?.toInt() ?? 0,
-      timerStatus: map['timerStatus'] ?? "Not Started",
+      timerStatus: map['timerStatus'] ?? 'Not Started',
       timerStartTimeEpoch: map['timerStartTimeEpoch']?.toInt(),
+    );
+  }
+
+  Map<String, dynamic> toMapSql() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'category': category,
+      'xpReward': xpReward,
+      'isCompleted': isCompleted ? 1 : 0, // Boolean to int
+      'dueDate': dueDate.millisecondsSinceEpoch,
+      'time': time,
+      'timeSpentSeconds': timeSpentSeconds,
+      'durationMinutes': durationMinutes,
+      'remainingSeconds': remainingSeconds,
+      'timerStatus': timerStatus,
+      'timerStartTimeEpoch': timerStartTimeEpoch,
+    };
+  }
+
+  factory RPGTask.fromMapSql(Map<String, dynamic> map) {
+    return RPGTask(
+      id: map['id'] as String,
+      title: map['title'] as String,
+      description: map['description'] as String,
+      category: map['category'] as String,
+      xpReward: map['xpReward'] as int,
+      isCompleted: (map['isCompleted'] as int) == 1, // Int to boolean
+      dueDate: DateTime.fromMillisecondsSinceEpoch(map['dueDate'] as int),
+      time: map['time'] as String?,
+      timeSpentSeconds: map['timeSpentSeconds'] as int,
+      durationMinutes: map['durationMinutes'] as int,
+      remainingSeconds: map['remainingSeconds'] as int,
+      timerStatus: map['timerStatus'] as String,
+      timerStartTimeEpoch: map['timerStartTimeEpoch'] as int?,
     );
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import '../models/models.dart';
+import '../helpers/database_helper.dart';
 
 class AppState extends ChangeNotifier {
   UserProfile _userProfile = UserProfile(username: 'Hero');
@@ -68,34 +69,53 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> _loadData() async {
-    final prefs = await SharedPreferences.getInstance();
-    
-    final profileJson = prefs.getString('userProfile');
-    if (profileJson != null) {
-      _userProfile = UserProfile.fromJson(profileJson);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final dbHelper = DatabaseHelper.instance;
+      
+      try {
+        final profile = await dbHelper.getProfile();
+        if (profile != null) {
+          _userProfile = profile;
+        }
+      } catch (e) {
+        debugPrint("Error loading profile from DB: $e");
+      }
+      
+      try {
+        final tasksList = await dbHelper.getAllTasks();
+        if (tasksList.isNotEmpty) {
+          _tasks = tasksList;
+        } else {
+          _seedTasks();
+        }
+      } catch (e) {
+        debugPrint("Error loading tasks from DB: $e");
+        _seedTasks();
+      }
+      
+      try {
+        final achievementsList = await dbHelper.getAllAchievements();
+        if (achievementsList.isNotEmpty) {
+          _achievements = achievementsList;
+        }
+      } catch (e) {
+        debugPrint("Error loading achievements from DB: $e");
+      }
+      
+      _isDarkMode = prefs.getBool('isDarkMode') ?? true;
+      
+      // For demo purposes, we randomly populate weekly XP if empty
+      _weeklyXp = {
+        'Mon': 120, 'Tue': 80, 'Wed': 150, 'Thu': 200, 'Fri': 100, 'Sat': 0, 'Sun': 0,
+      };
+      
+    } catch (e) {
+      debugPrint("Critical error in _loadData: $e");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
-    
-    final tasksJsonList = prefs.getStringList('tasks');
-    if (tasksJsonList != null && tasksJsonList.isNotEmpty) {
-      _tasks = tasksJsonList.map((t) => RPGTask.fromJson(t)).toList();
-    } else {
-      _seedTasks();
-    }
-    
-    final achievementsJsonList = prefs.getStringList('achievements');
-    if (achievementsJsonList != null) {
-      _achievements = achievementsJsonList.map((a) => Achievement.fromJson(a)).toList();
-    }
-    
-    _isDarkMode = prefs.getBool('isDarkMode') ?? true;
-    
-    // For demo purposes, we randomly populate weekly XP if empty
-    _weeklyXp = {
-      'Mon': 120, 'Tue': 80, 'Wed': 150, 'Thu': 200, 'Fri': 100, 'Sat': 0, 'Sun': 0,
-    };
-    
-    _isLoading = false;
-    notifyListeners();
   }
 
   void _seedTasks() {
@@ -108,20 +128,15 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> _saveProfile() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('userProfile', _userProfile.toJson());
+    await DatabaseHelper.instance.saveProfile(_userProfile);
   }
 
   Future<void> _saveTasks() async {
-    final prefs = await SharedPreferences.getInstance();
-    final tasksJsonList = _tasks.map((t) => t.toJson()).toList();
-    await prefs.setStringList('tasks', tasksJsonList);
+    await DatabaseHelper.instance.saveAllTasks(_tasks);
   }
 
   Future<void> _saveAchievements() async {
-    final prefs = await SharedPreferences.getInstance();
-    final achievementsJsonList = _achievements.map((a) => a.toJson()).toList();
-    await prefs.setStringList('achievements', achievementsJsonList);
+    await DatabaseHelper.instance.saveAllAchievements(_achievements);
   }
 
   void addTask(RPGTask task) {
