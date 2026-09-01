@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # real_life_rpg
 
 A new Flutter project.
@@ -15,3 +16,6 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+=======
+# real-life-rpg
+>>>>>>> 26be4e4bc122f582ff67a5f3e077f9c19d158fbf
