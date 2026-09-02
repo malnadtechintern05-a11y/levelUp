@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
+import '../services/sound_service.dart';
+
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
 
@@ -9,31 +11,49 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _taskReminder = true;
-  bool _streakReminder = true;
-  bool _soundEffects = true;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0F1C),
       appBar: AppBar(
-        title: const Text('Settings', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text('Settings', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          const Text('APPEARANCE', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.only(left: 4.0, bottom: 8.0),
+            child: Text(
+              'APPEARANCE',
+              style: TextStyle(
+                color: isDark ? const Color(0xFFF5B942) : const Color(0xFFD97706),
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
           Card(
             child: Consumer<AppState>(
               builder: (context, state, child) {
                 return SwitchListTile(
-                  title: const Text('Dark Mode'),
+                  secondary: Icon(
+                    state.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                    color: isDark ? const Color(0xFFF5B942) : const Color(0xFFD97706),
+                  ),
+                  title: Text(
+                    state.isDarkMode ? 'Dark Mode' : 'Light Mode',
+                    style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    state.isDarkMode ? 'Dark navy & gold aesthetic' : 'Clean & bright slate aesthetic',
+                    style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13),
+                  ),
                   value: state.isDarkMode,
+                  activeColor: const Color(0xFFF5B942),
                   onChanged: (val) {
                     state.toggleTheme(val);
                   },
@@ -43,66 +63,181 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           
           const SizedBox(height: 24),
-          const Text('NOTIFICATIONS', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Card(
-            child: Column(
-              children: [
-                SwitchListTile(
-                  title: const Text('Daily Task Reminder'),
-                  value: _taskReminder,
-                  onChanged: (val) => setState(() => _taskReminder = val),
-                ),
-                const Divider(height: 1),
-                SwitchListTile(
-                  title: const Text('Streak Reminder'),
-                  value: _streakReminder,
-                  onChanged: (val) => setState(() => _streakReminder = val),
-                ),
-              ],
+          Padding(
+            padding: const EdgeInsets.only(left: 4.0, bottom: 8.0),
+            child: Text(
+              'NOTIFICATIONS',
+              style: TextStyle(
+                color: isDark ? const Color(0xFFF5B942) : const Color(0xFFD97706),
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                letterSpacing: 1.2,
+              ),
             ),
+          ),
+          Consumer<AppState>(
+            builder: (context, state, child) {
+              final notifSettings = state.notificationSettings;
+              return Card(
+                child: Column(
+                  children: [
+                    SwitchListTile(
+                      secondary: const Icon(Icons.celebration_outlined, color: Color(0xFFF5B942)),
+                      title: Text('Task Completion Celebrations', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
+                      subtitle: Text('Show congratulatory XP dialog & quotes', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
+                      value: notifSettings.taskCompletionNotifications,
+                      activeColor: const Color(0xFFF5B942),
+                      onChanged: (val) {
+                        notifSettings.taskCompletionNotifications = val;
+                        state.updateNotificationSettings(notifSettings);
+                      },
+                    ),
+                    Divider(height: 1, color: theme.colorScheme.outline),
+                    SwitchListTile(
+                      secondary: const Icon(Icons.emoji_events_outlined, color: Colors.amber),
+                      title: Text('Achievement Notifications', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
+                      subtitle: Text('Alerts when new trophies are unlocked', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
+                      value: notifSettings.achievementNotifications,
+                      activeColor: const Color(0xFFF5B942),
+                      onChanged: (val) {
+                        notifSettings.achievementNotifications = val;
+                        state.updateNotificationSettings(notifSettings);
+                      },
+                    ),
+                    Divider(height: 1, color: theme.colorScheme.outline),
+                    SwitchListTile(
+                      secondary: Icon(Icons.timer_outlined, color: theme.colorScheme.onSurface),
+                      title: Text('Task Reminders', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
+                      subtitle: Text('Reminders for scheduled quest times', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
+                      value: notifSettings.taskReminders,
+                      activeColor: const Color(0xFFF5B942),
+                      onChanged: (val) {
+                        notifSettings.taskReminders = val;
+                        state.updateNotificationSettings(notifSettings);
+                      },
+                    ),
+                    Divider(height: 1, color: theme.colorScheme.outline),
+                    SwitchListTile(
+                      secondary: Icon(Icons.notifications_active_outlined, color: theme.colorScheme.onSurface),
+                      title: Text('Daily Reminders', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
+                      subtitle: Text('Daily morning quest check-ins', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
+                      value: notifSettings.dailyReminders,
+                      activeColor: const Color(0xFFF5B942),
+                      onChanged: (val) {
+                        notifSettings.dailyReminders = val;
+                        state.updateNotificationSettings(notifSettings);
+                      },
+                    ),
+                    Divider(height: 1, color: theme.colorScheme.outline),
+                    SwitchListTile(
+                      secondary: const Icon(Icons.local_fire_department_outlined, color: Colors.orangeAccent),
+                      title: Text('Streak Reminders', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
+                      subtitle: Text('Keep your streak alive before midnight', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
+                      value: notifSettings.streakReminders,
+                      activeColor: const Color(0xFFF5B942),
+                      onChanged: (val) {
+                        notifSettings.streakReminders = val;
+                        state.updateNotificationSettings(notifSettings);
+                      },
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
 
           const SizedBox(height: 24),
-          const Text('APP', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Card(
-            child: Column(
-              children: [
-                SwitchListTile(
-                  title: const Text('Sound Effects'),
-                  value: _soundEffects,
-                  onChanged: (val) => setState(() => _soundEffects = val),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  title: const Text('Reset Progress', style: TextStyle(color: Colors.redAccent)),
-                  trailing: const Icon(Icons.warning, color: Colors.redAccent),
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Progress reset not available in demo.')));
-                  },
-                ),
-              ],
+          Padding(
+            padding: const EdgeInsets.only(left: 4.0, bottom: 8.0),
+            child: Text(
+              'APP',
+              style: TextStyle(
+                color: isDark ? const Color(0xFFF5B942) : const Color(0xFFD97706),
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                letterSpacing: 1.2,
+              ),
             ),
+          ),
+          Consumer<AppState>(
+            builder: (context, state, child) {
+              return Card(
+                child: Column(
+                  children: [
+                    SwitchListTile(
+                      secondary: Icon(Icons.volume_up_outlined, color: theme.colorScheme.onSurface),
+                      title: Text('Completion Alarm & Sounds', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
+                      subtitle: Text('Play victory fanfare alarm & vibration when a task finishes', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
+                      value: state.soundEffectsEnabled,
+                      activeColor: const Color(0xFFF5B942),
+                      onChanged: (val) async {
+                        await state.toggleSoundEffects(val);
+                        if (val) {
+                          // Play a short preview
+                          state.soundEffectsEnabled;
+                        }
+                      },
+                    ),
+                    Divider(height: 1, color: theme.colorScheme.outline),
+                    ListTile(
+                      leading: const Icon(Icons.play_circle_outline, color: Color(0xFFF5B942)),
+                      title: Text('Test Alarm Sound', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
+                      subtitle: Text('Preview the task completion alarm', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
+                      trailing: const Icon(Icons.volume_up, color: Color(0xFFF5B942)),
+                      onTap: () {
+                        SoundService.instance.playTaskCompletedAlarm(isSoundEnabled: true);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('🔔 Playing task completion alarm & fanfare!'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                    ),
+                    Divider(height: 1, color: theme.colorScheme.outline),
+                    ListTile(
+                      leading: const Icon(Icons.refresh, color: Colors.redAccent),
+                      title: const Text('Reset Progress', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w500)),
+                      trailing: const Icon(Icons.chevron_right, color: Colors.redAccent),
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Progress reset not available in demo.')));
+                      },
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
 
           const SizedBox(height: 24),
-          const Text('ABOUT', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.only(left: 4.0, bottom: 8.0),
+            child: Text(
+              'ABOUT',
+              style: TextStyle(
+                color: isDark ? const Color(0xFFF5B942) : const Color(0xFFD97706),
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
           Card(
             child: Column(
               children: [
                 ListTile(
-                  title: const Text('About Real Life RPG'),
-                  trailing: const Icon(Icons.info_outline),
+                  leading: Icon(Icons.info_outline, color: theme.colorScheme.onSurface),
+                  title: Text('About Real Life RPG', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
+                  trailing: Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Version 1.0.0. Level up in real life!')));
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('LevelUp RPG v1.0.0. Level up your life!')));
                   },
                 ),
-                const Divider(height: 1),
-                const ListTile(
-                  title: Text('App Version'),
-                  trailing: Text('1.0.0', style: TextStyle(color: Colors.grey)),
+                Divider(height: 1, color: theme.colorScheme.outline),
+                ListTile(
+                  leading: Icon(Icons.verified_outlined, color: theme.colorScheme.onSurface),
+                  title: Text('App Version', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
+                  trailing: Text('1.0.0', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),

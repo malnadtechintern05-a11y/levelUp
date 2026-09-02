@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../screens/quest_details_screen.dart';
 import '../providers/app_state.dart';
+import 'hydration_quest_card.dart';
 
 class QuestCard extends StatelessWidget {
   final RPGTask task;
@@ -46,14 +47,16 @@ class QuestCard extends StatelessWidget {
     // Category fallbacks
     switch (task.category) {
       case 'Fitness':
-      case 'Health':
         return Image.asset('assets/images/workout_quest.jpg', width: 60, height: 60, fit: BoxFit.cover);
+      case 'Health':
+        return Image.asset('assets/images/health_quest.jpg', width: 60, height: 60, fit: BoxFit.cover);
       case 'Work':
-        return Image.asset('assets/images/study_quest.jpg', width: 60, height: 60, fit: BoxFit.cover);
+        return Image.asset('assets/images/work_quest.jpg', width: 60, height: 60, fit: BoxFit.cover);
       case 'Study':
+        return Image.asset('assets/images/book_quest.jpg', width: 60, height: 60, fit: BoxFit.cover);
       case 'Personal':
       default:
-        return Image.asset('assets/images/book_quest.jpg', width: 60, height: 60, fit: BoxFit.cover);
+        return Image.asset('assets/images/personal_quest.jpg', width: 60, height: 60, fit: BoxFit.cover);
     }
   }
 
@@ -64,15 +67,15 @@ class QuestCard extends StatelessWidget {
   }
 
   void _showEarlyFinishDialog(BuildContext context, AppState state) {
+    final theme = Theme.of(context);
     int elapsed = (task.durationMinutes * 60) - state.getCalculatedRemainingSeconds(task);
     int elapsedMins = elapsed ~/ 60;
     
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF162033),
-        title: const Text('Finish task early?', style: TextStyle(color: Colors.white)),
-        content: Text('You have completed $elapsedMins of ${task.durationMinutes} minutes.', style: const TextStyle(color: Colors.white70)),
+        title: Text('Finish task early?', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
+        content: Text('You have completed $elapsedMins of ${task.durationMinutes} minutes.', style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
         actions: [
           TextButton(
             onPressed: () {
@@ -81,15 +84,18 @@ class QuestCard extends StatelessWidget {
                 state.startTaskTimer(task.id);
               }
             },
-            child: const Text('Continue Timer', style: TextStyle(color: Colors.grey)),
+            child: Text('Continue Timer', style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.amber, foregroundColor: Colors.black),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFF5B942),
+              foregroundColor: Colors.black,
+            ),
             onPressed: () {
               Navigator.pop(context);
               state.finishTaskEarly(task.id);
             },
-            child: const Text('Finish Task'),
+            child: const Text('Finish Task', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -98,9 +104,19 @@ class QuestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (task.taskType == 'hydration') {
+      return HydrationQuestCard(task: task);
+    }
+
     // We watch AppState here so the timer updates every second.
     final state = context.watch<AppState>();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     int remaining = state.getCalculatedRemainingSeconds(task);
+
+    final actionBtnBg = isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9);
+    final actionBtnBorder = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+    final actionBtnText = isDark ? Colors.white : const Color(0xFF0F172A);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -144,18 +160,25 @@ class QuestCard extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                           decoration: task.isCompleted ? TextDecoration.lineThrough : null,
-                          color: task.isCompleted ? Colors.grey : Theme.of(context).textTheme.bodyLarge?.color,
+                          color: task.isCompleted ? Colors.grey : theme.colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(task.category, style: const TextStyle(color: Color(0xFFAAB4C2), fontSize: 12)),
+                      Text(
+                        task.category, 
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurfaceVariant, 
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                       const SizedBox(height: 4),
                       Row(
                         children: [
                           Text(
                             '+${task.xpReward} XP', 
-                            style: const TextStyle(
-                              color: Colors.green,
+                            style: TextStyle(
+                              color: isDark ? const Color(0xFF4CAF50) : const Color(0xFF16A34A),
                               fontSize: 12, 
                               fontWeight: FontWeight.bold
                             )
@@ -164,7 +187,7 @@ class QuestCard extends StatelessWidget {
                           Text(
                             '• ⏱ ${task.durationMinutes} min',
                             style: const TextStyle(
-                              color: Colors.amber,
+                              color: Color(0xFFF5B942),
                               fontSize: 12,
                               fontWeight: FontWeight.bold
                             )
@@ -172,19 +195,70 @@ class QuestCard extends StatelessWidget {
                         ],
                       ),
                       
-                      // Timer UI
+                      // Timer / Availability UI
                       if (!task.isCompleted) ...[
                         const SizedBox(height: 12),
-                        if (task.timerStatus == 'Not Started')
+                        if (state.isTaskFuture(task))
                           SizedBox(
                             width: double.infinity,
-                            child: ElevatedButton.icon(
+                            child: OutlinedButton.icon(
+                              icon: const Icon(Icons.lock_outline, size: 16, color: Color(0xFF94A3B8)),
+                              label: Text(
+                                state.getTaskAvailabilityButtonText(task),
+                                style: TextStyle(
+                                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: actionBtnBg.withValues(alpha: 0.5),
+                                side: BorderSide(color: actionBtnBorder),
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              onPressed: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('🔒 "${task.title}" is scheduled for ${state.getTaskAvailabilityDateText(task)}. It will unlock on that day!'),
+                                    backgroundColor: Colors.orange.shade800,
+                                    duration: const Duration(seconds: 3),
+                                  ),
+                                );
+                              },
+                            ),
+                          )
+                        else if (state.isTaskPast(task))
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.history_toggle_off, color: Colors.redAccent, size: 16),
+                                SizedBox(width: 6),
+                                Text(
+                                  'Missed Quest',
+                                  style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 13),
+                                ),
+                              ],
+                            ),
+                          )
+                        else if (task.timerStatus == 'Not Started')
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
                               icon: const Icon(Icons.play_arrow, size: 18),
                               label: const Text('Start Task'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF2A3042),
-                                foregroundColor: Colors.amber,
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: actionBtnBg,
+                                foregroundColor: const Color(0xFFF5B942),
+                                side: BorderSide(color: actionBtnBorder),
                                 padding: const EdgeInsets.symmetric(vertical: 8),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                               ),
                               onPressed: () => state.startTaskTimer(task.id),
                             ),
@@ -192,17 +266,19 @@ class QuestCard extends StatelessWidget {
                         else ...[
                           Text(
                             '⏱ ${_formatTime(remaining)} remaining',
-                            style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 14),
+                            style: const TextStyle(color: Color(0xFFF5B942), fontWeight: FontWeight.bold, fontSize: 14),
                           ),
                           const SizedBox(height: 8),
                           Row(
                             children: [
                               Expanded(
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF2A3042),
-                                    foregroundColor: Colors.white,
+                                child: OutlinedButton(
+                                  style: OutlinedButton.styleFrom(
+                                    backgroundColor: actionBtnBg,
+                                    foregroundColor: actionBtnText,
+                                    side: BorderSide(color: actionBtnBorder),
                                     padding: EdgeInsets.zero,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                   ),
                                   onPressed: () {
                                     if (task.timerStatus == 'Running') {
@@ -211,16 +287,17 @@ class QuestCard extends StatelessWidget {
                                       state.startTaskTimer(task.id);
                                     }
                                   },
-                                  child: Text(task.timerStatus == 'Running' ? 'Pause' : 'Resume'),
+                                  child: Text(task.timerStatus == 'Running' ? 'Pause' : 'Resume', style: const TextStyle(fontWeight: FontWeight.w600)),
                                 ),
                               ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.amber,
+                                    backgroundColor: const Color(0xFFF5B942),
                                     foregroundColor: Colors.black,
                                     padding: EdgeInsets.zero,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                   ),
                                   onPressed: () {
                                     state.pauseTaskTimer(task.id); // Pause while in dialog
@@ -250,8 +327,8 @@ class QuestCard extends StatelessWidget {
                       height: 32,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.green,
-                        border: Border.all(color: Colors.green, width: 2),
+                        color: isDark ? const Color(0xFF4CAF50) : const Color(0xFF16A34A),
+                        border: Border.all(color: isDark ? const Color(0xFF4CAF50) : const Color(0xFF16A34A), width: 2),
                       ),
                       child: const Icon(Icons.check, color: Colors.white, size: 20),
                     ),

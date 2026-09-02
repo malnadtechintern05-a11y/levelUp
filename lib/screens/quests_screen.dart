@@ -27,19 +27,6 @@ class _QuestsScreenState extends State<QuestsScreen> {
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: Colors.amber,
-              onPrimary: Colors.black,
-              surface: Color(0xFF162033),
-              onSurface: Colors.white,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
     if (picked != null) {
       setState(() {
@@ -62,13 +49,11 @@ class _QuestsScreenState extends State<QuestsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0F1C),
       appBar: AppBar(
-        title: const Text('Task Calendar', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
+        title: Text('Task Calendar', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
       ),
       body: Consumer<AppState>(
         builder: (context, state, child) {
@@ -86,25 +71,33 @@ class _QuestsScreenState extends State<QuestsScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.chevron_left, color: Colors.amber, size: 32),
+                      icon: const Icon(Icons.chevron_left, color: Color(0xFFF5B942), size: 32),
                       onPressed: () => _changeDate(-1),
                     ),
                     GestureDetector(
                       onTap: _pickDate,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.calendar_today, color: Colors.amber, size: 20),
-                          const SizedBox(width: 8),
-                          Text(
-                            _getDateText(),
-                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-                          ),
-                        ],
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: theme.colorScheme.outline),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.calendar_today, color: Color(0xFFF5B942), size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              _getDateText(),
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.chevron_right, color: Colors.amber, size: 32),
+                      icon: const Icon(Icons.chevron_right, color: Color(0xFFF5B942), size: 32),
                       onPressed: () => _changeDate(1),
                     ),
                   ],
@@ -120,8 +113,8 @@ class _QuestsScreenState extends State<QuestsScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Daily Progress', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                        Text('$completedCount / $totalTasks Tasks Completed', style: const TextStyle(color: Colors.amber, fontSize: 14, fontWeight: FontWeight.bold)),
+                        Text('Daily Progress', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+                        Text('$completedCount / $totalTasks Tasks Completed', style: const TextStyle(color: Color(0xFFF5B942), fontSize: 14, fontWeight: FontWeight.bold)),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -129,8 +122,8 @@ class _QuestsScreenState extends State<QuestsScreen> {
                       borderRadius: BorderRadius.circular(8),
                       child: LinearProgressIndicator(
                         value: progress,
-                        backgroundColor: const Color(0xFF162033),
-                        color: Colors.amber,
+                        backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                        color: const Color(0xFFF5B942),
                         minHeight: 8,
                       ),
                     ),
@@ -142,9 +135,18 @@ class _QuestsScreenState extends State<QuestsScreen> {
               // Task List
               Expanded(
                 child: tasksForDate.isEmpty
-                    ? const Center(child: Text('No tasks for this day.', style: TextStyle(color: Colors.grey)))
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.event_available, size: 48, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+                            const SizedBox(height: 12),
+                            Text('No tasks for this day.', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 14)),
+                          ],
+                        ),
+                      )
                     : ListView.builder(
-                        padding: const EdgeInsets.only(left: 16, right: 16, bottom: 100), // Safe bottom padding for FAB
+                        padding: const EdgeInsets.only(left: 16, right: 16, bottom: 100),
                         itemCount: tasksForDate.length,
                         itemBuilder: (context, index) {
                           final task = tasksForDate[index];
@@ -165,7 +167,7 @@ class _QuestsScreenState extends State<QuestsScreen> {
         },
         icon: const Icon(Icons.add, size: 24),
         label: const Text('+ Add Task', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.amber,
+        backgroundColor: const Color(0xFFF5B942),
         foregroundColor: Colors.black,
         elevation: 4,
       ),

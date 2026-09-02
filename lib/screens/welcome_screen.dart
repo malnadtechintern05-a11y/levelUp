@@ -14,6 +14,16 @@ class WelcomeScreen extends StatelessWidget {
             return Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Image.asset(
+                    'assets/logo.png',
+                    width: 120,
+                    height: 120,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+                const SizedBox(height: 24),
                 Text('Welcome, ${state.userProfile.username}!', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
                 const Padding(
                   padding: EdgeInsets.all(16.0),
@@ -22,9 +32,16 @@ class WelcomeScreen extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                 ),
+                const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () => Navigator.pushReplacementNamed(context, '/main'),
-                  child: const Text('Start Your Journey'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF5B942),
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Start Your Journey', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 ),
               ],
             );

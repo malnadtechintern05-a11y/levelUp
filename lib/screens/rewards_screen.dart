@@ -50,6 +50,8 @@ class RewardsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Rewards Store'),
@@ -63,19 +65,22 @@ class RewardsScreen extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.all(16),
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  border: Border(bottom: BorderSide(color: theme.colorScheme.outline)),
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text('Your Gold: ', style: TextStyle(fontSize: 18)),
-                    const Icon(Icons.monetization_on, color: Colors.amber, size: 28),
+                    Text('Your Gold: ', style: TextStyle(fontSize: 18, color: theme.colorScheme.onSurface, fontWeight: FontWeight.w600)),
+                    const Icon(Icons.monetization_on, color: Color(0xFFF5B942), size: 28),
                     const SizedBox(width: 8),
                     Text(
                       '${state.userProfile.gold}',
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Colors.amber,
+                        color: Color(0xFFF5B942),
                       ),
                     ),
                   ],
@@ -91,21 +96,26 @@ class RewardsScreen extends StatelessWidget {
                     
                     return Card(
                       margin: const EdgeInsets.only(bottom: 12),
-                      elevation: 4,
+                      elevation: 1,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: theme.colorScheme.outline),
+                      ),
                       child: ListTile(
                         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                         leading: const Icon(Icons.card_giftcard, size: 40, color: Colors.pinkAccent),
                         title: Text(
                           reward.title,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: theme.colorScheme.onSurface),
                         ),
                         trailing: ElevatedButton.icon(
                           onPressed: () => _buyReward(context, reward.id, reward.title, reward.cost),
-                          icon: const Icon(Icons.monetization_on, size: 16, color: Colors.amber),
-                          label: Text('${reward.cost}'),
+                          icon: Icon(Icons.monetization_on, size: 16, color: canAfford ? Colors.black : theme.colorScheme.onSurfaceVariant),
+                          label: Text('${reward.cost} Gold'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: canAfford ? Colors.black45 : Colors.grey[800],
-                            foregroundColor: canAfford ? Colors.white : Colors.grey,
+                            backgroundColor: canAfford ? const Color(0xFFF5B942) : theme.colorScheme.surfaceContainerHighest,
+                            foregroundColor: canAfford ? Colors.black : theme.colorScheme.onSurfaceVariant,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           ),
                         ),
                       ),

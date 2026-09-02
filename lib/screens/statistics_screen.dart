@@ -62,13 +62,13 @@ class StatisticsScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     children: [
-                      _buildSummaryRow('Total Quests Completed', '${state.completedTasks.length}'),
-                      const Divider(color: Colors.grey),
-                      _buildSummaryRow('Total XP', '${profile.totalXP}'),
-                      const Divider(color: Colors.grey),
-                      _buildSummaryRow('Current Streak', '${profile.currentStreak} Days'),
-                      const Divider(color: Colors.grey),
-                      _buildSummaryRow('Most Active Category', state.mostActiveCategory),
+                      _buildSummaryRow(context, 'Total Quests Completed', '${state.completedTasks.length}'),
+                      Divider(color: Theme.of(context).colorScheme.outline),
+                      _buildSummaryRow(context, 'Total XP', '${profile.totalXP}'),
+                      Divider(color: Theme.of(context).colorScheme.outline),
+                      _buildSummaryRow(context, 'Current Streak', '${profile.currentStreak} Days'),
+                      Divider(color: Theme.of(context).colorScheme.outline),
+                      _buildSummaryRow(context, 'Most Active Category', state.mostActiveCategory),
                     ],
                   ),
                 ),
@@ -80,14 +80,15 @@ class StatisticsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryRow(String title, String value) {
+  Widget _buildSummaryRow(BuildContext context, String title, String value) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: const TextStyle(color: Color(0xFFAAB4C2))),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          Text(title, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500)),
+          Text(value, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: theme.colorScheme.onSurface)),
         ],
       ),
     );

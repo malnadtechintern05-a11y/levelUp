@@ -46,6 +46,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Edit Profile')),
       body: SingleChildScrollView(
@@ -55,7 +58,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Choose Avatar', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 16)),
+              Text(
+                'Choose Avatar', 
+                style: TextStyle(
+                  color: isDark ? const Color(0xFFF5B942) : const Color(0xFFD97706), 
+                  fontWeight: FontWeight.bold, 
+                  fontSize: 16,
+                ),
+              ),
               const SizedBox(height: 16),
               Center(
                 child: Wrap(
@@ -75,15 +85,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: isSelected ? Colors.amber : Colors.transparent,
+                            color: isSelected ? const Color(0xFFF5B942) : Colors.transparent,
                             width: 3,
                           ),
-                          boxShadow: isSelected ? [BoxShadow(color: Colors.amber.withOpacity(0.5), blurRadius: 8)] : [],
+                          boxShadow: isSelected ? [BoxShadow(color: const Color(0xFFF5B942).withValues(alpha: 0.4), blurRadius: 8)] : [],
                         ),
                         child: CircleAvatar(
                           radius: 30,
-                          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                          child: Icon(AvatarHelper.getIconForId(avatarId), size: 36, color: Colors.white),
+                          backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                          child: Icon(
+                            AvatarHelper.getIconForId(avatarId), 
+                            size: 34, 
+                            color: isSelected ? const Color(0xFFF5B942) : theme.colorScheme.onSurface,
+                          ),
                         ),
                       ),
                     );
@@ -91,12 +105,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
               ),
               const SizedBox(height: 40),
-              const Text('Hero Name', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 16)),
+              Text(
+                'Hero Name', 
+                style: TextStyle(
+                  color: isDark ? const Color(0xFFF5B942) : const Color(0xFFD97706), 
+                  fontWeight: FontWeight.bold, 
+                  fontSize: 16,
+                ),
+              ),
               const SizedBox(height: 8),
               TextFormField(
                 initialValue: _username,
+                style: TextStyle(color: theme.colorScheme.onSurface),
                 decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.badge),
                 ),
                 validator: (value) => value == null || value.trim().isEmpty ? 'Please enter a name' : null,
@@ -107,9 +128,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.amber,
+                    backgroundColor: const Color(0xFFF5B942),
                     foregroundColor: Colors.black,
                     padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   onPressed: _save,
                   child: const Text('SAVE CHANGES', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),

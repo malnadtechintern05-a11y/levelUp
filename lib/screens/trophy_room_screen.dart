@@ -28,9 +28,15 @@ class TrophyRoomScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final achievement = achievements[index];
               return Card(
-                color: achievement.isUnlocked
-                    ? Theme.of(context).colorScheme.primaryContainer
-                    : Theme.of(context).colorScheme.surfaceVariant,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(
+                    color: achievement.isUnlocked
+                        ? const Color(0xFFF5B942).withValues(alpha: 0.5)
+                        : Theme.of(context).colorScheme.outline,
+                    width: achievement.isUnlocked ? 1.5 : 1,
+                  ),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -40,8 +46,8 @@ class TrophyRoomScreen extends StatelessWidget {
                         achievement.isUnlocked ? Icons.emoji_events : Icons.lock,
                         size: 48,
                         color: achievement.isUnlocked
-                            ? Colors.amber
-                            : Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+                            ? const Color(0xFFF5B942)
+                            : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -49,7 +55,9 @@ class TrophyRoomScreen extends StatelessWidget {
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: achievement.isUnlocked ? null : Colors.grey,
+                              color: achievement.isUnlocked
+                                  ? Theme.of(context).colorScheme.onSurface
+                                  : Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                       ),
                       const SizedBox(height: 8),
@@ -57,7 +65,7 @@ class TrophyRoomScreen extends StatelessWidget {
                         achievement.description,
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: achievement.isUnlocked ? null : Colors.grey,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                       ),
                     ],

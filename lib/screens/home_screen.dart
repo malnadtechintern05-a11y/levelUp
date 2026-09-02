@@ -4,6 +4,10 @@ import '../providers/app_state.dart';
 import '../widgets/quest_card.dart';
 import '../screens/add_quest_screen.dart';
 import '../screens/settings_screen.dart';
+import '../screens/notifications_screen.dart';
+import '../screens/privacy_policy_screen.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -16,7 +20,14 @@ class _HomeScreenState extends State<HomeScreen> {
   String _selectedCategory = 'All';
 
   Widget _buildCategoryChip(BuildContext context, String label, IconData icon, Color color) {
-    bool isSelected = _selectedCategory == label;
+    final theme = Theme.of(context);
+    final isSelected = _selectedCategory == label;
+    final isDark = theme.brightness == Brightness.dark;
+
+    final unselectedBg = isDark ? const Color(0xFF162033) : Colors.white;
+    final unselectedBorder = isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
+    final unselectedText = isDark ? const Color(0xFFAAB4C2) : const Color(0xFF475569);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 6.0),
       child: GestureDetector(
@@ -25,13 +36,25 @@ class _HomeScreenState extends State<HomeScreen> {
             _selectedCategory = label;
           });
         },
-        child: Container(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
           width: 80,
           height: 80,
           decoration: BoxDecoration(
-            color: isSelected ? Colors.amber : const Color(0xFF162033),
+            color: isSelected ? const Color(0xFFF5B942) : unselectedBg,
             borderRadius: BorderRadius.circular(16),
-            border: isSelected ? null : Border.all(color: Colors.grey.withOpacity(0.2)),
+            border: Border.all(
+              color: isSelected ? const Color(0xFFF5B942) : unselectedBorder,
+              width: isSelected ? 2 : 1,
+            ),
+            boxShadow: [
+              if (!isDark && !isSelected)
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+            ],
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -39,12 +62,12 @@ class _HomeScreenState extends State<HomeScreen> {
               Icon(icon, color: isSelected ? Colors.black : color, size: 28),
               const SizedBox(height: 8),
               Text(
-                label, 
+                label,
                 style: TextStyle(
-                  color: isSelected ? Colors.black : Colors.white70, 
+                  color: isSelected ? Colors.black : unselectedText,
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
-                )
+                ),
               ),
             ],
           ),
@@ -55,20 +78,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0F1C),
       drawer: Drawer(
-        backgroundColor: const Color(0xFF162033),
+        backgroundColor: theme.colorScheme.surface,
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
               decoration: BoxDecoration(
-                color: const Color(0xFF0A0F1C),
+                color: isDark ? const Color(0xFF0A0F1C) : const Color(0xFF1E293B),
                 image: DecorationImage(
                   image: const AssetImage('assets/images/banner_hero.jpg'),
                   fit: BoxFit.cover,
-                  colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.5), BlendMode.darken),
+                  colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.5), BlendMode.darken),
                 ),
               ),
               child: const Column(
@@ -77,98 +102,249 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Text('Real-Life RPG', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                   SizedBox(height: 8),
-                  Text('Level up your life.', style: TextStyle(color: Colors.amber, fontSize: 14)),
+                  Text('Level up your life.', style: TextStyle(color: Color(0xFFF5B942), fontSize: 14)),
                 ],
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.settings, color: Colors.white),
-              title: const Text('Settings', style: TextStyle(color: Colors.white)),
+              leading: Icon(Icons.settings_outlined, color: theme.colorScheme.onSurface),
+              title: Text('Settings', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsScreen()));
               },
             ),
             ListTile(
-              leading: const Icon(Icons.info_outline, color: Colors.white),
-              title: const Text('About', style: TextStyle(color: Colors.white)),
+              leading: Icon(Icons.info_outline, color: theme.colorScheme.onSurface),
+              title: Text('About', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
               onTap: () {
                 Navigator.pop(context);
                 showDialog(
                   context: context,
                   builder: (context) => AlertDialog(
-                    backgroundColor: const Color(0xFF162033),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    title: const Row(
+                    title: Row(
                       children: [
-                        Icon(Icons.emoji_events, color: Colors.amber, size: 28),
-                        SizedBox(width: 8),
-                        Text('LevelUp RPG', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        const Icon(Icons.emoji_events, color: Color(0xFFF5B942), size: 28),
+                        const SizedBox(width: 8),
+                        Text('LevelUp RPG', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
                       ],
                     ),
-                    content: const Column(
+                    content: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'Version 1.0.0',
-                          style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: Color(0xFFF5B942), fontWeight: FontWeight.bold),
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
                         Text(
                           'Turn your daily chores and habits into an epic quest! Complete tasks, earn XP, unlock achievements, and become the hero of your own life.',
-                          style: TextStyle(color: Colors.white70, height: 1.5),
+                          style: TextStyle(color: theme.colorScheme.onSurfaceVariant, height: 1.5),
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
                         Text(
                           'Keep grinding and leveling up!',
-                          style: TextStyle(color: Colors.white, fontStyle: FontStyle.italic),
+                          style: TextStyle(color: theme.colorScheme.onSurface, fontStyle: FontStyle.italic, fontWeight: FontWeight.w500),
                         ),
                       ],
                     ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context),
-                        child: const Text('CLOSE', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
+                        child: const Text('CLOSE', style: TextStyle(color: Color(0xFFF5B942), fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
                 );
               },
             ),
+            Divider(color: theme.colorScheme.outline),
+            ListTile(
+              leading: Icon(Icons.share_outlined, color: theme.colorScheme.onSurface),
+              title: Text('Share App', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
+              onTap: () async {
+                Navigator.pop(context);
+                const shareText = "🔥 I'm leveling up my real life with LevelUp! 🎮⚡\n"
+                    "Complete real-life quests, earn XP, build streaks, and become the best version of yourself.\n"
+                    "Try LevelUp!\n"
+                    "https://play.google.com/store/apps/details?id=com.levelup.realliferpg";
+                try {
+                  await Share.share(shareText, subject: 'LevelUp - Real Life RPG');
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Sharing LevelUp invitation...')),
+                    );
+                  }
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.star_rate_outlined, color: Color(0xFFF5B942)),
+              title: Text('Rate App', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
+              onTap: () async {
+                Navigator.pop(context);
+                const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.levelup.realliferpg';
+                final uri = Uri.parse(playStoreUrl);
+                bool launched = false;
+                try {
+                  if (await canLaunchUrl(uri)) {
+                    launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  }
+                } catch (_) {}
+
+                if (!launched && context.mounted) {
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      title: Row(
+                        children: [
+                          const Icon(Icons.star, color: Color(0xFFF5B942), size: 28),
+                          const SizedBox(width: 8),
+                          Text('Love LevelUp?', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                      content: Text(
+                        'Your feedback helps us improve and make the app even better!',
+                        style: TextStyle(color: theme.colorScheme.onSurfaceVariant, height: 1.4),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: Text('Maybe Later', style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFF5B942),
+                            foregroundColor: Colors.black,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          onPressed: () => Navigator.pop(ctx),
+                          child: const Text('Rate Later', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.privacy_tip_outlined, color: theme.colorScheme.onSurface),
+              title: Text('Privacy Policy', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PrivacyPolicyScreen()),
+                );
+              },
+            ),
+            Divider(color: theme.colorScheme.outline),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.redAccent),
+              title: const Text('Logout', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+              onTap: () async {
+                Navigator.pop(context); // close drawer
+                await context.read<AppState>().logout();
+                if (context.mounted) {
+                  Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                }
+              },
+            ),
           ],
         ),
       ),
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
         leading: Builder(
           builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
+            icon: Icon(Icons.menu, color: theme.colorScheme.onSurface),
             onPressed: () {
               Scaffold.of(context).openDrawer();
             },
           ),
         ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
           children: [
-            const Row(
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                'assets/logo.png',
+                width: 36,
+                height: 36,
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Hey Hero! ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.white)),
-                Text('🔥', style: TextStyle(fontSize: 22)),
+                Row(
+                  children: [
+                    Text('Hey Hero! ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: theme.colorScheme.onSurface)),
+                    const Text('🔥', style: TextStyle(fontSize: 18)),
+                  ],
+                ),
+                Text(
+                  "Let's crush your goals today.",
+                  style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
+                ),
               ],
             ),
-            Text("Let's crush your goals today.", style: TextStyle(fontSize: 14, color: Colors.grey.shade400)),
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: Colors.white), 
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No new notifications.')));
-            }
+          Consumer<AppState>(
+            builder: (context, state, child) {
+              final unreadCount = state.unreadNotificationCount;
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      unreadCount > 0 ? Icons.notifications_active : Icons.notifications_none,
+                      color: unreadCount > 0 ? const Color(0xFFF5B942) : theme.colorScheme.onSurface,
+                    ),
+                    tooltip: 'Notifications',
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                      );
+                    },
+                  ),
+                  if (unreadCount > 0)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.redAccent,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          unreadCount > 9 ? '9+' : '$unreadCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
+          const SizedBox(width: 4),
         ],
       ),
       body: Consumer<AppState>(
@@ -179,31 +355,31 @@ class _HomeScreenState extends State<HomeScreen> {
           final completedCount = todayCompletedTasks.length;
           final progress = totalTasks > 0 ? completedCount / totalTasks : 0.0;
 
-          final filteredTasks = _selectedCategory == 'All' 
-              ? activeTasks 
+          final filteredTasks = _selectedCategory == 'All'
+              ? activeTasks
               : activeTasks.where((t) => t.category == _selectedCategory).toList();
 
           return ListView(
-            padding: const EdgeInsets.only(bottom: 100), // safe padding for FAB
+            padding: const EdgeInsets.only(bottom: 100),
             children: [
               // Hero Banner (Level Card)
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                height: 160, // slightly shorter to not be too tall
+                height: 160,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
                   image: DecorationImage(
                     image: const AssetImage('assets/images/banner_hero.jpg'),
                     fit: BoxFit.cover,
-                    colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.4), BlendMode.darken),
+                    colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.45), BlendMode.darken),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.5),
+                      color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.15),
                       blurRadius: 10,
-                      offset: const Offset(0, 5),
+                      offset: const Offset(0, 4),
                     )
-                  ]
+                  ],
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(20.0),
@@ -224,9 +400,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: LinearProgressIndicator(
-                          value: state.userProfile.totalXP / (state.userProfile.level * 100), 
-                          backgroundColor: Colors.white24, 
-                          color: Colors.amber,
+                          value: (state.userProfile.totalXP / (state.userProfile.level * 100)).clamp(0.0, 1.0),
+                          backgroundColor: Colors.white24,
+                          color: const Color(0xFFF5B942),
                           minHeight: 8,
                         ),
                       ),
@@ -241,8 +417,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Daily Progress', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                    Text('$completedCount / $totalTasks Completed', style: TextStyle(color: Colors.amber, fontSize: 14, fontWeight: FontWeight.bold)),
+                    Text('Daily Progress', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+                    Text('$completedCount / $totalTasks Completed', style: const TextStyle(color: Color(0xFFF5B942), fontSize: 14, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
@@ -253,8 +429,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   borderRadius: BorderRadius.circular(8),
                   child: LinearProgressIndicator(
                     value: progress,
-                    backgroundColor: const Color(0xFF162033),
-                    color: Colors.amber,
+                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                    color: const Color(0xFFF5B942),
                     minHeight: 8,
                   ),
                 ),
@@ -267,7 +443,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 10.0),
                 child: Row(
                   children: [
-                    _buildCategoryChip(context, 'All', Icons.dashboard_customize, Colors.amber),
+                    _buildCategoryChip(context, 'All', Icons.dashboard_customize, const Color(0xFFF5B942)),
                     _buildCategoryChip(context, 'Study', Icons.menu_book, Colors.blueAccent),
                     _buildCategoryChip(context, 'Fitness', Icons.fitness_center, Colors.redAccent),
                     _buildCategoryChip(context, 'Health', Icons.favorite, Colors.green),
@@ -284,32 +460,79 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text("Active Tasks", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-                    TextButton(
-                      onPressed: () {},
-                      style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(50, 30), tapTargetSize: MaterialTapTargetSize.shrinkWrap),
-                      child: const Text('View all', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
+                    Text("Active Tasks", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+                    Text(
+                      '${filteredTasks.length} pending',
+                      style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 12),
-              
+
               // Task List
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Column(
-                  children: filteredTasks.isEmpty 
-                    ? [const Padding(
-                        padding: EdgeInsets.all(20.0),
-                        child: Text("No tasks in this category.", style: TextStyle(color: Colors.grey)),
-                      )]
-                    : filteredTasks.map((task) => QuestCard(
-                        task: task,
-                        onComplete: () => state.completeTask(task.id),
-                      )).toList(),
+                  children: filteredTasks.isEmpty
+                      ? [
+                          Padding(
+                            padding: const EdgeInsets.all(32.0),
+                            child: Center(
+                              child: Column(
+                                children: [
+                                  Icon(Icons.check_circle_outline, size: 48, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+                                  const SizedBox(height: 12),
+                                  Text("No active tasks in this category.", style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 14)),
+                                ],
+                              ),
+                            ),
+                          )
+                        ]
+                      : filteredTasks.map((task) => QuestCard(
+                            task: task,
+                            onComplete: () => state.completeTask(task.id),
+                          )).toList(),
                 ),
               ),
+
+              if (todayCompletedTasks.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Completed Today", 
+                        style: TextStyle(
+                          fontSize: 18, 
+                          fontWeight: FontWeight.bold, 
+                          color: isDark ? const Color(0xFF4CAF50) : const Color(0xFF16A34A),
+                        ),
+                      ),
+                      Text(
+                        '${todayCompletedTasks.length} done',
+                        style: TextStyle(
+                          color: isDark ? const Color(0xFF4CAF50) : const Color(0xFF16A34A), 
+                          fontSize: 13, 
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    children: todayCompletedTasks.map((task) => QuestCard(
+                          task: task,
+                          onComplete: () {},
+                        )).toList(),
+                  ),
+                ),
+              ],
             ],
           );
         },
@@ -318,7 +541,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onPressed: () {
           Navigator.push(context, MaterialPageRoute(builder: (context) => const AddQuestScreen()));
         },
-        backgroundColor: Colors.amber,
+        backgroundColor: const Color(0xFFF5B942),
         foregroundColor: Colors.black,
         icon: const Icon(Icons.add, size: 24),
         label: const Text('Add Task', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),

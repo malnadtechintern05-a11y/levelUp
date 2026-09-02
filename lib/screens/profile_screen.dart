@@ -22,7 +22,8 @@ class ProfileScreen extends StatelessWidget {
     }
   }
 
-  Widget _buildSkillBar(String icon, String skillName, int totalXp, Color color) {
+  Widget _buildSkillBar(BuildContext context, String icon, String skillName, int totalXp, Color color) {
+    final theme = Theme.of(context);
     int level = (totalXp / 100).floor();
     int currentXp = totalXp % 100;
     double progress = currentXp / 100.0;
@@ -40,12 +41,12 @@ class ProfileScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(skillName, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 15)),
+                    Text(skillName, style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface, fontSize: 15)),
                     Text('Level $level', style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
-              Text('$currentXp / 100 XP', style: TextStyle(color: Colors.grey.shade400, fontSize: 12)),
+              Text('$currentXp / 100 XP', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
             ],
           ),
           const SizedBox(height: 8),
@@ -53,7 +54,7 @@ class ProfileScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(6),
             child: LinearProgressIndicator(
               value: progress,
-              backgroundColor: const Color(0xFF162033),
+              backgroundColor: theme.colorScheme.surfaceContainerHighest,
               color: color,
               minHeight: 8,
             ),
@@ -65,17 +66,15 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0F1C),
       appBar: AppBar(
-        title: const Text('Hero Profile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text('Hero Profile', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings), 
+            icon: Icon(Icons.settings_outlined, color: theme.colorScheme.onSurface), 
             onPressed: () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsScreen()));
             },
@@ -86,10 +85,10 @@ class ProfileScreen extends StatelessWidget {
         builder: (context, state, child) {
           final profile = state.userProfile;
           final xpNeeded = profile.level * 100;
-          final progress = profile.totalXP / xpNeeded;
+          final progress = (profile.totalXP / xpNeeded).clamp(0.0, 1.0);
 
           return ListView(
-            padding: const EdgeInsets.only(bottom: 120.0), // Safe bottom padding
+            padding: const EdgeInsets.only(bottom: 120.0),
             children: [
               // Banner & Avatar Stack
               Stack(
@@ -105,7 +104,7 @@ class ProfileScreen extends StatelessWidget {
                       image: DecorationImage(
                         image: const AssetImage('assets/images/banner_hero.jpg'),
                         fit: BoxFit.cover,
-                        colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.6), BlendMode.darken),
+                        colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.55), BlendMode.darken),
                       ),
                     ),
                   ),
@@ -113,8 +112,8 @@ class ProfileScreen extends StatelessWidget {
                   Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: const Color(0xFF0A0F1C),
-                      border: Border.all(color: const Color(0xFF0A0F1C), width: 8),
+                      color: theme.scaffoldBackgroundColor,
+                      border: Border.all(color: theme.scaffoldBackgroundColor, width: 8),
                     ),
                     child: GestureDetector(
                       onTap: () => _pickImage(context),
@@ -124,19 +123,19 @@ class ProfileScreen extends StatelessWidget {
                           Container(
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              border: Border.all(color: Colors.amber, width: 4),
+                              border: Border.all(color: const Color(0xFFF5B942), width: 4),
                               boxShadow: [
-                                BoxShadow(color: Colors.amber.withOpacity(0.3), blurRadius: 15, spreadRadius: 5),
+                                BoxShadow(color: const Color(0xFFF5B942).withValues(alpha: 0.3), blurRadius: 15, spreadRadius: 5),
                               ],
                             ),
                             child: CircleAvatar(
                               radius: 50,
-                              backgroundColor: const Color(0xFF162033),
+                              backgroundColor: theme.colorScheme.surfaceContainerHighest,
                               backgroundImage: profile.profileImagePath != null 
                                 ? FileImage(File(profile.profileImagePath!)) 
                                 : null,
                               child: profile.profileImagePath == null 
-                                ? Icon(AvatarHelper.getIconForId(profile.avatarId), size: 60, color: Colors.white)
+                                ? Icon(AvatarHelper.getIconForId(profile.avatarId), size: 60, color: const Color(0xFFF5B942))
                                 : null,
                             ),
                           ),
@@ -147,9 +146,9 @@ class ProfileScreen extends StatelessWidget {
                             child: Container(
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
-                                color: Colors.amber,
+                                color: const Color(0xFFF5B942),
                                 shape: BoxShape.circle,
-                                border: Border.all(color: const Color(0xFF0A0F1C), width: 3),
+                                border: Border.all(color: theme.scaffoldBackgroundColor, width: 3),
                               ),
                               child: const Icon(Icons.edit, size: 18, color: Colors.black),
                             ),
@@ -168,24 +167,22 @@ class ProfileScreen extends StatelessWidget {
                   children: [
                     Text(
                       profile.username,
-                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Level ${profile.level}',
-                      style: const TextStyle(fontSize: 18, color: Colors.amber, fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontSize: 18, color: Color(0xFFF5B942), fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
               
-              // XP Progress
+              // XP Progress Card
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Card(
-                  color: const Color(0xFF162033),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
@@ -193,8 +190,8 @@ class ProfileScreen extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('XP Progress', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                            Text('${profile.totalXP} / $xpNeeded XP', style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
+                            Text('XP Progress', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
+                            Text('${profile.totalXP} / $xpNeeded XP', style: const TextStyle(color: Color(0xFFF5B942), fontWeight: FontWeight.bold)),
                           ],
                         ),
                         const SizedBox(height: 12),
@@ -202,8 +199,8 @@ class ProfileScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                           child: LinearProgressIndicator(
                             value: progress,
-                            backgroundColor: Colors.black45,
-                            color: Colors.amber,
+                            backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                            color: const Color(0xFFF5B942),
                             minHeight: 12,
                           ),
                         ),
@@ -222,11 +219,11 @@ class ProfileScreen extends StatelessWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: _buildStatBox(context, 'Total XP', '${profile.totalXP}', Colors.amber),
+                          child: _buildStatBox(context, 'Total XP', '${profile.totalXP}', const Color(0xFFF5B942)),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: _buildStatBox(context, 'Tasks Done', '${state.completedTasks.length}', Colors.green),
+                          child: _buildStatBox(context, 'Tasks Done', '${state.completedTasks.length}', isDark ? const Color(0xFF4CAF50) : const Color(0xFF16A34A)),
                         ),
                       ],
                     ),
@@ -234,7 +231,7 @@ class ProfileScreen extends StatelessWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: _buildStatBox(context, 'Current Streak', '${profile.currentStreak} Days', profile.currentStreak == 0 ? Colors.red.shade300 : Colors.greenAccent),
+                          child: _buildStatBox(context, 'Current Streak', '${profile.currentStreak} Days', profile.currentStreak == 0 ? Colors.red.shade400 : Colors.green),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -248,24 +245,22 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 32),
               
               // Skills Section
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: Text('Skills', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Text('Skills', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
               ),
               const SizedBox(height: 12),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Card(
-                  color: const Color(0xFF162033),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       children: [
-                        _buildSkillBar('💪', 'Strength', profile.skills['Strength'] ?? 0, Colors.redAccent),
-                        _buildSkillBar('📚', 'Knowledge', profile.skills['Knowledge'] ?? 0, Colors.blueAccent),
-                        _buildSkillBar('🔥', 'Discipline', profile.skills['Discipline'] ?? 0, Colors.orange),
-                        _buildSkillBar('🎯', 'Focus', profile.skills['Focus'] ?? 0, Colors.purpleAccent),
+                        _buildSkillBar(context, '💪', 'Strength', profile.skills['Strength'] ?? 0, Colors.redAccent),
+                        _buildSkillBar(context, '📚', 'Knowledge', profile.skills['Knowledge'] ?? 0, Colors.blueAccent),
+                        _buildSkillBar(context, '🔥', 'Discipline', profile.skills['Discipline'] ?? 0, Colors.orange),
+                        _buildSkillBar(context, '🎯', 'Focus', profile.skills['Focus'] ?? 0, Colors.purpleAccent),
                       ],
                     ),
                   ),
@@ -277,17 +272,40 @@ class ProfileScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: const Color(0xFF2A3042),
-                      foregroundColor: Colors.white,
+                      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      foregroundColor: theme.colorScheme.onSurface,
+                      side: BorderSide(color: theme.colorScheme.outline),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     onPressed: () {
                       Navigator.push(context, MaterialPageRoute(builder: (context) => const EditProfileScreen()));
                     },
-                    child: const Text('Edit Profile', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text('Edit Profile', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: Colors.red.shade700,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () async {
+                      await context.read<AppState>().logout();
+                      if (context.mounted) {
+                        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                      }
+                    },
+                    child: const Text('Logout', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   ),
                 ),
               )
@@ -299,15 +317,27 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildStatBox(BuildContext context, String title, String value, Color color) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF162033),
-        borderRadius: BorderRadius.circular(12),
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.colorScheme.outline),
+        boxShadow: [
+          if (!isDark)
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+        ],
       ),
       child: Column(
         children: [
-          Text(title, style: TextStyle(color: Colors.grey.shade400, fontSize: 13)),
+          Text(title, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w500)),
           const SizedBox(height: 6),
           Text(value, style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.bold)),
         ],

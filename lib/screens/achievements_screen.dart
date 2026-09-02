@@ -7,14 +7,12 @@ class AchievementsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0F1C),
       appBar: AppBar(
-        title: const Text('Achievements', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text('Achievements', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
       ),
       body: Consumer<AppState>(
         builder: (context, state, child) {
@@ -38,6 +36,13 @@ class AchievementsScreen extends StatelessWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    )
+                  ],
                 ),
                 child: Column(
                   children: [
@@ -45,7 +50,7 @@ class AchievementsScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text('Achievements Unlocked', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
-                        Text('$unlockedCount / $totalCount', style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 16)),
+                        Text('$unlockedCount / $totalCount', style: const TextStyle(color: Color(0xFFF5B942), fontWeight: FontWeight.bold, fontSize: 16)),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -53,8 +58,8 @@ class AchievementsScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                       child: LinearProgressIndicator(
                         value: progress,
-                        backgroundColor: Colors.black45,
-                        color: Colors.amber,
+                        backgroundColor: Colors.black38,
+                        color: const Color(0xFFF5B942),
                         minHeight: 8,
                       ),
                     ),
@@ -70,13 +75,14 @@ class AchievementsScreen extends StatelessWidget {
                   itemBuilder: (context, index) {
                     final achievement = achievements[index];
                     return Card(
-                      color: const Color(0xFF162033),
                       margin: const EdgeInsets.only(bottom: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                         side: BorderSide(
-                          color: achievement.isUnlocked ? Colors.amber.withOpacity(0.5) : Colors.transparent,
-                          width: 1,
+                          color: achievement.isUnlocked
+                              ? const Color(0xFFF5B942).withValues(alpha: 0.5)
+                              : theme.colorScheme.outline,
+                          width: achievement.isUnlocked ? 1.5 : 1,
                         ),
                       ),
                       child: Padding(
@@ -88,15 +94,21 @@ class AchievementsScreen extends StatelessWidget {
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: achievement.isUnlocked ? Colors.amber.withOpacity(0.15) : Colors.grey.withOpacity(0.1),
+                                color: achievement.isUnlocked 
+                                    ? const Color(0xFFF5B942).withValues(alpha: 0.15) 
+                                    : theme.colorScheme.surfaceContainerHighest,
                                 border: Border.all(
-                                  color: achievement.isUnlocked ? Colors.amber : Colors.grey.shade700,
+                                  color: achievement.isUnlocked 
+                                      ? const Color(0xFFF5B942) 
+                                      : theme.colorScheme.outline,
                                   width: 2,
                                 ),
                               ),
                               child: Icon(
                                 achievement.isUnlocked ? Icons.emoji_events : Icons.lock,
-                                color: achievement.isUnlocked ? Colors.amber : Colors.grey.shade400,
+                                color: achievement.isUnlocked 
+                                    ? const Color(0xFFF5B942) 
+                                    : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                                 size: 28,
                               ),
                             ),
@@ -112,13 +124,13 @@ class AchievementsScreen extends StatelessWidget {
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 16,
-                                      color: Colors.white,
+                                      color: theme.colorScheme.onSurface,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     achievement.description,
-                                    style: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+                                    style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13),
                                   ),
                                 ],
                               ),
@@ -129,7 +141,9 @@ class AchievementsScreen extends StatelessWidget {
                             Text(
                               achievement.isUnlocked ? 'UNLOCKED' : 'LOCKED',
                               style: TextStyle(
-                                color: achievement.isUnlocked ? Colors.amber : Colors.grey.shade500,
+                                color: achievement.isUnlocked 
+                                    ? const Color(0xFFF5B942) 
+                                    : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12,
                               ),
@@ -142,20 +156,22 @@ class AchievementsScreen extends StatelessWidget {
                 ),
               ),
               
-              // Next Achievement Section (reduces empty space)
+              // Next Achievement Section
               if (unlockedCount < totalCount)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Padding(
-                        padding: EdgeInsets.only(left: 4, bottom: 8),
-                        child: Text("Next Achievement", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4, bottom: 8),
+                        child: Text("Next Achievement", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: theme.colorScheme.onSurface)),
                       ),
                       Card(
-                        color: const Color(0xFF162033),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(color: theme.colorScheme.outline),
+                        ),
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
                           child: Column(
@@ -163,14 +179,14 @@ class AchievementsScreen extends StatelessWidget {
                             children: [
                               Row(
                                 children: [
-                                  const Icon(Icons.star_border, color: Colors.amber, size: 24),
+                                  const Icon(Icons.star_border, color: Color(0xFFF5B942), size: 24),
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(nextAchievement.name, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 15)),
-                                        Text(nextAchievement.description, style: TextStyle(color: Colors.grey.shade400, fontSize: 13)),
+                                        Text(nextAchievement.name, style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface, fontSize: 15)),
+                                        Text(nextAchievement.description, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13)),
                                       ],
                                     ),
                                   ),
@@ -180,8 +196,8 @@ class AchievementsScreen extends StatelessWidget {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text('Level progress', style: TextStyle(color: Colors.grey.shade400, fontSize: 12)),
-                                  Text('${state.userProfile.level} / 5', style: const TextStyle(color: Colors.amber, fontSize: 12, fontWeight: FontWeight.bold)),
+                                  Text('Level progress', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
+                                  Text('${state.userProfile.level} / 5', style: const TextStyle(color: Color(0xFFF5B942), fontSize: 12, fontWeight: FontWeight.bold)),
                                 ],
                               ),
                               const SizedBox(height: 6),
@@ -189,8 +205,8 @@ class AchievementsScreen extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(4),
                                 child: LinearProgressIndicator(
                                   value: (state.userProfile.level / 5).clamp(0.0, 1.0),
-                                  backgroundColor: Colors.black26,
-                                  color: Colors.amber,
+                                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                                  color: const Color(0xFFF5B942),
                                   minHeight: 4,
                                 ),
                               ),

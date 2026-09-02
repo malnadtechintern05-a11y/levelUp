@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
@@ -14,12 +13,6 @@ class QuestDetailsScreen extends StatefulWidget {
 }
 
 class _QuestDetailsScreenState extends State<QuestDetailsScreen> {
-  String _formatDuration(int totalSeconds) {
-    int minutes = totalSeconds ~/ 60;
-    int seconds = totalSeconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-  }
-
   IconData _getCategoryIcon() {
     switch (widget.task.category) {
       case 'Study': return Icons.menu_book;
@@ -42,6 +35,9 @@ class _QuestDetailsScreenState extends State<QuestDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Quest Details')),
       body: Padding(
@@ -53,7 +49,7 @@ class _QuestDetailsScreenState extends State<QuestDetailsScreen> {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _getCategoryColor().withOpacity(0.2),
+                color: _getCategoryColor().withValues(alpha: 0.15),
                 border: Border.all(color: _getCategoryColor(), width: 3),
               ),
               child: Icon(_getCategoryIcon(), size: 60, color: _getCategoryColor()),
@@ -61,7 +57,7 @@ class _QuestDetailsScreenState extends State<QuestDetailsScreen> {
             const SizedBox(height: 24),
             Text(
               widget.task.title,
-              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
@@ -71,7 +67,7 @@ class _QuestDetailsScreenState extends State<QuestDetailsScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: _getCategoryColor().withOpacity(0.2),
+                    color: _getCategoryColor().withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(widget.task.category, style: TextStyle(color: _getCategoryColor(), fontWeight: FontWeight.bold)),
@@ -80,14 +76,14 @@ class _QuestDetailsScreenState extends State<QuestDetailsScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.amber.withOpacity(0.2),
+                    color: const Color(0xFFF5B942).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.star, color: Colors.amber, size: 16),
+                      const Icon(Icons.star, color: Color(0xFFF5B942), size: 16),
                       const SizedBox(width: 4),
-                      Text('+${widget.task.xpReward} XP', style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
+                      Text('+${widget.task.xpReward} XP', style: const TextStyle(color: Color(0xFFF5B942), fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
@@ -95,16 +91,76 @@ class _QuestDetailsScreenState extends State<QuestDetailsScreen> {
             ),
             const SizedBox(height: 32),
             
-            // Timer UI
+            // Timer / Availability UI
             if (!widget.task.isCompleted) ...[
               Consumer<AppState>(
                 builder: (context, state, child) {
+                  if (state.isTaskFuture(widget.task)) {
+                    return Card(
+                      color: isDark ? const Color(0xFF162033) : const Color(0xFFF1F5F9),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: BorderSide(color: theme.colorScheme.outline),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          children: [
+                            const Icon(Icons.lock_outline, size: 48, color: Color(0xFF94A3B8)),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Quest Locked',
+                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'This quest is scheduled for ${state.getTaskAvailabilityDateText(widget.task)} and will automatically unlock on that day.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
+                  if (state.isTaskPast(widget.task)) {
+                    return Card(
+                      color: Colors.red.withValues(alpha: 0.1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: BorderSide(color: Colors.red.withValues(alpha: 0.3)),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          children: [
+                            const Icon(Icons.history_toggle_off, size: 48, color: Colors.redAccent),
+                            const SizedBox(height: 12),
+                            const Text(
+                              'Missed Quest',
+                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.redAccent),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'This quest was scheduled for ${state.getTaskAvailabilityDateText(widget.task)} and has expired.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
                   int remaining = state.getCalculatedRemainingSeconds(widget.task);
                   return Card(
-                    color: const Color(0xFF162033),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
-                      side: BorderSide(color: widget.task.timerStatus == 'Running' ? Colors.amber : Colors.transparent, width: 2),
+                      side: BorderSide(
+                        color: widget.task.timerStatus == 'Running' ? const Color(0xFFF5B942) : theme.colorScheme.outline,
+                        width: 2,
+                      ),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(20.0),
@@ -113,7 +169,7 @@ class _QuestDetailsScreenState extends State<QuestDetailsScreen> {
                           if (widget.task.timerStatus == 'Not Started')
                             Text(
                               '${widget.task.durationMinutes}:00',
-                              style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.white),
+                              style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
                             )
                           else
                             Text(
@@ -121,7 +177,7 @@ class _QuestDetailsScreenState extends State<QuestDetailsScreen> {
                               style: TextStyle(
                                 fontSize: 48, 
                                 fontWeight: FontWeight.bold, 
-                                color: widget.task.timerStatus == 'Running' ? Colors.amber : Colors.white
+                                color: widget.task.timerStatus == 'Running' ? const Color(0xFFF5B942) : theme.colorScheme.onSurface,
                               ),
                             ),
                           const SizedBox(height: 16),
@@ -131,9 +187,10 @@ class _QuestDetailsScreenState extends State<QuestDetailsScreen> {
                               icon: const Icon(Icons.play_arrow),
                               label: const Text('START TIMER', style: TextStyle(fontWeight: FontWeight.bold)),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.amber,
+                                backgroundColor: const Color(0xFFF5B942),
                                 foregroundColor: Colors.black,
                                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
                             )
                           else
@@ -151,9 +208,10 @@ class _QuestDetailsScreenState extends State<QuestDetailsScreen> {
                                   icon: Icon(widget.task.timerStatus == 'Running' ? Icons.pause : Icons.play_arrow),
                                   label: Text(widget.task.timerStatus == 'Running' ? 'PAUSE' : 'RESUME', style: const TextStyle(fontWeight: FontWeight.bold)),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: widget.task.timerStatus == 'Running' ? Colors.orange : Colors.amber,
+                                    backgroundColor: widget.task.timerStatus == 'Running' ? Colors.orange : const Color(0xFFF5B942),
                                     foregroundColor: Colors.black,
                                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                   ),
                                 ),
                               ],
@@ -168,16 +226,20 @@ class _QuestDetailsScreenState extends State<QuestDetailsScreen> {
 
             if (widget.task.isCompleted)
               Card(
-                color: Colors.green.withOpacity(0.2),
+                color: isDark ? const Color(0xFF4CAF50).withValues(alpha: 0.15) : const Color(0xFF16A34A).withValues(alpha: 0.1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: isDark ? const Color(0xFF4CAF50) : const Color(0xFF16A34A)),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(20.0),
                   child: Column(
                     children: [
-                      const Icon(Icons.check_circle, color: Colors.green, size: 48),
+                      Icon(Icons.check_circle, color: isDark ? const Color(0xFF4CAF50) : const Color(0xFF16A34A), size: 48),
                       const SizedBox(height: 8),
-                      const Text('Quest Completed!', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 18)),
+                      Text('Quest Completed!', style: TextStyle(color: isDark ? const Color(0xFF4CAF50) : const Color(0xFF16A34A), fontWeight: FontWeight.bold, fontSize: 18)),
                       const SizedBox(height: 4),
-                      Text('Duration: ${widget.task.durationMinutes} min', style: const TextStyle(color: Colors.white70)),
+                      Text('Duration: ${widget.task.durationMinutes} min', style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
                     ],
                   ),
                 ),
@@ -192,9 +254,9 @@ class _QuestDetailsScreenState extends State<QuestDetailsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Description', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 16)),
+                        Text('Description', style: TextStyle(color: isDark ? const Color(0xFFF5B942) : const Color(0xFFD97706), fontWeight: FontWeight.bold, fontSize: 16)),
                         const SizedBox(height: 8),
-                        Text(widget.task.description, style: const TextStyle(fontSize: 16, height: 1.5)),
+                        Text(widget.task.description, style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 16, height: 1.5)),
                       ],
                     ),
                   ),
@@ -202,26 +264,30 @@ class _QuestDetailsScreenState extends State<QuestDetailsScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            if (!widget.task.isCompleted)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.check_circle_outline),
-                  label: const Text('COMPLETE QUEST EARLY', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                  ),
-                  onPressed: () {
-                    context.read<AppState>().finishTaskEarly(widget.task.id);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('+${widget.task.xpReward} XP Earned!'), backgroundColor: Colors.green),
-                    );
-                    Navigator.pop(context);
-                  },
-                ),
-              ),
+            Consumer<AppState>(
+              builder: (context, state, child) {
+                if (!widget.task.isCompleted && state.isTaskToday(widget.task)) {
+                  return SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.check_circle_outline),
+                      label: const Text('COMPLETE QUEST EARLY', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: isDark ? const Color(0xFF4CAF50) : const Color(0xFF16A34A),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () {
+                        context.read<AppState>().finishTaskEarly(widget.task.id);
+                        Navigator.pop(context);
+                      },
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
           ],
         ),
       ),

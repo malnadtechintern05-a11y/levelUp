@@ -1,13 +1,34 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
+import 'package:intl/intl.dart';
 import '../models/models.dart';
 import '../helpers/database_helper.dart';
+import '../main.dart'; // Import to use rootScaffoldMessengerKey and rootNavigatorKey
+import '../widgets/task_completion_dialog.dart';
+import '../services/sound_service.dart';
+import 'package:flutter/material.dart';
 
 class AppState extends ChangeNotifier {
   UserProfile _userProfile = UserProfile(username: 'Hero');
   List<RPGTask> _tasks = [];
   Timer? _globalTimer;
+  
+  List<AppNotification> _notifications = [];
+  NotificationSettings _notificationSettings = NotificationSettings();
+
+  final List<String> _motivationalQuotes = [
+    "You're getting stronger every day! 💪",
+    "Another quest conquered! ⚔️",
+    "Keep going, Hero! 🚀",
+    "Progress is progress! ⭐",
+    "Your future self will thank you! 🔥",
+    "Level up your real life! ⚡",
+    "Consistency is your superpower! 🌟",
+    "Small daily wins create massive victories! 🏆",
+    "Every rep and page counts! 📖",
+    "You are unstoppable! 💥",
+  ];
   
   // Example achievements matching the redesign
   List<Achievement> _achievements = [
@@ -23,12 +44,12 @@ class AppState extends ChangeNotifier {
     Reward(id: 'r3', title: 'Buy a New Video Game', cost: 1000),
   ];
   
-  Map<String, int> _weeklyXp = {
-    'Mon': 0, 'Tue': 0, 'Wed': 0, 'Thu': 0, 'Fri': 0, 'Sat': 0, 'Sun': 0,
-  };
+  Map<String, int> _weeklyXp = {};
   
   bool _isLoading = true;
   bool _isDarkMode = true;
+  bool _isLoggedIn = false;
+  bool _soundEffectsEnabled = true;
   
   UserProfile get userProfile => _userProfile;
   List<RPGTask> get tasks => _tasks;
@@ -37,12 +58,87 @@ class AppState extends ChangeNotifier {
   Map<String, int> get weeklyXp => _weeklyXp;
   bool get isLoading => _isLoading;
   bool get isDarkMode => _isDarkMode;
+  bool get isLoggedIn => _isLoggedIn;
+  bool get soundEffectsEnabled => _soundEffectsEnabled;
+  List<AppNotification> get notifications => _notifications;
+  int get unreadNotificationCount => _notifications.where((n) => !n.isRead).length;
+  NotificationSettings get notificationSettings => _notificationSettings;
+  List<String> get motivationalQuotes => _motivationalQuotes;
 
-  List<RPGTask> get activeTasks => _tasks.where((t) => !t.isCompleted).toList();
+  Future<void> loginUser(String username) async {
+    _isLoggedIn = true;
+    _userProfile.username = username;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('is_logged_in', true);
+    await prefs.setString('logged_in_username', username);
+    notifyListeners();
+  }
+
+  Future<void> logout() async {
+    _isLoggedIn = false;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('is_logged_in', false);
+    notifyListeners();
+  }
+
+  Future<void> toggleSoundEffects(bool val) async {
+    _soundEffectsEnabled = val;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('sound_effects_enabled', val);
+    notifyListeners();
+  }
+
+  List<RPGTask> get activeTasks => _tasks.where((t) => !t.isCompleted && isTaskToday(t)).toList();
+  List<RPGTask> get allActiveTasks => _tasks.where((t) => !t.isCompleted).toList();
   List<RPGTask> get completedTasks => _tasks.where((t) => t.isCompleted).toList();
   
   bool _isSameDay(DateTime d1, DateTime d2) {
     return d1.year == d2.year && d1.month == d2.month && d1.day == d2.day;
+  }
+
+  bool isTaskToday(RPGTask task) {
+    final now = DateTime.now();
+    return _isSameDay(task.dueDate, now);
+  }
+
+  bool isTaskFuture(RPGTask task) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final taskDate = DateTime(task.dueDate.year, task.dueDate.month, task.dueDate.day);
+    return taskDate.isAfter(today);
+  }
+
+  bool isTaskPast(RPGTask task) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final taskDate = DateTime(task.dueDate.year, task.dueDate.month, task.dueDate.day);
+    return taskDate.isBefore(today);
+  }
+
+  String getTaskAvailabilityButtonText(RPGTask task) {
+    if (isTaskToday(task)) {
+      return 'Start Task';
+    }
+    if (isTaskFuture(task)) {
+      final now = DateTime.now();
+      final tomorrow = DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
+      final taskDate = DateTime(task.dueDate.year, task.dueDate.month, task.dueDate.day);
+      if (taskDate == tomorrow) {
+        return '🔒 Available Tomorrow';
+      }
+      return '🔒 Available on ${DateFormat('MMM d').format(task.dueDate)}';
+    }
+    return task.isCompleted ? 'Completed' : 'Missed Quest';
+  }
+
+  String getTaskAvailabilityDateText(RPGTask task) {
+    final now = DateTime.now();
+    final tomorrow = DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
+    final taskDate = DateTime(task.dueDate.year, task.dueDate.month, task.dueDate.day);
+    if (taskDate == tomorrow) {
+      return 'Tomorrow';
+    }
+    return DateFormat('MMMM d, yyyy').format(task.dueDate);
   }
 
   List<RPGTask> getTasksForDate(DateTime date) => _tasks.where((t) => _isSameDay(t.dueDate, date)).toList();
@@ -86,12 +182,11 @@ class AppState extends ChangeNotifier {
         final tasksList = await dbHelper.getAllTasks();
         if (tasksList.isNotEmpty) {
           _tasks = tasksList;
-        } else {
-          _seedTasks();
         }
+        _ensureDailyTasks();
       } catch (e) {
         debugPrint("Error loading tasks from DB: $e");
-        _seedTasks();
+        _ensureDailyTasks();
       }
       
       try {
@@ -102,8 +197,26 @@ class AppState extends ChangeNotifier {
       } catch (e) {
         debugPrint("Error loading achievements from DB: $e");
       }
+
+      try {
+        final notifsList = await dbHelper.getAllNotifications();
+        _notifications = notifsList;
+      } catch (e) {
+        debugPrint("Error loading notifications from DB: $e");
+      }
+
+      _notificationSettings = NotificationSettings(
+        taskCompletionNotifications: prefs.getBool('notif_task_completion') ?? true,
+        taskReminders: prefs.getBool('notif_task_reminders') ?? true,
+        dailyReminders: prefs.getBool('notif_daily_reminders') ?? true,
+        streakReminders: prefs.getBool('notif_streak_reminders') ?? true,
+        achievementNotifications: prefs.getBool('notif_achievements') ?? true,
+      );
       
+      _isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+      _soundEffectsEnabled = prefs.getBool('sound_effects_enabled') ?? true;
       _isDarkMode = prefs.getBool('isDarkMode') ?? true;
+      _updateStreak();
       
       // For demo purposes, we randomly populate weekly XP if empty
       _weeklyXp = {
@@ -118,13 +231,484 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  void _seedTasks() {
-    _tasks = [
-      RPGTask(id: 't1', title: 'Morning Exercise', description: 'Stay fit', category: 'Fitness', xpReward: 50, dueDate: DateTime.now(), isCompleted: true),
-      RPGTask(id: 't2', title: 'Study Flutter', description: 'Build cool apps', category: 'Study', xpReward: 100, dueDate: DateTime.now()),
-      RPGTask(id: 't3', title: 'Read a Book', description: 'Personal growth', category: 'Personal', xpReward: 30, dueDate: DateTime.now()),
-    ];
-    _saveTasks();
+  void _ensureDailyTasks() {
+    final now = DateTime.now();
+    final yesterday = now.subtract(const Duration(days: 1));
+    final tomorrow = now.add(const Duration(days: 1));
+
+    bool hasYesterday = _tasks.any((t) => _isSameDay(t.dueDate, yesterday));
+    bool hasToday = _tasks.any((t) => _isSameDay(t.dueDate, now));
+    bool hasTomorrow = _tasks.any((t) => _isSameDay(t.dueDate, tomorrow));
+
+    bool added = false;
+
+    if (!hasYesterday) {
+      _tasks.addAll([
+        RPGTask(
+          id: 'task_yest_water',
+          title: 'Daily Drinking Water',
+          description: 'Daily hydration goal: 2.5 L',
+          category: 'Health',
+          xpReward: 50,
+          dueDate: yesterday,
+          durationMinutes: 0,
+          remainingSeconds: 0,
+          timerStatus: 'Completed',
+          isCompleted: true,
+          taskType: 'hydration',
+          waterGoalMl: 2500,
+          currentWaterMl: 2500,
+          waterLogs: [
+            WaterLogEntry(id: 'w_y1', amountMl: 500, timestamp: yesterday.add(const Duration(hours: 9))),
+            WaterLogEntry(id: 'w_y2', amountMl: 750, timestamp: yesterday.add(const Duration(hours: 12))),
+            WaterLogEntry(id: 'w_y3', amountMl: 500, timestamp: yesterday.add(const Duration(hours: 15))),
+            WaterLogEntry(id: 'w_y4', amountMl: 750, timestamp: yesterday.add(const Duration(hours: 19))),
+          ],
+        ),
+        RPGTask(
+          id: 'task_yest_2',
+          title: 'Morning Cardio & Stretch',
+          description: '20 minutes of cardio to boost energy',
+          category: 'Fitness',
+          xpReward: 60,
+          dueDate: yesterday,
+          durationMinutes: 20,
+          remainingSeconds: 0,
+          timerStatus: 'Completed',
+          isCompleted: true,
+        ),
+        RPGTask(
+          id: 'task_yest_3',
+          title: 'Study Flutter Architecture',
+          description: 'Provider & SQLite architectural patterns',
+          category: 'Study',
+          xpReward: 100,
+          dueDate: yesterday,
+          durationMinutes: 45,
+          remainingSeconds: 0,
+          timerStatus: 'Completed',
+          isCompleted: true,
+        ),
+        RPGTask(
+          id: 'task_yest_4',
+          title: 'Read 15 Pages of Book',
+          description: 'Atomic Habits chapter reading',
+          category: 'Personal',
+          xpReward: 40,
+          dueDate: yesterday,
+          durationMinutes: 20,
+          remainingSeconds: 0,
+          timerStatus: 'Completed',
+          isCompleted: true,
+        ),
+        RPGTask(
+          id: 'task_yest_5',
+          title: 'Code Review & Sprint Tasks',
+          description: 'Refactor components and optimize code',
+          category: 'Work',
+          xpReward: 80,
+          dueDate: yesterday,
+          durationMinutes: 30,
+          remainingSeconds: 0,
+          timerStatus: 'Completed',
+          isCompleted: true,
+        ),
+      ]);
+      added = true;
+    }
+
+    if (!hasToday) {
+      _tasks.addAll([
+        RPGTask(
+          id: 'task_today_water',
+          title: 'Daily Drinking Water',
+          description: 'Daily hydration goal: 2.5 L',
+          category: 'Health',
+          xpReward: 50,
+          dueDate: now,
+          durationMinutes: 0,
+          remainingSeconds: 0,
+          timerStatus: 'Not Started',
+          isCompleted: false,
+          taskType: 'hydration',
+          waterGoalMl: 2500,
+          currentWaterMl: 1500,
+          waterLogs: [
+            WaterLogEntry(id: 'w_t1', amountMl: 500, timestamp: now.subtract(const Duration(hours: 4))),
+            WaterLogEntry(id: 'w_t2', amountMl: 500, timestamp: now.subtract(const Duration(hours: 2))),
+            WaterLogEntry(id: 'w_t3', amountMl: 500, timestamp: now.subtract(const Duration(minutes: 45))),
+          ],
+        ),
+        RPGTask(
+          id: 'task_today_2',
+          title: 'Morning Yoga & Stretching',
+          description: 'Full body mobility and flexibility',
+          category: 'Fitness',
+          xpReward: 40,
+          dueDate: now,
+          durationMinutes: 15,
+          remainingSeconds: 0,
+          timerStatus: 'Completed',
+          isCompleted: true,
+        ),
+        RPGTask(
+          id: 'task_today_3',
+          title: 'Build LevelUp RPG Features',
+          description: 'Complete daily quests and theme integration',
+          category: 'Work',
+          xpReward: 100,
+          dueDate: now,
+          durationMinutes: 45,
+          remainingSeconds: 45 * 60,
+          timerStatus: 'Not Started',
+          isCompleted: false,
+        ),
+        RPGTask(
+          id: 'task_today_4',
+          title: 'Read Clean Architecture Book',
+          description: 'Study software engineering principles',
+          category: 'Study',
+          xpReward: 80,
+          dueDate: now,
+          durationMinutes: 30,
+          remainingSeconds: 30 * 60,
+          timerStatus: 'Not Started',
+          isCompleted: false,
+        ),
+        RPGTask(
+          id: 'task_today_5',
+          title: 'Evening 4000 Steps Walk',
+          description: 'Brisk evening walk for mental clarity',
+          category: 'Fitness',
+          xpReward: 50,
+          dueDate: now,
+          durationMinutes: 20,
+          remainingSeconds: 20 * 60,
+          timerStatus: 'Not Started',
+          isCompleted: false,
+        ),
+        RPGTask(
+          id: 'task_today_6',
+          title: 'Review Goals & Plan Tomorrow',
+          description: 'Organize priorities for tomorrow',
+          category: 'Personal',
+          xpReward: 30,
+          dueDate: now,
+          durationMinutes: 10,
+          remainingSeconds: 10 * 60,
+          timerStatus: 'Not Started',
+          isCompleted: false,
+        ),
+      ]);
+      added = true;
+    }
+
+    if (!hasTomorrow) {
+      _tasks.addAll([
+        RPGTask(
+          id: 'task_tom_water',
+          title: 'Daily Drinking Water',
+          description: 'Daily hydration goal: 2.5 L',
+          category: 'Health',
+          xpReward: 50,
+          dueDate: tomorrow,
+          durationMinutes: 0,
+          remainingSeconds: 0,
+          timerStatus: 'Not Started',
+          isCompleted: false,
+          taskType: 'hydration',
+          waterGoalMl: 2500,
+          currentWaterMl: 0,
+          waterLogs: [],
+        ),
+        RPGTask(
+          id: 'task_tom_2',
+          title: 'Gym Strength Training Session',
+          description: 'Chest, shoulders, and triceps focus',
+          category: 'Fitness',
+          xpReward: 90,
+          dueDate: tomorrow,
+          durationMinutes: 45,
+          remainingSeconds: 45 * 60,
+          timerStatus: 'Not Started',
+          isCompleted: false,
+        ),
+        RPGTask(
+          id: 'task_tom_3',
+          title: 'Learn Advanced SQL Queries',
+          description: 'Joins, indexing, and query optimization',
+          category: 'Study',
+          xpReward: 110,
+          dueDate: tomorrow,
+          durationMinutes: 60,
+          remainingSeconds: 60 * 60,
+          timerStatus: 'Not Started',
+          isCompleted: false,
+        ),
+        RPGTask(
+          id: 'task_tom_4',
+          title: 'Team Sprint Review & Planning',
+          description: 'Review milestones and track deliverables',
+          category: 'Work',
+          xpReward: 85,
+          dueDate: tomorrow,
+          durationMinutes: 40,
+          remainingSeconds: 40 * 60,
+          timerStatus: 'Not Started',
+          isCompleted: false,
+        ),
+        RPGTask(
+          id: 'task_tom_5',
+          title: 'Mindfulness & Gratitude Journal',
+          description: 'Write 3 accomplishments and 3 reflections',
+          category: 'Personal',
+          xpReward: 40,
+          dueDate: tomorrow,
+          durationMinutes: 15,
+          remainingSeconds: 15 * 60,
+          timerStatus: 'Not Started',
+          isCompleted: false,
+        ),
+      ]);
+      added = true;
+    }
+
+    if (added) {
+      _saveTasks();
+    }
+  }
+
+  // --- HYDRATION LOGIC ---
+
+  String _formatDateKey(DateTime dt) {
+    return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+  }
+
+  void addWater(String taskId, int amountMl, [BuildContext? context]) {
+    final idx = _tasks.indexWhere((t) => t.id == taskId);
+    if (idx != -1) {
+      final task = _tasks[idx];
+      if (isTaskFuture(task)) {
+        final msg = '🔒 "${task.title}" is scheduled for ${getTaskAvailabilityDateText(task)} and is locked until that day.';
+        if (context != null && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(msg),
+              backgroundColor: Colors.orange.shade800,
+            ),
+          );
+        } else {
+          rootScaffoldMessengerKey.currentState?.showSnackBar(
+            SnackBar(
+              content: Text(msg),
+              backgroundColor: Colors.orange.shade800,
+            ),
+          );
+        }
+        return;
+      }
+
+      final newLog = WaterLogEntry(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        amountMl: amountMl,
+        timestamp: DateTime.now(),
+      );
+
+      task.waterLogs.insert(0, newLog);
+      task.currentWaterMl += amountMl;
+
+      final todayStr = _formatDateKey(DateTime.now());
+      final yesterdayStr = _formatDateKey(DateTime.now().subtract(const Duration(days: 1)));
+
+      // Check if goal reached
+      if (task.currentWaterMl >= task.waterGoalMl) {
+        final bool wasAlreadyCompleted = task.isCompleted;
+        task.isCompleted = true;
+        task.timerStatus = 'Completed';
+
+        // Award XP only once per day
+        if (_userProfile.hydrationXpAwardedDate != todayStr) {
+          final int oldLevel = _userProfile.level;
+          _userProfile.hydrationXpAwardedDate = todayStr;
+          final int xp = task.xpReward > 0 ? task.xpReward : 50;
+          _addXP(xp);
+          _userProfile.gold += 25;
+          _userProfile.skills['Strength'] = (_userProfile.skills['Strength'] ?? 0) + 10;
+
+          // Hydration streak update
+          if (_userProfile.lastHydrationCompletedDate == yesterdayStr) {
+            _userProfile.hydrationCurrentStreak += 1;
+          } else if (_userProfile.lastHydrationCompletedDate == todayStr) {
+            // Already counted streak today
+          } else {
+            _userProfile.hydrationCurrentStreak = 1;
+          }
+
+          if (_userProfile.hydrationCurrentStreak > _userProfile.hydrationBestStreak) {
+            _userProfile.hydrationBestStreak = _userProfile.hydrationCurrentStreak;
+          }
+          _userProfile.lastHydrationCompletedDate = todayStr;
+
+          List<Achievement> newlyUnlocked = _checkAchievements();
+          _saveProfile();
+          _saveTasks();
+          notifyListeners();
+
+          _triggerTaskCompletionFlow(
+            task: task,
+            xpEarned: xp,
+            oldLevel: oldLevel,
+            newlyUnlocked: newlyUnlocked,
+            context: context,
+          );
+          return;
+        } else if (!wasAlreadyCompleted) {
+          _saveProfile();
+        }
+      }
+
+      _saveTasks();
+      notifyListeners();
+    }
+  }
+
+  void removeWaterLog(String taskId, String logId) {
+    final idx = _tasks.indexWhere((t) => t.id == taskId);
+    if (idx != -1) {
+      final task = _tasks[idx];
+      final logIdx = task.waterLogs.indexWhere((l) => l.id == logId);
+      if (logIdx != -1) {
+        final removed = task.waterLogs.removeAt(logIdx);
+        task.currentWaterMl = (task.currentWaterMl - removed.amountMl).clamp(0, 999999);
+
+        // If falls below goal, update completion state
+        if (task.currentWaterMl < task.waterGoalMl) {
+          task.isCompleted = false;
+          task.timerStatus = 'Not Started';
+        }
+
+        _saveTasks();
+        notifyListeners();
+      }
+    }
+  }
+
+  void updateWaterGoal(String taskId, int newGoalMl) {
+    final idx = _tasks.indexWhere((t) => t.id == taskId);
+    if (idx != -1) {
+      final task = _tasks[idx];
+      task.waterGoalMl = newGoalMl;
+      if (task.currentWaterMl >= task.waterGoalMl) {
+        task.isCompleted = true;
+        task.timerStatus = 'Completed';
+      } else {
+        task.isCompleted = false;
+        task.timerStatus = 'Not Started';
+      }
+      _saveTasks();
+      notifyListeners();
+    }
+  }
+
+  void _showHydrationSuccessDialog(BuildContext context, RPGTask task) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogCtx) {
+        final theme = Theme.of(dialogCtx);
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: Color(0xFF38BDF8), width: 2),
+          ),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              Icon(Icons.celebration, color: Color(0xFFF5B942), size: 28),
+              SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  'HYDRATION QUEST COMPLETE!',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF0284C7).withValues(alpha: 0.15),
+                  border: Border.all(color: const Color(0xFF38BDF8), width: 3),
+                ),
+                child: const Icon(Icons.water_drop, color: Color(0xFF38BDF8), size: 50),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                '💧 Daily Goal Completed: ${(task.waterGoalMl / 1000).toStringAsFixed(1)} L',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '⚡ Reward Earned: +${task.xpReward} XP',
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFFF5B942)),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '🔥 Streak: ${_userProfile.hydrationCurrentStreak} Days!',
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.orangeAccent),
+              ),
+            ],
+          ),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFF5B942),
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () => Navigator.pop(dialogCtx),
+              child: const Text('CLAIM REWARD', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _updateStreak() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    
+    final completedDates = <DateTime>{};
+    for (var t in _tasks) {
+      if (t.isCompleted) {
+        completedDates.add(DateTime(t.dueDate.year, t.dueDate.month, t.dueDate.day));
+      }
+    }
+
+    int streak = 0;
+    DateTime checkDate = today;
+    if (!completedDates.contains(today)) {
+      checkDate = today.subtract(const Duration(days: 1));
+    }
+
+    while (completedDates.contains(checkDate)) {
+      streak++;
+      checkDate = checkDate.subtract(const Duration(days: 1));
+    }
+
+    _userProfile.currentStreak = streak;
+    if (_userProfile.currentStreak > _userProfile.bestStreak) {
+      _userProfile.bestStreak = _userProfile.currentStreak;
+    }
+    _saveProfile();
   }
 
   Future<void> _saveProfile() async {
@@ -194,23 +778,49 @@ class AppState extends ChangeNotifier {
   }
 
   void startTaskTimer(String taskId) {
-    // Pause any other running timers
-    for (var t in _tasks) {
-      if (t.timerStatus == 'Running' && t.id != taskId) {
-        _pauseTimerLocally(t);
-      }
-    }
-
     final idx = _tasks.indexWhere((t) => t.id == taskId);
-    if (idx != -1 && _tasks[idx].timerStatus != 'Completed') {
-      if (_tasks[idx].timerStatus == 'Not Started') {
-        _tasks[idx].remainingSeconds = _tasks[idx].durationMinutes * 60;
+    if (idx != -1) {
+      final task = _tasks[idx];
+
+      if (isTaskFuture(task)) {
+        rootScaffoldMessengerKey.currentState?.showSnackBar(
+          SnackBar(
+            content: Text('🔒 "${task.title}" is scheduled for ${getTaskAvailabilityDateText(task)}. It will unlock on that day!'),
+            backgroundColor: Colors.orange.shade800,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+        return;
       }
-      _tasks[idx].timerStatus = 'Running';
-      _tasks[idx].timerStartTimeEpoch = DateTime.now().millisecondsSinceEpoch;
-      _startGlobalTimerIfNeeded();
-      _saveTasks();
-      notifyListeners();
+
+      if (isTaskPast(task) && !task.isCompleted) {
+        rootScaffoldMessengerKey.currentState?.showSnackBar(
+          SnackBar(
+            content: Text('⚠️ "${task.title}" was scheduled for a past date and cannot be started.'),
+            backgroundColor: Colors.red.shade800,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+        return;
+      }
+
+      // Pause any other running timers
+      for (var t in _tasks) {
+        if (t.timerStatus == 'Running' && t.id != taskId) {
+          _pauseTimerLocally(t);
+        }
+      }
+
+      if (task.timerStatus != 'Completed') {
+        if (task.timerStatus == 'Not Started') {
+          task.remainingSeconds = task.durationMinutes * 60;
+        }
+        task.timerStatus = 'Running';
+        task.timerStartTimeEpoch = DateTime.now().millisecondsSinceEpoch;
+        _startGlobalTimerIfNeeded();
+        _saveTasks();
+        notifyListeners();
+      }
     }
   }
 
@@ -234,27 +844,52 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  void finishTaskEarly(String taskId) {
+  void finishTaskEarly(String taskId, [BuildContext? context]) {
     final idx = _tasks.indexWhere((t) => t.id == taskId);
     if (idx != -1) {
-      _pauseTimerLocally(_tasks[idx]); // Update elapsed time
-      completeTask(taskId);
+      final task = _tasks[idx];
+      if (isTaskFuture(task)) {
+        rootScaffoldMessengerKey.currentState?.showSnackBar(
+          SnackBar(
+            content: Text('🔒 "${task.title}" is scheduled for ${getTaskAvailabilityDateText(task)} and is locked.'),
+            backgroundColor: Colors.orange.shade800,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+        return;
+      }
+      _pauseTimerLocally(task); // Update elapsed time
+      completeTask(taskId, context);
     }
   }
 
   @override
-  void completeTask(String taskId) {
+  void completeTask(String taskId, [BuildContext? context]) {
     final index = _tasks.indexWhere((t) => t.id == taskId);
     if (index != -1 && !_tasks[index].isCompleted) {
-      _pauseTimerLocally(_tasks[index]); // Stop timer if running
-      _tasks[index].isCompleted = true;
-      _tasks[index].timerStatus = 'Completed';
+      final task = _tasks[index];
+      if (isTaskFuture(task)) {
+        rootScaffoldMessengerKey.currentState?.showSnackBar(
+          SnackBar(
+            content: Text('🔒 "${task.title}" is scheduled for ${getTaskAvailabilityDateText(task)} and cannot be completed today.'),
+            backgroundColor: Colors.orange.shade800,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+        return;
+      }
+
+      final int oldLevel = _userProfile.level;
+
+      _pauseTimerLocally(task); // Stop timer if running
+      task.isCompleted = true;
+      task.timerStatus = 'Completed';
       
-      int xp = _tasks[index].xpReward;
+      int xp = task.xpReward;
       _userProfile.gold += (xp ~/ 2);
       
       // Update skills based on category
-      String category = _tasks[index].category;
+      String category = task.category;
       if (category == 'Fitness' || category == 'Health') {
         _userProfile.skills['Strength'] = (_userProfile.skills['Strength'] ?? 0) + 10;
       } else if (category == 'Study' || category == 'Work') {
@@ -264,10 +899,190 @@ class AppState extends ChangeNotifier {
       }
       
       _addXP(xp);
-      _checkAchievements();
+      _updateStreak();
+      List<Achievement> newlyUnlocked = _checkAchievements();
       _saveTasks();
       _saveProfile();
       notifyListeners();
+
+      _triggerTaskCompletionFlow(
+        task: task,
+        xpEarned: xp,
+        oldLevel: oldLevel,
+        newlyUnlocked: newlyUnlocked,
+        context: context,
+      );
+    }
+  }
+
+  void _triggerTaskCompletionFlow({
+    required RPGTask task,
+    required int xpEarned,
+    required int oldLevel,
+    required List<Achievement> newlyUnlocked,
+    BuildContext? context,
+  }) {
+    // 1. Random Motivational Quote
+    final quotes = List<String>.from(_motivationalQuotes)..shuffle();
+    final quote = quotes.first;
+
+    // 2. Category-Specific Notification Info
+    String categoryHeadline = '🎉 QUEST COMPLETE!';
+    String categoryBody = 'You completed ${task.title}. +$xpEarned XP earned!';
+    switch (task.category) {
+      case 'Fitness':
+        categoryHeadline = '💪 Workout Complete!';
+        categoryBody = 'You finished your fitness quest.\n+$xpEarned XP earned!';
+        break;
+      case 'Study':
+        categoryHeadline = '📚 Knowledge Increased!';
+        categoryBody = 'Study task completed successfully.\nKeep learning and earn more XP!';
+        break;
+      case 'Health':
+        categoryHeadline = '💧 Health Quest Complete!';
+        categoryBody = 'Great job taking care of yourself.\n+$xpEarned XP earned!';
+        break;
+      case 'Work':
+        categoryHeadline = '🚀 Mission Complete!';
+        categoryBody = 'Another step toward your goals.\n+$xpEarned XP earned!';
+        break;
+      case 'Personal':
+      default:
+        categoryHeadline = '✨ Personal Quest Complete!';
+        categoryBody = 'Small progress every day creates big results.\n+$xpEarned XP earned!';
+        break;
+    }
+
+    // 3. Task Completion Notification
+    final completionNotification = AppNotification(
+      id: 'notif_${DateTime.now().millisecondsSinceEpoch}',
+      title: categoryHeadline,
+      body: categoryBody,
+      category: task.category,
+      type: 'taskCompletion',
+      timestamp: DateTime.now(),
+      xpReward: xpEarned,
+      streakDays: _userProfile.currentStreak,
+      motivationalQuote: quote,
+    );
+    _notifications.insert(0, completionNotification);
+    DatabaseHelper.instance.saveNotification(completionNotification);
+
+    // 4. Level Up Notification
+    bool didLevelUp = _userProfile.level > oldLevel;
+    if (didLevelUp) {
+      final levelNotification = AppNotification(
+        id: 'notif_lvl_${DateTime.now().millisecondsSinceEpoch}',
+        title: '🎊 LEVEL UP!',
+        body: 'Congratulations, Hero!\nYou reached Level ${_userProfile.level}.\nKeep completing quests to become stronger.',
+        category: 'LevelUp',
+        type: 'levelUp',
+        timestamp: DateTime.now(),
+      );
+      _notifications.insert(0, levelNotification);
+      DatabaseHelper.instance.saveNotification(levelNotification);
+    }
+
+    // 5. Achievement Notification
+    if (_notificationSettings.achievementNotifications) {
+      for (var ach in newlyUnlocked) {
+        final achNotif = AppNotification(
+          id: 'notif_ach_${ach.id}_${DateTime.now().millisecondsSinceEpoch}',
+          title: '🏆 ACHIEVEMENT UNLOCKED!',
+          body: '${ach.name}\n${ach.description}',
+          category: 'Achievement',
+          type: 'achievement',
+          timestamp: DateTime.now(),
+          xpReward: ach.xpReward,
+        );
+        _notifications.insert(0, achNotif);
+        DatabaseHelper.instance.saveNotification(achNotif);
+      }
+    }
+
+    // 6. Play Task Completion Alarm Sound & Haptic Vibration
+    if (didLevelUp) {
+      SoundService.instance.playLevelUpAlarm(isSoundEnabled: _soundEffectsEnabled);
+    } else {
+      SoundService.instance.playTaskCompletedAlarm(isSoundEnabled: _soundEffectsEnabled);
+    }
+
+    // 7. Visual Dialog Feedback
+    if (_notificationSettings.taskCompletionNotifications) {
+      final targetContext = context ?? rootNavigatorKey.currentContext;
+      if (targetContext != null) {
+        showDialog(
+          context: targetContext,
+          barrierDismissible: false,
+          builder: (dialogContext) => TaskCompletionCelebrationDialog(
+            task: task,
+            xpEarned: xpEarned,
+            currentStreak: _userProfile.currentStreak,
+            motivationalQuote: quote,
+            onDismiss: () {
+              if (didLevelUp) {
+                Future.delayed(const Duration(milliseconds: 250), () {
+                  final ctx = rootNavigatorKey.currentContext;
+                  if (ctx != null) {
+                    showDialog(
+                      context: ctx,
+                      barrierDismissible: false,
+                      builder: (_) => LevelUpCelebrationDialog(
+                        newLevel: _userProfile.level,
+                        onDismiss: () {
+                          if (newlyUnlocked.isNotEmpty && _notificationSettings.achievementNotifications) {
+                            Future.delayed(const Duration(milliseconds: 250), () {
+                              final c = rootNavigatorKey.currentContext;
+                              if (c != null) {
+                                showDialog(
+                                  context: c,
+                                  builder: (_) => AchievementUnlockedCelebrationDialog(
+                                    achievement: newlyUnlocked.first,
+                                    onDismiss: () {},
+                                  ),
+                                );
+                              }
+                            });
+                          }
+                        },
+                      ),
+                    );
+                  }
+                });
+              } else if (newlyUnlocked.isNotEmpty && _notificationSettings.achievementNotifications) {
+                Future.delayed(const Duration(milliseconds: 250), () {
+                  final ctx = rootNavigatorKey.currentContext;
+                  if (ctx != null) {
+                    showDialog(
+                      context: ctx,
+                      builder: (_) => AchievementUnlockedCelebrationDialog(
+                        achievement: newlyUnlocked.first,
+                        onDismiss: () {},
+                      ),
+                    );
+                  }
+                });
+              }
+            },
+          ),
+        );
+      } else {
+        rootScaffoldMessengerKey.currentState?.showSnackBar(
+          SnackBar(
+            content: Text('$categoryHeadline +$xpEarned XP earned!'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } else {
+      rootScaffoldMessengerKey.currentState?.showSnackBar(
+        SnackBar(
+          content: Text('Quest "${task.title}" Completed! +$xpEarned XP earned!'),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 4),
+        ),
+      );
     }
   }
 
@@ -281,27 +1096,66 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  void _checkAchievements() {
-    bool changed = false;
+  List<Achievement> _checkAchievements() {
+    List<Achievement> newlyUnlocked = [];
     
     // First Quest
     if (!_achievements[0].isUnlocked && completedTasks.isNotEmpty) {
-      _achievements[0].isUnlocked = true; changed = true;
+      _achievements[0].isUnlocked = true;
+      newlyUnlocked.add(_achievements[0]);
     }
-    // On Fire (7 day streak) - simplistic logic for demo
+    // On Fire (7 day streak)
     if (!_achievements[1].isUnlocked && _userProfile.currentStreak >= 7) {
-      _achievements[1].isUnlocked = true; changed = true;
+      _achievements[1].isUnlocked = true;
+      newlyUnlocked.add(_achievements[1]);
     }
     // Quest Master (50 quests)
     if (!_achievements[2].isUnlocked && completedTasks.length >= 50) {
-      _achievements[2].isUnlocked = true; changed = true;
+      _achievements[2].isUnlocked = true;
+      newlyUnlocked.add(_achievements[2]);
     }
     // Legend (Level 50)
     if (!_achievements[3].isUnlocked && _userProfile.level >= 50) {
-      _achievements[3].isUnlocked = true; changed = true;
+      _achievements[3].isUnlocked = true;
+      newlyUnlocked.add(_achievements[3]);
     }
     
-    if (changed) _saveAchievements();
+    if (newlyUnlocked.isNotEmpty) _saveAchievements();
+    return newlyUnlocked;
+  }
+
+  Future<void> updateNotificationSettings(NotificationSettings settings) async {
+    _notificationSettings = settings;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('notif_task_completion', settings.taskCompletionNotifications);
+    await prefs.setBool('notif_task_reminders', settings.taskReminders);
+    await prefs.setBool('notif_daily_reminders', settings.dailyReminders);
+    await prefs.setBool('notif_streak_reminders', settings.streakReminders);
+    await prefs.setBool('notif_achievements', settings.achievementNotifications);
+    notifyListeners();
+  }
+
+  Future<void> markNotificationAsRead(String id) async {
+    final idx = _notifications.indexWhere((n) => n.id == id);
+    if (idx != -1) {
+      _notifications[idx].isRead = true;
+      await DatabaseHelper.instance.markNotificationAsRead(id);
+      notifyListeners();
+    }
+  }
+
+  Future<void> markAllNotificationsAsRead() async {
+    for (var n in _notifications) {
+      n.isRead = true;
+    }
+    await DatabaseHelper.instance.markAllNotificationsAsRead();
+    notifyListeners();
+  }
+
+  Future<void> clearAllNotifications() async {
+    _notifications.clear();
+    await DatabaseHelper.instance.clearAllNotifications();
+    notifyListeners();
   }
 
   void updateProfile(String newName, String newAvatarId) {
@@ -324,5 +1178,18 @@ class AppState extends ChangeNotifier {
     _userProfile.profileImagePath = path;
     _saveProfile();
     notifyListeners();
+  }
+
+  bool buyReward(String rewardId) {
+    final idx = _rewards.indexWhere((r) => r.id == rewardId);
+    if (idx != -1) {
+      if (_userProfile.gold >= _rewards[idx].cost) {
+        _userProfile.gold -= _rewards[idx].cost;
+        _saveProfile();
+        notifyListeners();
+        return true;
+      }
+    }
+    return false;
   }
 }
