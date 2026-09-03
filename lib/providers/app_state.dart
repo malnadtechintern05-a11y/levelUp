@@ -1,12 +1,17 @@
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
 import '../models/models.dart';
+import '../models/alarm_song.dart';
 import '../helpers/database_helper.dart';
 import '../main.dart'; // Import to use rootScaffoldMessengerKey and rootNavigatorKey
 import '../widgets/task_completion_dialog.dart';
 import '../services/sound_service.dart';
+import '../services/auth_service.dart';
+import '../services/online_task_service.dart';
+import '../services/online_hydration_service.dart';
+import '../services/online_achievement_service.dart';
+import '../services/api_client.dart';
 import 'package:flutter/material.dart';
 
 class AppState extends ChangeNotifier {
@@ -65,19 +70,115 @@ class AppState extends ChangeNotifier {
   NotificationSettings get notificationSettings => _notificationSettings;
   List<String> get motivationalQuotes => _motivationalQuotes;
 
-  Future<void> loginUser(String username) async {
-    _isLoggedIn = true;
-    _userProfile.username = username;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('is_logged_in', true);
-    await prefs.setString('logged_in_username', username);
+  Future<Map<String, dynamic>> loginUser(String identifier, [String? password]) async {
+    // If password provided, use online backend
+    if (password != null && password.isNotEmpty) {
+      final res = await AuthService.instance.login(identifier, password);
+      if (res['status'] == 'success') {
+        _isLoggedIn = true;
+        if (res['user'] != null) {
+          _applyUserData(res['user'] as Map<String, dynamic>);
+        }
+        await refreshAllData();
+        notifyListeners();
+      }
+      return res;
+    } else {
+      // Local fallback compatibility
+      _isLoggedIn = true;
+      _userProfile.username = identifier;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('is_logged_in', true);
+      await prefs.setString('logged_in_username', identifier);
+      notifyListeners();
+      return {'status': 'success'};
+    }
+  }
+
+  Future<Map<String, dynamic>> registerHero({
+    required String username,
+    required String email,
+    required String password,
+    required String confirmPassword,
+    String avatarId = 'hero1',
+    String? displayName,
+  }) async {
+    final res = await AuthService.instance.register(
+      username: username,
+      email: email,
+      password: password,
+      confirmPassword: confirmPassword,
+      avatarId: avatarId,
+      displayName: displayName,
+    );
+    if (res['status'] == 'success') {
+      _isLoggedIn = true;
+      if (res['user'] != null) {
+        _applyUserData(res['user'] as Map<String, dynamic>);
+      }
+      await refreshAllData();
+      notifyListeners();
+    }
+    return res;
+  }
+
+  void _applyUserData(Map<String, dynamic> data) {
+    final displayName = data['display_name']?.toString().trim();
+    final rawUsername = data['username']?.toString().trim();
+    if (displayName != null && displayName.isNotEmpty) {
+      _userProfile.username = displayName;
+    } else if (rawUsername != null && rawUsername.isNotEmpty) {
+      _userProfile.username = rawUsername;
+    }
+    _userProfile.email = data['email']?.toString() ?? _userProfile.email;
+    _userProfile.avatarId = data['avatar_id']?.toString() ?? _userProfile.avatarId;
+    _userProfile.level = int.tryParse(data['level']?.toString() ?? '1') ?? 1;
+    _userProfile.totalXP = int.tryParse(data['total_xp']?.toString() ?? '0') ?? 0;
+    _userProfile.gold = int.tryParse(data['gold']?.toString() ?? '0') ?? 0;
+    _userProfile.currentStreak = int.tryParse(data['current_streak']?.toString() ?? '0') ?? 0;
+    _userProfile.bestStreak = int.tryParse(data['best_streak']?.toString() ?? '0') ?? 0;
+    if (data['skills'] is Map) {
+      _userProfile.skills = Map<String, int>.from(
+        (data['skills'] as Map).map((k, v) => MapEntry(k.toString(), int.tryParse(v.toString()) ?? 50))
+      );
+    }
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setString('current_username', _userProfile.username);
+      prefs.setString('hero_username', _userProfile.username);
+      prefs.setString('hero_avatar', _userProfile.avatarId);
+    });
+    _saveProfile();
+  }
+
+  Future<void> refreshAllData() async {
+    try {
+      final user = await AuthService.instance.getCurrentUser();
+      if (user != null) {
+        _applyUserData(user);
+      }
+
+      final onlineTasks = await OnlineTaskService.instance.fetchTasks();
+      if (onlineTasks.isNotEmpty) {
+        _tasks = onlineTasks;
+        await _saveTasks();
+      }
+
+      final onlineAchievements = await OnlineAchievementService.instance.fetchAchievements();
+      if (onlineAchievements.isNotEmpty) {
+        _achievements = onlineAchievements;
+        await _saveAchievements();
+      }
+    } catch (e) {
+      debugPrint("Online sync fallback to local cache: $e");
+    }
     notifyListeners();
   }
 
   Future<void> logout() async {
+    await AuthService.instance.logout();
     _isLoggedIn = false;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('is_logged_in', false);
+    _userProfile = UserProfile(username: 'Hero');
+    _tasks = [];
     notifyListeners();
   }
 
@@ -86,6 +187,18 @@ class AppState extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('sound_effects_enabled', val);
     notifyListeners();
+  }
+
+  String get selectedAlarmSongId => SoundService.instance.selectedAlarmSongId;
+  AlarmSong get currentAlarmSong => SoundService.instance.currentAlarmSong;
+
+  Future<void> setSelectedAlarmSong(String songId) async {
+    await SoundService.instance.setSelectedAlarmSong(songId);
+    notifyListeners();
+  }
+
+  Future<void> previewAlarmSong(String songId) async {
+    await SoundService.instance.previewAlarmSong(songId);
   }
 
   List<RPGTask> get activeTasks => _tasks.where((t) => !t.isCompleted && isTaskToday(t)).toList();
@@ -167,12 +280,23 @@ class AppState extends ChangeNotifier {
   Future<void> _loadData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      final savedName = prefs.getString('current_username') ?? prefs.getString('hero_username');
+      if (savedName != null && savedName.trim().isNotEmpty) {
+        _userProfile.username = savedName.trim();
+      }
+      final savedAvatar = prefs.getString('hero_avatar');
+      if (savedAvatar != null && savedAvatar.trim().isNotEmpty) {
+        _userProfile.avatarId = savedAvatar.trim();
+      }
       final dbHelper = DatabaseHelper.instance;
       
       try {
         final profile = await dbHelper.getProfile();
         if (profile != null) {
           _userProfile = profile;
+          if (savedName != null && savedName.trim().isNotEmpty && profile.username == 'Hero') {
+            _userProfile.username = savedName.trim();
+          }
         }
       } catch (e) {
         debugPrint("Error loading profile from DB: $e");
@@ -569,6 +693,12 @@ class AppState extends ChangeNotifier {
 
       _saveTasks();
       notifyListeners();
+
+      // Async online sync for hydration
+      OnlineHydrationService.instance.addWater(amountMl, taskId: taskId).catchError((e) {
+        debugPrint("Online hydration sync error: $e");
+        return <String, dynamic>{};
+      });
     }
   }
 
@@ -608,78 +738,6 @@ class AppState extends ChangeNotifier {
       _saveTasks();
       notifyListeners();
     }
-  }
-
-  void _showHydrationSuccessDialog(BuildContext context, RPGTask task) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogCtx) {
-        final theme = Theme.of(dialogCtx);
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: const BorderSide(color: Color(0xFF38BDF8), width: 2),
-          ),
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              Icon(Icons.celebration, color: Color(0xFFF5B942), size: 28),
-              SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  'HYDRATION QUEST COMPLETE!',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFF0284C7).withValues(alpha: 0.15),
-                  border: Border.all(color: const Color(0xFF38BDF8), width: 3),
-                ),
-                child: const Icon(Icons.water_drop, color: Color(0xFF38BDF8), size: 50),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                '💧 Daily Goal Completed: ${(task.waterGoalMl / 1000).toStringAsFixed(1)} L',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '⚡ Reward Earned: +${task.xpReward} XP',
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFFF5B942)),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                '🔥 Streak: ${_userProfile.hydrationCurrentStreak} Days!',
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.orangeAccent),
-              ),
-            ],
-          ),
-          actionsAlignment: MainAxisAlignment.center,
-          actions: [
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFF5B942),
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: () => Navigator.pop(dialogCtx),
-              child: const Text('CLAIM REWARD', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   void _updateStreak() {
@@ -863,7 +921,6 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  @override
   void completeTask(String taskId, [BuildContext? context]) {
     final index = _tasks.indexWhere((t) => t.id == taskId);
     if (index != -1 && !_tasks[index].isCompleted) {
@@ -905,6 +962,7 @@ class AppState extends ChangeNotifier {
       _saveProfile();
       notifyListeners();
 
+      // Trigger completion flow celebration & dialog
       _triggerTaskCompletionFlow(
         task: task,
         xpEarned: xp,
@@ -912,6 +970,22 @@ class AppState extends ChangeNotifier {
         newlyUnlocked: newlyUnlocked,
         context: context,
       );
+
+      // Online synchronization with backend
+      OnlineTaskService.instance.completeTask(taskId).then((res) {
+        if (res['status'] == 'success' && res['user'] != null) {
+          final u = res['user'];
+          _userProfile.totalXP = int.tryParse(u['total_xp']?.toString() ?? '0') ?? _userProfile.totalXP;
+          _userProfile.level = int.tryParse(u['level']?.toString() ?? '1') ?? _userProfile.level;
+          _userProfile.gold = int.tryParse(u['gold']?.toString() ?? '0') ?? _userProfile.gold;
+          _userProfile.currentStreak = int.tryParse(u['current_streak']?.toString() ?? '0') ?? _userProfile.currentStreak;
+          _userProfile.bestStreak = int.tryParse(u['best_streak']?.toString() ?? '0') ?? _userProfile.bestStreak;
+          _saveProfile();
+          notifyListeners();
+        }
+      }).catchError((e) {
+        debugPrint("Online completion sync warning: $e");
+      });
     }
   }
 
@@ -1158,12 +1232,32 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateProfile(String newName, String newAvatarId) {
-    if (newName.isNotEmpty) {
-      _userProfile.username = newName;
+  Future<void> updateProfile(String newName, String newAvatarId) async {
+    final cleanName = newName.trim();
+    if (cleanName.isNotEmpty) {
+      _userProfile.username = cleanName;
       _userProfile.avatarId = newAvatarId;
-      _saveProfile();
       notifyListeners();
+
+      // 1. Immediately persist to SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('current_username', cleanName);
+      await prefs.setString('hero_username', cleanName);
+      await prefs.setString('hero_avatar', newAvatarId);
+
+      // 2. Persist to SQLite database
+      await _saveProfile();
+
+      // 3. Sync to online backend MySQL database
+      try {
+        await ApiClient.instance.post('/users/profile.php', body: {
+          'username': cleanName,
+          'display_name': cleanName,
+          'avatar_id': newAvatarId,
+        });
+      } catch (e) {
+        debugPrint("Failed to sync profile update online: $e");
+      }
     }
   }
 

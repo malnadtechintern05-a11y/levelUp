@@ -15,6 +15,11 @@ import 'screens/admin/admin_login_screen.dart';
 
 import 'screens/notifications_screen.dart';
 import 'screens/privacy_policy_screen.dart';
+import 'providers/rankings_provider.dart';
+import 'screens/rankings_screen.dart';
+import 'screens/alarm_sound_screen.dart';
+import 'screens/register_screen.dart';
+import 'services/api_client.dart';
 
 final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -25,11 +30,24 @@ void main() async {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
+
+  // Handle automatic session expiration redirection
+  ApiClient.instance.onUnauthorized = () {
+    rootNavigatorKey.currentState?.pushNamedAndRemoveUntil('/login', (route) => false);
+    rootScaffoldMessengerKey.currentState?.showSnackBar(
+      const SnackBar(
+        content: Text('Your session has expired. Please log in again.'),
+        backgroundColor: Colors.orange,
+      ),
+    );
+  };
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AppState()),
         ChangeNotifierProvider(create: (_) => AdminState()),
+        ChangeNotifierProvider(create: (_) => RankingsProvider()),
       ],
       child: const RealLifeRPGApp(),
     ),
@@ -249,6 +267,9 @@ class RealLifeRPGApp extends StatelessWidget {
             '/admin': (context) => const AdminLoginScreen(),
             '/notifications': (context) => const NotificationsScreen(),
             '/privacy-policy': (context) => const PrivacyPolicyScreen(),
+            '/rankings': (context) => const RankingsScreen(),
+            '/alarm-sounds': (context) => const AlarmSoundScreen(),
+            '/register': (context) => const RegisterScreen(),
           },
         );
       },
@@ -269,6 +290,7 @@ class _MainLayoutState extends State<MainLayout> {
   final List<Widget> _screens = [
     const HomeScreen(),
     const QuestsScreen(),
+    const RankingsScreen(),
     const AchievementsScreen(),
     const ProfileScreen(),
   ];
@@ -301,6 +323,11 @@ class _MainLayoutState extends State<MainLayout> {
               icon: Icon(Icons.assignment_outlined),
               selectedIcon: Icon(Icons.assignment),
               label: 'Tasks',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.leaderboard_outlined),
+              selectedIcon: Icon(Icons.leaderboard),
+              label: 'Rankings',
             ),
             NavigationDestination(
               icon: Icon(Icons.emoji_events_outlined),

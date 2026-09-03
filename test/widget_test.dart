@@ -1,30 +1,64 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:real_life_rpg/main.dart';
+import 'package:provider/provider.dart';
+import 'package:real_life_rpg/providers/app_state.dart';
+import 'package:real_life_rpg/providers/admin_state.dart';
+import 'package:real_life_rpg/providers/rankings_provider.dart';
+import 'package:real_life_rpg/screens/login_screen.dart';
+import 'package:real_life_rpg/screens/register_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const RealLifeRPGApp());
+  TestWidgetsFlutterBinding.ensureInitialized();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  setUpAll(() {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  setUp(() {
+    SharedPreferences.setMockInitialValues({'is_logged_in': false});
+  });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+  testWidgets('LoginScreen renders fields and hero branding', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => AppState()),
+          ChangeNotifierProvider(create: (_) => AdminState()),
+          ChangeNotifierProvider(create: (_) => RankingsProvider()),
+        ],
+        child: const MaterialApp(
+          home: LoginScreen(),
+        ),
+      ),
+    );
+
+    expect(find.text('Welcome Back Hero'), findsOneWidget);
+    expect(find.text('LOG IN'), findsOneWidget);
+    expect(find.text('Username or Email'), findsOneWidget);
+    expect(find.text('Password'), findsOneWidget);
+  });
+
+  testWidgets('RegisterScreen renders fields and avatar selector', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => AppState()),
+          ChangeNotifierProvider(create: (_) => AdminState()),
+          ChangeNotifierProvider(create: (_) => RankingsProvider()),
+        ],
+        child: const MaterialApp(
+          home: RegisterScreen(),
+        ),
+      ),
+    );
+
+    expect(find.text('BEGIN YOUR JOURNEY'), findsOneWidget);
+    expect(find.text('Choose Your Avatar'), findsOneWidget);
+    expect(find.text('Hero Username'), findsOneWidget);
+    expect(find.text('Email Address'), findsOneWidget);
+    expect(find.text('CREATE HERO ACCOUNT'), findsOneWidget);
   });
 }

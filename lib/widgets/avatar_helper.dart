@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 
 class AvatarHelper {
@@ -18,5 +19,31 @@ class AvatarHelper {
       default:
         return Icons.person;
     }
+  }
+
+  static Widget buildAvatar({
+    required String avatarId,
+    String? profileImagePath,
+    double radius = 24,
+    Color? backgroundColor,
+    Color? iconColor,
+  }) {
+    if (profileImagePath != null &&
+        profileImagePath.isNotEmpty &&
+        File(profileImagePath).existsSync()) {
+      return CircleAvatar(
+        radius: radius,
+        backgroundImage: FileImage(File(profileImagePath)),
+      );
+    }
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: backgroundColor ?? const Color(0xFF0F172A),
+      child: Icon(
+        getIconForId(avatarId),
+        size: radius * 1.1,
+        color: iconColor ?? const Color(0xFFF5B942),
+      ),
+    );
   }
 }

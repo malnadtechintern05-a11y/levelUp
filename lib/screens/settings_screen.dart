@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../services/sound_service.dart';
+import '../screens/alarm_sound_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({Key? key}) : super(key: key);
+  const SettingsScreen({super.key});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -53,7 +54,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13),
                   ),
                   value: state.isDarkMode,
-                  activeColor: const Color(0xFFF5B942),
+                  activeThumbColor: const Color(0xFFF5B942),
                   onChanged: (val) {
                     state.toggleTheme(val);
                   },
@@ -86,7 +87,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       title: Text('Task Completion Celebrations', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
                       subtitle: Text('Show congratulatory XP dialog & quotes', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
                       value: notifSettings.taskCompletionNotifications,
-                      activeColor: const Color(0xFFF5B942),
+                      activeThumbColor: const Color(0xFFF5B942),
                       onChanged: (val) {
                         notifSettings.taskCompletionNotifications = val;
                         state.updateNotificationSettings(notifSettings);
@@ -98,7 +99,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       title: Text('Achievement Notifications', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
                       subtitle: Text('Alerts when new trophies are unlocked', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
                       value: notifSettings.achievementNotifications,
-                      activeColor: const Color(0xFFF5B942),
+                      activeThumbColor: const Color(0xFFF5B942),
                       onChanged: (val) {
                         notifSettings.achievementNotifications = val;
                         state.updateNotificationSettings(notifSettings);
@@ -110,7 +111,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       title: Text('Task Reminders', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
                       subtitle: Text('Reminders for scheduled quest times', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
                       value: notifSettings.taskReminders,
-                      activeColor: const Color(0xFFF5B942),
+                      activeThumbColor: const Color(0xFFF5B942),
                       onChanged: (val) {
                         notifSettings.taskReminders = val;
                         state.updateNotificationSettings(notifSettings);
@@ -122,7 +123,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       title: Text('Daily Reminders', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
                       subtitle: Text('Daily morning quest check-ins', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
                       value: notifSettings.dailyReminders,
-                      activeColor: const Color(0xFFF5B942),
+                      activeThumbColor: const Color(0xFFF5B942),
                       onChanged: (val) {
                         notifSettings.dailyReminders = val;
                         state.updateNotificationSettings(notifSettings);
@@ -134,7 +135,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       title: Text('Streak Reminders', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
                       subtitle: Text('Keep your streak alive before midnight', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
                       value: notifSettings.streakReminders,
-                      activeColor: const Color(0xFFF5B942),
+                      activeThumbColor: const Color(0xFFF5B942),
                       onChanged: (val) {
                         notifSettings.streakReminders = val;
                         state.updateNotificationSettings(notifSettings);
@@ -169,27 +170,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       title: Text('Completion Alarm & Sounds', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
                       subtitle: Text('Play victory fanfare alarm & vibration when a task finishes', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
                       value: state.soundEffectsEnabled,
-                      activeColor: const Color(0xFFF5B942),
+                      activeThumbColor: const Color(0xFFF5B942),
                       onChanged: (val) async {
                         await state.toggleSoundEffects(val);
                         if (val) {
-                          // Play a short preview
-                          state.soundEffectsEnabled;
+                          state.previewAlarmSong(state.selectedAlarmSongId);
                         }
                       },
                     ),
                     Divider(height: 1, color: theme.colorScheme.outline),
                     ListTile(
+                      leading: const Icon(Icons.music_note, color: Color(0xFFF5B942)),
+                      title: Text('Alarm Song & Fanfare', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
+                      subtitle: Text(
+                        '${state.currentAlarmSong.name} (${state.currentAlarmSong.category})',
+                        style: const TextStyle(color: Color(0xFFF5B942), fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const AlarmSoundScreen()));
+                      },
+                    ),
+                    Divider(height: 1, color: theme.colorScheme.outline),
+                    ListTile(
                       leading: const Icon(Icons.play_circle_outline, color: Color(0xFFF5B942)),
-                      title: Text('Test Alarm Sound', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
-                      subtitle: Text('Preview the task completion alarm', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
+                      title: Text('Test Active Alarm', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
+                      subtitle: Text('Preview ${state.currentAlarmSong.name}', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
                       trailing: const Icon(Icons.volume_up, color: Color(0xFFF5B942)),
                       onTap: () {
                         SoundService.instance.playTaskCompletedAlarm(isSoundEnabled: true);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('🔔 Playing task completion alarm & fanfare!'),
-                            duration: Duration(seconds: 2),
+                          SnackBar(
+                            content: Text('🔔 Conquered Quest! Playing "${state.currentAlarmSong.name}"'),
+                            duration: const Duration(seconds: 2),
                           ),
                         );
                       },

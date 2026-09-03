@@ -6,6 +6,7 @@ import '../screens/add_quest_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/notifications_screen.dart';
 import '../screens/privacy_policy_screen.dart';
+import '../screens/rankings_screen.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -105,6 +106,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text('Level up your life.', style: TextStyle(color: Color(0xFFF5B942), fontSize: 14)),
                 ],
               ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.leaderboard, color: Color(0xFFF5B942)),
+              title: Text('🏆 Player Rankings', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const RankingsScreen()));
+              },
             ),
             ListTile(
               leading: Icon(Icons.settings_outlined, color: theme.colorScheme.onSurface),

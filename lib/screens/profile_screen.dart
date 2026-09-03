@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../screens/settings_screen.dart';
 import '../screens/edit_profile_screen.dart';
+import '../screens/rankings_screen.dart';
 import '../widgets/avatar_helper.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -267,7 +268,31 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
               
-              const SizedBox(height: 32),
+              const SizedBox(height: 28),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: const Color(0xFFF5B942),
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 2,
+                    ),
+                    icon: const Icon(Icons.leaderboard, color: Colors.black),
+                    label: const Text(
+                      '🏆 Player Rankings',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const RankingsScreen()));
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: SizedBox(

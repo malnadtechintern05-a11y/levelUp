@@ -33,31 +33,69 @@ class QuestCard extends StatelessWidget {
     }
   }
 
-  Widget _buildImage() {
+  IconData _getCategoryIcon() {
     final title = task.title.toLowerCase();
-    
-    // Keyword overrides
-    if (title.contains('run')) {
-      return Image.asset('assets/images/run_quest.jpg', width: 60, height: 60, fit: BoxFit.cover);
+    if (title.contains('run') || title.contains('jog')) {
+      return Icons.directions_run_rounded;
     }
-    if (title.contains('meditat') || title.contains('yoga')) {
-      return Image.asset('assets/images/yoga_quest.jpg', width: 60, height: 60, fit: BoxFit.cover);
+    if (title.contains('meditat') || title.contains('yoga') || title.contains('mindful') || title.contains('breath')) {
+      return Icons.self_improvement_rounded;
+    }
+    if (title.contains('water') || title.contains('hydrat')) {
+      return Icons.water_drop_rounded;
+    }
+    if (title.contains('read') || title.contains('book')) {
+      return Icons.menu_book_rounded;
+    }
+    if (title.contains('code') || title.contains('program') || title.contains('dev')) {
+      return Icons.terminal_rounded;
+    }
+    if (title.contains('sleep') || title.contains('rest')) {
+      return Icons.bedtime_rounded;
     }
 
-    // Category fallbacks
     switch (task.category) {
-      case 'Fitness':
-        return Image.asset('assets/images/workout_quest.jpg', width: 60, height: 60, fit: BoxFit.cover);
-      case 'Health':
-        return Image.asset('assets/images/health_quest.jpg', width: 60, height: 60, fit: BoxFit.cover);
-      case 'Work':
-        return Image.asset('assets/images/work_quest.jpg', width: 60, height: 60, fit: BoxFit.cover);
       case 'Study':
-        return Image.asset('assets/images/book_quest.jpg', width: 60, height: 60, fit: BoxFit.cover);
+        return Icons.school_rounded;
+      case 'Fitness':
+        return Icons.fitness_center_rounded;
+      case 'Health':
+        return Icons.favorite_rounded;
+      case 'Work':
+        return Icons.bolt_rounded;
       case 'Personal':
       default:
-        return Image.asset('assets/images/personal_quest.jpg', width: 60, height: 60, fit: BoxFit.cover);
+        return Icons.stars_rounded;
     }
+  }
+
+  Widget _buildCleanBadge() {
+    final color = _getCategoryColor();
+    final isCompleted = task.isCompleted;
+    final iconColor = isCompleted ? Colors.grey : color;
+    final bgColor = isCompleted
+        ? Colors.grey.withValues(alpha: 0.12)
+        : color.withValues(alpha: 0.15);
+
+    return Container(
+      width: 50,
+      height: 50,
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isCompleted ? Colors.grey.withValues(alpha: 0.3) : color.withValues(alpha: 0.4),
+          width: 1.5,
+        ),
+      ),
+      child: Center(
+        child: Icon(
+          isCompleted ? Icons.check_circle_outline_rounded : _getCategoryIcon(),
+          color: iconColor,
+          size: 26,
+        ),
+      ),
+    );
   }
 
   String _formatTime(int seconds) {
@@ -136,15 +174,12 @@ class QuestCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               
-              // Image
+              // Simple & Clean RPG Badge
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: _buildImage(),
-                ),
+                padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 4.0),
+                child: _buildCleanBadge(),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               
               // Content
               Expanded(
