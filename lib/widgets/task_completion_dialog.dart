@@ -18,67 +18,74 @@ class TaskCompletionCelebrationDialog extends StatelessWidget {
   }) : super(key: key);
 
   String _getCategoryHeadline() {
-    switch (task.category) {
-      case 'Fitness':
-        return '💪 Workout Complete!';
-      case 'Study':
-        return '📚 Knowledge Increased!';
-      case 'Health':
-        return '💧 Health Quest Complete!';
-      case 'Work':
-        return '🚀 Mission Complete!';
-      case 'Personal':
-      default:
-        return '✨ Personal Quest Complete!';
-    }
+    final cat = task.category.toLowerCase();
+    if (cat.contains('fitness') || cat.contains('gym') || cat.contains('workout')) return '💪 Workout Complete!';
+    if (cat.contains('study') || cat.contains('learn')) return '📚 Knowledge Increased!';
+    if (cat.contains('read')) return '📖 Chapter Conquered!';
+    if (cat.contains('code') || cat.contains('dev')) return '💻 Code Shipped!';
+    if (cat.contains('health') || cat.contains('water')) return '💧 Health Quest Complete!';
+    if (cat.contains('meditat') || cat.contains('mindful')) return '🧘 Zen State Achieved!';
+    if (cat.contains('clean')) return '🧹 Space Refreshed!';
+    if (cat.contains('walk')) return '🚶 Steps Logged!';
+    if (cat.contains('social')) return '👥 Bond Strengthened!';
+    if (cat.contains('creat') || cat.contains('draw') || cat.contains('paint')) return '🎨 Masterpiece Crafted!';
+    if (cat.contains('work')) return '🚀 Mission Complete!';
+    if (cat.contains('habit')) return '🔥 Habit Solidified!';
+    if (cat.contains('daily')) return '☀️ Daily Quest Victorious!';
+    return '✨ Quest Completed!';
   }
 
   String _getCategorySubtext() {
-    switch (task.category) {
-      case 'Fitness':
-        return 'You finished your fitness quest. Keep building your strength!';
-      case 'Study':
-        return 'Study task completed successfully. Keep learning and earn more XP!';
-      case 'Health':
-        return 'Great job taking care of yourself and maintaining balance.';
-      case 'Work':
-        return 'Another step toward your goals. High productivity achieved!';
-      case 'Personal':
-      default:
-        return 'Small progress every day creates big results.';
-    }
+    final cat = task.category.toLowerCase();
+    if (cat.contains('fitness') || cat.contains('gym')) return 'You finished your fitness quest. Keep building your strength!';
+    if (cat.contains('study') || cat.contains('learn')) return 'Study task completed successfully. Keep learning and earn more XP!';
+    if (cat.contains('read')) return 'Great reading session. Expanding knowledge one page at a time!';
+    if (cat.contains('code')) return 'Clean code committed! Your digital crafting skills leveled up.';
+    if (cat.contains('health')) return 'Great job taking care of your body and wellness.';
+    if (cat.contains('meditat')) return 'Mindfulness practiced. Enjoy the mental clarity and calm.';
+    if (cat.contains('clean')) return 'Your environment is organized and clear. Great discipline!';
+    if (cat.contains('walk')) return 'Endurance increased! Every step builds real-life momentum.';
+    if (cat.contains('social')) return 'Connected with meaningful people. Social stats boosted!';
+    if (cat.contains('creat')) return 'Creativity unleashed. Keep expressing your unique talents!';
+    if (cat.contains('work')) return 'Another step toward your goals. High productivity achieved!';
+    if (cat.contains('habit')) return 'Consistency is your superpower. Your streak continues!';
+    return 'Great work! Keep building your real-life character.';
   }
 
   Color _getCategoryColor() {
-    switch (task.category) {
-      case 'Fitness':
-        return Colors.redAccent;
-      case 'Study':
-        return Colors.blueAccent;
-      case 'Health':
-        return Colors.green;
-      case 'Work':
-        return Colors.purpleAccent;
-      case 'Personal':
-      default:
-        return const Color(0xFFF5B942);
-    }
+    final cat = task.category.toLowerCase();
+    if (cat.contains('fitness') || cat.contains('gym')) return Colors.orangeAccent;
+    if (cat.contains('study') || cat.contains('learn')) return Colors.blueAccent;
+    if (cat.contains('read')) return const Color(0xFFF59E0B);
+    if (cat.contains('code')) return Colors.cyanAccent;
+    if (cat.contains('health')) return Colors.greenAccent;
+    if (cat.contains('meditat')) return Colors.tealAccent;
+    if (cat.contains('clean')) return Colors.lightBlueAccent;
+    if (cat.contains('walk')) return Colors.limeAccent;
+    if (cat.contains('social')) return Colors.pinkAccent;
+    if (cat.contains('creat')) return Colors.purpleAccent;
+    if (cat.contains('work')) return Colors.indigoAccent;
+    if (cat.contains('habit')) return Colors.deepOrangeAccent;
+    if (cat.contains('daily')) return const Color(0xFFF5B942);
+    return const Color(0xFFF5B942);
   }
 
   IconData _getCategoryIcon() {
-    switch (task.category) {
-      case 'Fitness':
-        return Icons.fitness_center;
-      case 'Study':
-        return Icons.menu_book;
-      case 'Health':
-        return Icons.favorite;
-      case 'Work':
-        return Icons.work;
-      case 'Personal':
-      default:
-        return Icons.star;
-    }
+    final cat = task.category.toLowerCase();
+    if (cat.contains('fitness') || cat.contains('gym')) return Icons.fitness_center;
+    if (cat.contains('study') || cat.contains('learn')) return Icons.menu_book;
+    if (cat.contains('read')) return Icons.auto_stories;
+    if (cat.contains('code')) return Icons.code;
+    if (cat.contains('health')) return Icons.favorite;
+    if (cat.contains('meditat')) return Icons.self_improvement;
+    if (cat.contains('clean')) return Icons.cleaning_services;
+    if (cat.contains('walk')) return Icons.directions_walk;
+    if (cat.contains('social')) return Icons.people;
+    if (cat.contains('creat')) return Icons.palette;
+    if (cat.contains('work')) return Icons.work;
+    if (cat.contains('habit')) return Icons.local_fire_department;
+    if (cat.contains('daily')) return Icons.wb_sunny;
+    return Icons.star;
   }
 
   @override
@@ -180,8 +187,10 @@ class TaskCompletionCelebrationDialog extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Rewards Row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 10,
+              runSpacing: 8,
               children: [
                 // XP Badge
                 Container(
@@ -207,32 +216,58 @@ class TaskCompletionCelebrationDialog extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
+
+                // Coins Badge
+                if (task.getEffectiveCoinReward() > 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5B942).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFF5B942)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.monetization_on, color: Color(0xFFF5B942), size: 18),
+                        const SizedBox(width: 4),
+                        Text(
+                          '+${task.getEffectiveCoinReward()} Coins',
+                          style: const TextStyle(
+                            color: Color(0xFFF5B942),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
                 // Streak Badge
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.orangeAccent.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.orangeAccent),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.local_fire_department, color: Colors.orangeAccent, size: 18),
-                      const SizedBox(width: 4),
-                      Text(
-                        '$currentStreak Day Streak',
-                        style: const TextStyle(
-                          color: Colors.orangeAccent,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                if (currentStreak > 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.orangeAccent.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.orangeAccent),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.local_fire_department, color: Colors.orangeAccent, size: 18),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$currentStreak Day Streak',
+                          style: const TextStyle(
+                            color: Colors.orangeAccent,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
               ],
             ),
             const SizedBox(height: 16),

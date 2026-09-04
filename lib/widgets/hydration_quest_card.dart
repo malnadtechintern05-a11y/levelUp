@@ -249,6 +249,25 @@ class HydrationQuestCard extends StatelessWidget {
                   ),
                 ],
               ),
+              if (task.getNextReminder() != null && !task.isCompleted) ...[
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    const Icon(Icons.schedule, size: 14, color: brightAqua),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Next reminder: ${task.getNextReminder()!.time} — ${task.getNextReminder()!.amountMl} ml',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 14),
+
               // Quick Add Buttons or Locked State
               if (!task.isCompleted && state.isTaskFuture(task)) ...[
                 Container(
@@ -303,6 +322,18 @@ class HydrationQuestCard extends StatelessWidget {
                       child: _buildQuickButton(
                         context: context,
                         state: state,
+                        amountMl: 150,
+                        label: '+150 ml',
+                        btnBg: btnBg,
+                        btnBorder: btnBorder,
+                        textColor: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildQuickButton(
+                        context: context,
+                        state: state,
                         amountMl: 250,
                         label: '+250 ml',
                         btnBg: btnBg,
@@ -310,37 +341,13 @@ class HydrationQuestCard extends StatelessWidget {
                         textColor: theme.colorScheme.onSurface,
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: _buildQuickButton(
                         context: context,
                         state: state,
                         amountMl: 500,
                         label: '+500 ml',
-                        btnBg: btnBg,
-                        btnBorder: btnBorder,
-                        textColor: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: _buildQuickButton(
-                        context: context,
-                        state: state,
-                        amountMl: 750,
-                        label: '+750 ml',
-                        btnBg: btnBg,
-                        btnBorder: btnBorder,
-                        textColor: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: _buildQuickButton(
-                        context: context,
-                        state: state,
-                        amountMl: 1000,
-                        label: '+1 L',
                         btnBg: btnBg,
                         btnBorder: btnBorder,
                         textColor: theme.colorScheme.onSurface,

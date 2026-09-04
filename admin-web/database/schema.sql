@@ -1,8 +1,11 @@
 -- LevelUp (Real-Life RPG) MySQL Database Schema
 -- Compatible with LevelUp Flutter Application data structures
 
-CREATE DATABASE IF NOT EXISTS `levelup_rpg` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE `levelup_rpg`;
+-- NOTE FOR HOSTING (e.g. InfinityFree / cPanel / Shared Hosting):
+-- Shared hosts do not allow creating or selecting databases via SQL commands (#1044 Access Denied).
+-- In phpMyAdmin, click your database name on the left sidebar FIRST, then import this SQL file.
+-- CREATE DATABASE IF NOT EXISTS `levelup_rpg` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- USE `levelup_rpg`;
 
 -- 1. Admins Table
 CREATE TABLE IF NOT EXISTS `admins` (

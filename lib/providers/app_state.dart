@@ -464,35 +464,13 @@ class AppState extends ChangeNotifier {
           ],
         ),
         RPGTask(
-          id: 'task_today_2',
-          title: 'Morning Yoga & Stretching',
-          description: 'Full body mobility and flexibility',
+          id: 'task_today_workout',
+          title: '30 Minute Workout',
+          description: 'Full-body strength training and conditioning routine.',
           category: 'Fitness',
-          xpReward: 40,
-          dueDate: now,
-          durationMinutes: 15,
-          remainingSeconds: 0,
-          timerStatus: 'Completed',
-          isCompleted: true,
-        ),
-        RPGTask(
-          id: 'task_today_3',
-          title: 'Build LevelUp RPG Features',
-          description: 'Complete daily quests and theme integration',
-          category: 'Work',
-          xpReward: 100,
-          dueDate: now,
-          durationMinutes: 45,
-          remainingSeconds: 45 * 60,
-          timerStatus: 'Not Started',
-          isCompleted: false,
-        ),
-        RPGTask(
-          id: 'task_today_4',
-          title: 'Read Clean Architecture Book',
-          description: 'Study software engineering principles',
-          category: 'Study',
-          xpReward: 80,
+          xpReward: 70,
+          coinReward: 35,
+          difficulty: 'Medium',
           dueDate: now,
           durationMinutes: 30,
           remainingSeconds: 30 * 60,
@@ -500,26 +478,130 @@ class AppState extends ChangeNotifier {
           isCompleted: false,
         ),
         RPGTask(
-          id: 'task_today_5',
-          title: 'Evening 4000 Steps Walk',
-          description: 'Brisk evening walk for mental clarity',
-          category: 'Fitness',
-          xpReward: 50,
+          id: 'task_today_study',
+          title: 'Study Mathematics',
+          description: 'Practice calculus problems and review key formulas.',
+          category: 'Study',
+          xpReward: 60,
+          coinReward: 30,
+          difficulty: 'Medium',
           dueDate: now,
-          durationMinutes: 20,
-          remainingSeconds: 20 * 60,
+          durationMinutes: 45,
+          remainingSeconds: 45 * 60,
           timerStatus: 'Not Started',
           isCompleted: false,
         ),
         RPGTask(
-          id: 'task_today_6',
-          title: 'Review Goals & Plan Tomorrow',
-          description: 'Organize priorities for tomorrow',
-          category: 'Personal',
-          xpReward: 30,
+          id: 'task_today_reading',
+          title: 'Read 20 Pages',
+          description: 'Read at least 20 pages from an educational or personal development book.',
+          category: 'Reading',
+          xpReward: 40,
+          coinReward: 20,
+          difficulty: 'Easy',
           dueDate: now,
-          durationMinutes: 10,
-          remainingSeconds: 10 * 60,
+          durationMinutes: 0,
+          remainingSeconds: 0,
+          timerStatus: 'Not Started',
+          isCompleted: false,
+        ),
+        RPGTask(
+          id: 'task_today_coding',
+          title: 'Complete Flutter Login Screen',
+          description: 'Implement responsive UI, validation, and error states in Flutter.',
+          category: 'Coding',
+          xpReward: 100,
+          coinReward: 50,
+          difficulty: 'Hard',
+          dueDate: now,
+          durationMinutes: 45,
+          remainingSeconds: 45 * 60,
+          timerStatus: 'Not Started',
+          isCompleted: false,
+        ),
+        RPGTask(
+          id: 'task_today_cleaning',
+          title: 'Clean Your Study Desk',
+          description: 'Clear clutter, dust desk surfaces, and organize work accessories.',
+          category: 'Cleaning',
+          xpReward: 30,
+          coinReward: 15,
+          difficulty: 'Easy',
+          dueDate: now,
+          durationMinutes: 0,
+          remainingSeconds: 0,
+          timerStatus: 'Not Started',
+          isCompleted: false,
+        ),
+        RPGTask(
+          id: 'task_today_meditation',
+          title: '15 Minute Meditation',
+          description: 'Mindful breathing practice to reset focus and reduce mental stress.',
+          category: 'Meditation',
+          xpReward: 35,
+          coinReward: 18,
+          difficulty: 'Easy',
+          dueDate: now,
+          durationMinutes: 15,
+          remainingSeconds: 15 * 60,
+          timerStatus: 'Not Started',
+          isCompleted: false,
+        ),
+        RPGTask(
+          id: 'task_today_habit',
+          title: 'Wake Up Before 7 AM',
+          description: 'Kickstart the morning with discipline and intentional morning routine.',
+          category: 'Habit',
+          xpReward: 40,
+          coinReward: 20,
+          difficulty: 'Easy',
+          streak: 7,
+          isHabit: true,
+          dueDate: now,
+          durationMinutes: 0,
+          remainingSeconds: 0,
+          timerStatus: 'Not Started',
+          isCompleted: false,
+        ),
+        RPGTask(
+          id: 'task_today_creative',
+          title: 'Draw for 30 Minutes',
+          description: 'Sketch characters, environment concepts, or daily creative studies.',
+          category: 'Creative',
+          xpReward: 45,
+          coinReward: 22,
+          difficulty: 'Medium',
+          dueDate: now,
+          durationMinutes: 30,
+          remainingSeconds: 30 * 60,
+          timerStatus: 'Not Started',
+          isCompleted: false,
+        ),
+        RPGTask(
+          id: 'task_today_social',
+          title: 'Call a Friend',
+          description: 'Check in with a close friend or family member for a meaningful chat.',
+          category: 'Social',
+          xpReward: 25,
+          coinReward: 12,
+          difficulty: 'Easy',
+          dueDate: now,
+          durationMinutes: 0,
+          remainingSeconds: 0,
+          timerStatus: 'Not Started',
+          isCompleted: false,
+        ),
+        RPGTask(
+          id: 'task_today_walking',
+          title: 'Evening 4000 Steps Walk',
+          description: 'Brisk outdoor walk for daily movement and fresh air.',
+          category: 'Walking',
+          xpReward: 50,
+          coinReward: 25,
+          difficulty: 'Easy',
+          dueDate: now,
+          durationMinutes: 25,
+          remainingSeconds: 25 * 60,
           timerStatus: 'Not Started',
           isCompleted: false,
         ),
@@ -597,6 +679,22 @@ class AppState extends ChangeNotifier {
       added = true;
     }
 
+    // Ensure all hydration tasks have a populated drinking schedule
+    for (var t in _tasks) {
+      if (t.taskType == 'hydration' && t.reminders.isEmpty) {
+        final defReminders = createDefaultDrinkingSchedule(drinkAmountMl: t.drinkAmountMl);
+        if (_isSameDay(t.dueDate, now) && t.waterLogs.isNotEmpty) {
+          int countToMark = t.waterLogs.length.clamp(0, defReminders.length);
+          for (int k = 0; k < countToMark; k++) {
+            defReminders[k].isCompleted = true;
+            defReminders[k].completedAt = t.waterLogs[k].timestamp;
+          }
+        }
+        t.reminders = defReminders;
+        added = true;
+      }
+    }
+
     if (added) {
       _saveTasks();
     }
@@ -606,6 +704,18 @@ class AppState extends ChangeNotifier {
 
   String _formatDateKey(DateTime dt) {
     return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+  }
+
+  List<HydrationReminder> createDefaultDrinkingSchedule({int drinkAmountMl = 250}) {
+    return [
+      HydrationReminder(id: 'hr_1', time: '08:00 AM', hour: 8, minute: 0, amountMl: drinkAmountMl, repeat: 'Every Day', isEnabled: true),
+      HydrationReminder(id: 'hr_2', time: '10:00 AM', hour: 10, minute: 0, amountMl: drinkAmountMl, repeat: 'Every Day', isEnabled: true),
+      HydrationReminder(id: 'hr_3', time: '12:00 PM', hour: 12, minute: 0, amountMl: 300, repeat: 'Every Day', isEnabled: true),
+      HydrationReminder(id: 'hr_4', time: '02:00 PM', hour: 14, minute: 0, amountMl: 300, repeat: 'Every Day', isEnabled: true),
+      HydrationReminder(id: 'hr_5', time: '04:00 PM', hour: 16, minute: 0, amountMl: drinkAmountMl, repeat: 'Every Day', isEnabled: true),
+      HydrationReminder(id: 'hr_6', time: '06:00 PM', hour: 18, minute: 0, amountMl: 300, repeat: 'Every Day', isEnabled: true),
+      HydrationReminder(id: 'hr_7', time: '08:00 PM', hour: 20, minute: 0, amountMl: drinkAmountMl, repeat: 'Every Day', isEnabled: true),
+    ];
   }
 
   void addWater(String taskId, int amountMl, [BuildContext? context]) {
@@ -641,16 +751,38 @@ class AppState extends ChangeNotifier {
       task.waterLogs.insert(0, newLog);
       task.currentWaterMl += amountMl;
 
+      // Smart Reminder Completion: mark nearest scheduled drink as completed
+      if (task.reminders.isNotEmpty) {
+        final nowTime = DateTime.now();
+        final currentMins = nowTime.hour * 60 + nowTime.minute;
+        
+        // 1. Check if there are missed reminders (time passed, not completed)
+        final missed = task.reminders.where((r) => r.isEnabled && !r.isCompleted && (r.hour * 60 + r.minute <= currentMins)).toList();
+        if (missed.isNotEmpty) {
+          missed.sort((a, b) => (b.hour * 60 + b.minute).compareTo(a.hour * 60 + a.minute));
+          missed.first.isCompleted = true;
+          missed.first.completedAt = DateTime.now();
+        } else {
+          // 2. Otherwise mark the next upcoming reminder
+          final upcoming = task.reminders.where((r) => r.isEnabled && !r.isCompleted).toList();
+          if (upcoming.isNotEmpty) {
+            upcoming.sort((a, b) => (a.hour * 60 + a.minute).compareTo(b.hour * 60 + b.minute));
+            upcoming.first.isCompleted = true;
+            upcoming.first.completedAt = DateTime.now();
+          }
+        }
+      }
+
       final todayStr = _formatDateKey(DateTime.now());
       final yesterdayStr = _formatDateKey(DateTime.now().subtract(const Duration(days: 1)));
 
-      // Check if goal reached
+      // Check if daily water goal reached
       if (task.currentWaterMl >= task.waterGoalMl) {
         final bool wasAlreadyCompleted = task.isCompleted;
         task.isCompleted = true;
         task.timerStatus = 'Completed';
 
-        // Award XP only once per day
+        // Award XP & streak reward only once per day
         if (_userProfile.hydrationXpAwardedDate != todayStr) {
           final int oldLevel = _userProfile.level;
           _userProfile.hydrationXpAwardedDate = todayStr;
@@ -735,9 +867,250 @@ class AppState extends ChangeNotifier {
         task.isCompleted = false;
         task.timerStatus = 'Not Started';
       }
+      
+      // Save per-user preference in SharedPreferences
+      SharedPreferences.getInstance().then((prefs) {
+        final uKey = _userProfile.username.toLowerCase().replaceAll(RegExp(r'\s+'), '_');
+        prefs.setInt('${uKey}_water_goal', newGoalMl);
+      });
+
       _saveTasks();
       notifyListeners();
     }
+  }
+
+  void updateDrinkAmount(String taskId, int newDrinkAmountMl) {
+    final idx = _tasks.indexWhere((t) => t.id == taskId);
+    if (idx != -1) {
+      final task = _tasks[idx];
+      task.drinkAmountMl = newDrinkAmountMl;
+
+      // Save per-user preference in SharedPreferences
+      SharedPreferences.getInstance().then((prefs) {
+        final uKey = _userProfile.username.toLowerCase().replaceAll(RegExp(r'\s+'), '_');
+        prefs.setInt('${uKey}_drink_amount', newDrinkAmountMl);
+      });
+
+      _saveTasks();
+      notifyListeners();
+    }
+  }
+
+  void addHydrationReminder(String taskId, HydrationReminder reminder) {
+    final idx = _tasks.indexWhere((t) => t.id == taskId);
+    if (idx != -1) {
+      final task = _tasks[idx];
+      task.reminders.add(reminder);
+      task.reminders.sort((a, b) => (a.hour * 60 + a.minute).compareTo(b.hour * 60 + b.minute));
+      _saveTasks();
+      notifyListeners();
+    }
+  }
+
+  void updateHydrationReminder(String taskId, HydrationReminder reminder) {
+    final idx = _tasks.indexWhere((t) => t.id == taskId);
+    if (idx != -1) {
+      final task = _tasks[idx];
+      final remIdx = task.reminders.indexWhere((r) => r.id == reminder.id);
+      if (remIdx != -1) {
+        task.reminders[remIdx] = reminder;
+        task.reminders.sort((a, b) => (a.hour * 60 + a.minute).compareTo(b.hour * 60 + b.minute));
+        _saveTasks();
+        notifyListeners();
+      }
+    }
+  }
+
+  void deleteHydrationReminder(String taskId, String reminderId) {
+    final idx = _tasks.indexWhere((t) => t.id == taskId);
+    if (idx != -1) {
+      final task = _tasks[idx];
+      task.reminders.removeWhere((r) => r.id == reminderId);
+      _saveTasks();
+      notifyListeners();
+    }
+  }
+
+  void toggleHydrationReminder(String taskId, String reminderId, bool isEnabled) {
+    final idx = _tasks.indexWhere((t) => t.id == taskId);
+    if (idx != -1) {
+      final task = _tasks[idx];
+      final remIdx = task.reminders.indexWhere((r) => r.id == reminderId);
+      if (remIdx != -1) {
+        task.reminders[remIdx].isEnabled = isEnabled;
+        _saveTasks();
+        notifyListeners();
+      }
+    }
+  }
+
+  void completeHydrationReminder(String taskId, String reminderId, [BuildContext? context]) {
+    final idx = _tasks.indexWhere((t) => t.id == taskId);
+    if (idx != -1) {
+      final task = _tasks[idx];
+      final remIdx = task.reminders.indexWhere((r) => r.id == reminderId);
+      if (remIdx != -1) {
+        final reminder = task.reminders[remIdx];
+        reminder.isCompleted = true;
+        reminder.completedAt = DateTime.now();
+        addWater(taskId, reminder.amountMl, context);
+      }
+    }
+  }
+
+  void generateHydrationSchedule(
+    String taskId, {
+    required TimeOfDay startTime,
+    required TimeOfDay endTime,
+    required int intervalMinutes,
+    required int drinkAmountMl,
+  }) {
+    final idx = _tasks.indexWhere((t) => t.id == taskId);
+    if (idx != -1) {
+      final task = _tasks[idx];
+      final startTotalMins = startTime.hour * 60 + startTime.minute;
+      final endTotalMins = endTime.hour * 60 + endTime.minute;
+
+      if (endTotalMins > startTotalMins && intervalMinutes > 0) {
+        final List<HydrationReminder> newReminders = [];
+        int current = startTotalMins;
+        int count = 1;
+
+        while (current <= endTotalMins) {
+          final h = current ~/ 60;
+          final m = current % 60;
+          final dt = DateTime(2026, 1, 1, h, m);
+          final timeStr = DateFormat('hh:mm a').format(dt);
+
+          newReminders.add(
+            HydrationReminder(
+              id: 'hr_gen_${DateTime.now().millisecondsSinceEpoch}_$count',
+              time: timeStr,
+              hour: h,
+              minute: m,
+              amountMl: drinkAmountMl,
+              repeat: 'Every Day',
+              isEnabled: true,
+            ),
+          );
+          current += intervalMinutes;
+          count++;
+        }
+
+        task.reminders = newReminders;
+        task.drinkAmountMl = drinkAmountMl;
+        task.reminderIntervalMinutes = intervalMinutes;
+        final startDt = DateTime(2026, 1, 1, startTime.hour, startTime.minute);
+        final endDt = DateTime(2026, 1, 1, endTime.hour, endTime.minute);
+        task.reminderStartTime = DateFormat('hh:mm a').format(startDt);
+        task.reminderEndTime = DateFormat('hh:mm a').format(endDt);
+
+        // Save per-user preference in SharedPreferences
+        SharedPreferences.getInstance().then((prefs) {
+          final uKey = _userProfile.username.toLowerCase().replaceAll(RegExp(r'\s+'), '_');
+          prefs.setInt('${uKey}_drink_amount', drinkAmountMl);
+          prefs.setInt('${uKey}_reminder_interval', intervalMinutes);
+          prefs.setString('${uKey}_start_time', task.reminderStartTime!);
+          prefs.setString('${uKey}_end_time', task.reminderEndTime!);
+        });
+
+        _saveTasks();
+        notifyListeners();
+      }
+    }
+  }
+
+  void updateHydrationSettings(
+    String taskId, {
+    int? dailyGoalMl,
+    int? drinkAmountMl,
+    bool? notificationsEnabled,
+    TimeOfDay? startTime,
+    TimeOfDay? endTime,
+    int? intervalMinutes,
+  }) {
+    final idx = _tasks.indexWhere((t) => t.id == taskId);
+    if (idx != -1) {
+      final task = _tasks[idx];
+      if (dailyGoalMl != null) {
+        task.waterGoalMl = dailyGoalMl;
+      }
+      if (drinkAmountMl != null) {
+        task.drinkAmountMl = drinkAmountMl;
+      }
+      if (notificationsEnabled != null) {
+        task.notificationsEnabled = notificationsEnabled;
+      }
+      if (startTime != null) {
+        final startDt = DateTime(2026, 1, 1, startTime.hour, startTime.minute);
+        task.reminderStartTime = DateFormat('hh:mm a').format(startDt);
+      }
+      if (endTime != null) {
+        final endDt = DateTime(2026, 1, 1, endTime.hour, endTime.minute);
+        task.reminderEndTime = DateFormat('hh:mm a').format(endDt);
+      }
+      if (intervalMinutes != null) {
+        task.reminderIntervalMinutes = intervalMinutes;
+      }
+
+      // Save per-user preference in SharedPreferences
+      SharedPreferences.getInstance().then((prefs) {
+        final uKey = _userProfile.username.toLowerCase().replaceAll(RegExp(r'\s+'), '_');
+        if (dailyGoalMl != null) prefs.setInt('${uKey}_water_goal', dailyGoalMl);
+        if (drinkAmountMl != null) prefs.setInt('${uKey}_drink_amount', drinkAmountMl);
+        if (notificationsEnabled != null) prefs.setBool('${uKey}_water_notifs', notificationsEnabled);
+        if (task.reminderStartTime != null) prefs.setString('${uKey}_start_time', task.reminderStartTime!);
+        if (task.reminderEndTime != null) prefs.setString('${uKey}_end_time', task.reminderEndTime!);
+        if (intervalMinutes != null) prefs.setInt('${uKey}_reminder_interval', intervalMinutes);
+      });
+
+      _saveTasks();
+      notifyListeners();
+    }
+  }
+
+  Map<String, dynamic> getHydrationStats(RPGTask task) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    // 1. Today
+    final todayConsumed = task.currentWaterMl;
+    final todayGoal = task.waterGoalMl;
+
+    // 2. Past 7 days (including today)
+    int totalLoggedMl7Days = 0;
+    int daysGoalCompleted7Days = 0;
+
+    for (int i = 0; i < 7; i++) {
+      final date = today.subtract(Duration(days: i));
+      final dateTasks = _tasks.where((t) => t.taskType == 'hydration' && _isSameDay(t.dueDate, date)).toList();
+      if (dateTasks.isNotEmpty) {
+        final dayTask = dateTasks.first;
+        totalLoggedMl7Days += dayTask.currentWaterMl;
+        if (dayTask.currentWaterMl >= dayTask.waterGoalMl && dayTask.waterGoalMl > 0) {
+          daysGoalCompleted7Days++;
+        }
+      } else if (i == 0) {
+        totalLoggedMl7Days += todayConsumed;
+        if (todayConsumed >= todayGoal && todayGoal > 0) {
+          daysGoalCompleted7Days++;
+        }
+      }
+    }
+
+    final double avgLitersPerDay = (totalLoggedMl7Days / 7.0) / 1000.0;
+    final int streak = _userProfile.hydrationCurrentStreak;
+
+    return {
+      'todayConsumedMl': todayConsumed,
+      'todayGoalMl': todayGoal,
+      'todayConsumedL': (todayConsumed / 1000).toStringAsFixed(1),
+      'todayGoalL': (todayGoal / 1000).toStringAsFixed(1),
+      'weeklyAverageL': avgLitersPerDay.toStringAsFixed(1),
+      'goalCompletedDays': daysGoalCompleted7Days,
+      'streakDays': streak,
+      'streak': streak,
+    };
   }
 
   void _updateStreak() {
@@ -893,6 +1266,50 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  void resetTaskTimer(String taskId) {
+    final idx = _tasks.indexWhere((t) => t.id == taskId);
+    if (idx != -1) {
+      final task = _tasks[idx];
+      task.timerStatus = 'Not Started';
+      task.timerStartTimeEpoch = null;
+      task.remainingSeconds = task.durationMinutes * 60;
+      _saveTasks();
+      notifyListeners();
+    }
+  }
+
+  void toggleTaskObjective(String taskId, String objectiveId, bool isCompleted) {
+    final idx = _tasks.indexWhere((t) => t.id == taskId);
+    if (idx != -1) {
+      final task = _tasks[idx];
+      task.getEffectiveObjectives();
+      final objIdx = task.objectives.indexWhere((o) => o.id == objectiveId);
+      if (objIdx != -1) {
+        task.objectives[objIdx].isCompleted = isCompleted;
+        _saveTasks();
+        notifyListeners();
+      }
+    }
+  }
+
+  void updateTaskNote(String taskId, String note) {
+    final idx = _tasks.indexWhere((t) => t.id == taskId);
+    if (idx != -1) {
+      _tasks[idx].personalNote = note;
+      _saveTasks();
+      notifyListeners();
+    }
+  }
+
+  void updateTaskProof(String taskId, String? imagePath) {
+    final idx = _tasks.indexWhere((t) => t.id == taskId);
+    if (idx != -1) {
+      _tasks[idx].proofImagePath = imagePath;
+      _saveTasks();
+      notifyListeners();
+    }
+  }
+
   void pauseTaskTimer(String taskId) {
     final idx = _tasks.indexWhere((t) => t.id == taskId);
     if (idx != -1) {
@@ -921,7 +1338,7 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  void completeTask(String taskId, [BuildContext? context]) {
+  void completeTask(String taskId, [BuildContext? context, int? xpOverride]) {
     final index = _tasks.indexWhere((t) => t.id == taskId);
     if (index != -1 && !_tasks[index].isCompleted) {
       final task = _tasks[index];
@@ -942,14 +1359,18 @@ class AppState extends ChangeNotifier {
       task.isCompleted = true;
       task.timerStatus = 'Completed';
       
-      int xp = task.xpReward;
-      _userProfile.gold += (xp ~/ 2);
+      int xp = xpOverride ?? task.xpReward;
+      int coins = task.getEffectiveCoinReward();
+      if (xpOverride != null && task.xpReward > 0) {
+        coins = ((coins * xpOverride) / task.xpReward).round();
+      }
+      _userProfile.gold += coins;
       
       // Update skills based on category
       String category = task.category;
-      if (category == 'Fitness' || category == 'Health') {
+      if (category == 'Fitness' || category == 'Health' || category == 'Walking') {
         _userProfile.skills['Strength'] = (_userProfile.skills['Strength'] ?? 0) + 10;
-      } else if (category == 'Study' || category == 'Work') {
+      } else if (category == 'Study' || category == 'Work' || category == 'Coding' || category == 'Learning' || category == 'Reading') {
         _userProfile.skills['Knowledge'] = (_userProfile.skills['Knowledge'] ?? 0) + 10;
       } else {
         _userProfile.skills['Discipline'] = (_userProfile.skills['Discipline'] ?? 0) + 10;

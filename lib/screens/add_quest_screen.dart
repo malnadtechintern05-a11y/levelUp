@@ -23,9 +23,26 @@ class _AddQuestScreenState extends State<AddQuestScreen> {
   TimeOfDay? _selectedTime;
   DateTime _selectedDate = DateTime.now();
 
-  final List<String> _categories = ['Study', 'Fitness', 'Health', 'Work', 'Personal'];
-  final List<int> _xpOptions = [20, 50, 100, 200];
-  final List<int> _durations = [10, 20, 30, 40, 45, 60, 90, 120];
+  final List<String> _categories = [
+    'Study',
+    'Fitness',
+    'Health',
+    'Learning',
+    'Work',
+    'Coding',
+    'Reading',
+    'Meditation',
+    'Walking',
+    'Social',
+    'Creative',
+    'Cleaning',
+    'Habit',
+    'Daily',
+    'Hobbies',
+    'Personal',
+  ];
+  final List<int> _xpOptions = [20, 40, 50, 70, 100, 150, 200];
+  final List<int> _durations = [0, 10, 15, 20, 30, 45, 60, 90];
   final List<int> _waterGoals = [1500, 2000, 2500, 3000];
 
   void _onCategoryChanged(String? value) {
@@ -36,13 +53,28 @@ class _AddQuestScreenState extends State<AddQuestScreen> {
         switch (value) {
           case 'Study':
           case 'Work':
+          case 'Coding':
+          case 'Learning':
             _selectedDuration = 30;
             break;
           case 'Fitness':
-            _selectedDuration = 40;
+            _selectedDuration = 30;
             break;
+          case 'Meditation':
+            _selectedDuration = 15;
+            break;
+          case 'Creative':
+            _selectedDuration = 30;
+            break;
+          case 'Reading':
+          case 'Cleaning':
           case 'Health':
-          case 'Personal':
+          case 'Social':
+          case 'Habit':
+          case 'Daily':
+            _selectedDuration = 0; // default no timer for reading, cleaning, etc.
+            break;
+          default:
             _selectedDuration = 20;
             break;
         }
@@ -90,6 +122,10 @@ class _AddQuestScreenState extends State<AddQuestScreen> {
         waterGoalMl: _taskType == 'hydration' ? _selectedWaterGoalMl : 2000,
         currentWaterMl: 0,
         waterLogs: [],
+        drinkAmountMl: 250,
+        reminders: _taskType == 'hydration'
+            ? Provider.of<AppState>(context, listen: false).createDefaultDrinkingSchedule(drinkAmountMl: 250)
+            : [],
       );
       
       context.read<AppState>().addTask(newTask);
@@ -248,7 +284,7 @@ class _AddQuestScreenState extends State<AddQuestScreen> {
                   children: _durations.map((duration) {
                     final isSelected = _selectedDuration == duration;
                     return ChoiceChip(
-                      label: Text('$duration min'),
+                      label: Text(duration == 0 ? 'No Timer' : '$duration min'),
                       selected: isSelected,
                       onSelected: (selected) {
                         if (selected) setState(() => _selectedDuration = duration);

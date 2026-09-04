@@ -20,7 +20,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -70,6 +70,11 @@ class DatabaseHelper {
         )
       ''');
     }
+    if (oldVersion < 5) {
+      try {
+        await db.execute('ALTER TABLE tasks ADD COLUMN extraDataJson TEXT NOT NULL DEFAULT "{}";');
+      } catch (_) {}
+    }
   }
 
   Future _createDB(Database db, int version) async {
@@ -113,7 +118,8 @@ class DatabaseHelper {
         taskType TEXT NOT NULL DEFAULT "normal",
         waterGoalMl INTEGER NOT NULL DEFAULT 2000,
         currentWaterMl INTEGER NOT NULL DEFAULT 0,
-        waterLogsJson TEXT NOT NULL DEFAULT "[]"
+        waterLogsJson TEXT NOT NULL DEFAULT "[]",
+        extraDataJson TEXT NOT NULL DEFAULT "{}"
       )
     ''');
 

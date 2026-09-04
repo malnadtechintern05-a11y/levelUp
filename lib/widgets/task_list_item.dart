@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../providers/app_state.dart';
+import '../screens/quest_details_screen.dart';
+import 'hydration_quest_card.dart';
 
 class TaskListItem extends StatelessWidget {
   final RPGTask task;
@@ -49,6 +51,13 @@ class TaskListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (task.taskType == 'hydration') {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: HydrationQuestCard(task: task),
+      );
+    }
+
     final state = context.watch<AppState>();
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -61,12 +70,17 @@ class TaskListItem extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       elevation: 1,
+      clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: theme.colorScheme.outline),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => QuestDetailsScreen(task: task)));
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -185,7 +199,8 @@ class TaskListItem extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 
   IconData _getCategoryIcon(String category) {
