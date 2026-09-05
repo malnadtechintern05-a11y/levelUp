@@ -90,7 +90,29 @@ function requireAuth(PDO $db): array {
     return $user;
 }
 
+function getOptionalAuth(PDO $db): ?array {
+    $token = getBearerToken();
+    if (!$token) {
+        return null;
+    }
+    try {
+        $stmt = $db->prepare("
+            SELECT u.*, ut.id as token_id, ut.expires_at
+            FROM user_tokens ut
+            JOIN users u ON ut.user_id = u.id
+            WHERE ut.token = ? AND ut.expires_at > NOW()
+            LIMIT 1
+        ");
+        $stmt->execute([$token]);
+        $user = $stmt->fetch();
+        return ($user && (int)$user['is_active'] === 1) ? $user : null;
+    } catch (Exception $e) {
+        return null;
+    }
+}
+
 function calculateLevelFromXp(int $totalXp): int {
     // 100 XP per level: Level 1 = 0-99 XP, Level 2 = 100-199 XP, etc.
     return max(1, (int)floor($totalXp / 100) + 1);
 }
+

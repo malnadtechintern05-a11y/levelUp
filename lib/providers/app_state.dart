@@ -12,6 +12,7 @@ import '../services/online_task_service.dart';
 import '../services/online_hydration_service.dart';
 import '../services/online_achievement_service.dart';
 import '../services/api_client.dart';
+import '../config/api_config.dart';
 import 'package:flutter/material.dart';
 
 class AppState extends ChangeNotifier {
@@ -55,7 +56,16 @@ class AppState extends ChangeNotifier {
   bool _isDarkMode = true;
   bool _isLoggedIn = false;
   bool _soundEffectsEnabled = true;
-  
+  String? _heroBannerUrl;
+  String? _customBannerPath;
+  String? _heroBannerTitle;
+  String? _heroBannerSubtitle;
+  bool _heroBannerEnabled = true;
+  bool _isMaintenanceMode = false;
+  String _maintenanceMessage = '';
+  String? _quoteOfTheDay;
+  int _dailyWaterGoalMl = 2500;
+
   UserProfile get userProfile => _userProfile;
   List<RPGTask> get tasks => _tasks;
   List<Achievement> get achievements => _achievements;
@@ -65,6 +75,32 @@ class AppState extends ChangeNotifier {
   bool get isDarkMode => _isDarkMode;
   bool get isLoggedIn => _isLoggedIn;
   bool get soundEffectsEnabled => _soundEffectsEnabled;
+  String? get heroBannerUrl => _heroBannerUrl;
+  String? get customBannerPath => _customBannerPath;
+  String? get heroBannerTitle => _heroBannerTitle;
+  String? get heroBannerSubtitle => _heroBannerSubtitle;
+  bool get heroBannerEnabled => _heroBannerEnabled;
+  bool get isMaintenanceMode => _isMaintenanceMode;
+  String get maintenanceMessage => _maintenanceMessage;
+  String? get quoteOfTheDay => _quoteOfTheDay;
+  int get dailyWaterGoalMl => _dailyWaterGoalMl;
+  bool get isAdmin =>
+      _userProfile.email?.toLowerCase() == 'admin@levelup.com' ||
+      _userProfile.username.toLowerCase() == 'admin' ||
+      _userProfile.username.toLowerCase() == 'zenmaster';
+
+  Future<void> setCustomBanner(String? path) async {
+    final clean = (path != null && path.trim().isNotEmpty) ? path.trim() : null;
+    _customBannerPath = clean;
+    final prefs = await SharedPreferences.getInstance();
+    if (clean != null) {
+      await prefs.setString('custom_banner_path', clean);
+    } else {
+      await prefs.remove('custom_banner_path');
+    }
+    notifyListeners();
+  }
+
   List<AppNotification> get notifications => _notifications;
   int get unreadNotificationCount => _notifications.where((n) => !n.isRead).length;
   NotificationSettings get notificationSettings => _notificationSettings;
@@ -155,11 +191,35 @@ class AppState extends ChangeNotifier {
       final user = await AuthService.instance.getCurrentUser();
       if (user != null) {
         _applyUserData(user);
+      } else {
+        // Fallback: sync public stats by username or primary active hero from server
+        try {
+          final queryParams = <String, String>{};
+          if (_userProfile.username.isNotEmpty && _userProfile.username != 'Hero') {
+            queryParams['username'] = _userProfile.username;
+          }
+          final pubRes = await ApiClient.instance.get('/users/public_profile.php', queryParams: queryParams.isNotEmpty ? queryParams : null);
+          if (pubRes['status'] == 'success' && pubRes['data'] is Map) {
+            _applyUserData(pubRes['data'] as Map<String, dynamic>);
+          }
+        } catch (_) {}
       }
 
       final onlineTasks = await OnlineTaskService.instance.fetchTasks();
       if (onlineTasks.isNotEmpty) {
-        _tasks = onlineTasks;
+        final taskMap = {for (var t in _tasks) t.id: t};
+        for (var ot in onlineTasks) {
+          if (taskMap.containsKey(ot.id)) {
+            final existing = taskMap[ot.id]!;
+            if (ot.taskType == 'hydration' && existing.waterLogs.isNotEmpty && ot.waterLogs.isEmpty) {
+              ot.waterLogs = existing.waterLogs;
+              ot.reminders = existing.reminders;
+              ot.currentWaterMl = existing.currentWaterMl;
+            }
+          }
+          taskMap[ot.id] = ot;
+        }
+        _tasks = taskMap.values.toList();
         await _saveTasks();
       }
 
@@ -168,10 +228,73 @@ class AppState extends ChangeNotifier {
         _achievements = onlineAchievements;
         await _saveAchievements();
       }
+
+      await fetchAppSettings();
     } catch (e) {
       debugPrint("Online sync fallback to local cache: $e");
     }
     notifyListeners();
+  }
+
+  Future<void> fetchAppSettings() async {
+    try {
+      final res = await ApiClient.instance.get('/settings/get.php');
+      if (res['status'] == 'success' && res['settings'] is Map) {
+        final settings = res['settings'] as Map<String, dynamic>;
+        final rawBanner = settings['hero_banner_image']?.toString()?.trim();
+
+        if (rawBanner != null && rawBanner.isNotEmpty) {
+          if (rawBanner.startsWith('http://') || rawBanner.startsWith('https://')) {
+            _heroBannerUrl = rawBanner;
+          } else {
+            // Build full URL from current ApiConfig origin
+            final apiUri = Uri.tryParse(ApiConfig.baseUrl);
+            if (apiUri != null) {
+              final portStr = (apiUri.port == 80 || apiUri.port == 443 || apiUri.port == 0) ? '' : ':${apiUri.port}';
+              final origin = '${apiUri.scheme}://${apiUri.host}$portStr';
+              final cleanPath = rawBanner.startsWith('/') ? rawBanner : '/$rawBanner';
+              _heroBannerUrl = '$origin$cleanPath';
+            } else {
+              _heroBannerUrl = rawBanner;
+            }
+          }
+        } else {
+          _heroBannerUrl = null;
+        }
+
+        final title = settings['hero_banner_title']?.toString()?.trim();
+        _heroBannerTitle = (title != null && title.isNotEmpty) ? title : null;
+
+        final subtitle = settings['hero_banner_subtitle']?.toString()?.trim();
+        _heroBannerSubtitle = (subtitle != null && subtitle.isNotEmpty) ? subtitle : null;
+
+        _heroBannerEnabled = settings['hero_banner_enabled'] != false && settings['hero_banner_enabled'] != '0';
+        _isMaintenanceMode = settings['maintenance_mode'] == true || settings['maintenance_mode'] == '1';
+        _maintenanceMessage = settings['maintenance_message']?.toString() ?? 'LevelUp realm is currently undergoing maintenance.';
+
+        final quote = settings['quote_of_the_day']?.toString()?.trim();
+        if (quote != null && quote.isNotEmpty) {
+          _quoteOfTheDay = quote;
+          if (!_motivationalQuotes.contains(quote)) {
+            _motivationalQuotes.insert(0, quote);
+          }
+        }
+
+        if (settings['default_water_goal_ml'] != null) {
+          _dailyWaterGoalMl = int.tryParse(settings['default_water_goal_ml'].toString()) ?? 2500;
+        }
+
+        final prefs = await SharedPreferences.getInstance();
+        if (_heroBannerUrl != null && _heroBannerUrl!.isNotEmpty) {
+          await prefs.setString('cached_hero_banner_url', _heroBannerUrl!);
+        } else {
+          await prefs.remove('cached_hero_banner_url');
+        }
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint("Failed to fetch app settings: $e");
+    }
   }
 
   Future<void> logout() async {
@@ -201,7 +324,7 @@ class AppState extends ChangeNotifier {
     await SoundService.instance.previewAlarmSong(songId);
   }
 
-  List<RPGTask> get activeTasks => _tasks.where((t) => !t.isCompleted && isTaskToday(t)).toList();
+  List<RPGTask> get activeTasks => _tasks.where((t) => !t.isCompleted && !isTaskFuture(t)).toList();
   List<RPGTask> get allActiveTasks => _tasks.where((t) => !t.isCompleted).toList();
   List<RPGTask> get completedTasks => _tasks.where((t) => t.isCompleted).toList();
   
@@ -340,12 +463,26 @@ class AppState extends ChangeNotifier {
       _isLoggedIn = prefs.getBool('is_logged_in') ?? false;
       _soundEffectsEnabled = prefs.getBool('sound_effects_enabled') ?? true;
       _isDarkMode = prefs.getBool('isDarkMode') ?? true;
+      
+      final cachedBanner = prefs.getString('cached_hero_banner_url');
+      if (cachedBanner != null && cachedBanner.trim().isNotEmpty) {
+        _heroBannerUrl = cachedBanner.trim();
+      }
+
+      final savedCustomBanner = prefs.getString('custom_banner_path');
+      if (savedCustomBanner != null && savedCustomBanner.trim().isNotEmpty) {
+        _customBannerPath = savedCustomBanner.trim();
+      }
+
       _updateStreak();
       
       // For demo purposes, we randomly populate weekly XP if empty
       _weeklyXp = {
         'Mon': 120, 'Tue': 80, 'Wed': 150, 'Thu': 200, 'Fri': 100, 'Sat': 0, 'Sun': 0,
       };
+
+      // Asynchronously fetch latest realm settings from online backend
+      fetchAppSettings();
       
     } catch (e) {
       debugPrint("Critical error in _loadData: $e");
@@ -1158,6 +1295,18 @@ class AppState extends ChangeNotifier {
     _tasks.add(task);
     _saveTasks();
     notifyListeners();
+
+    // Sync task to server so admin and all endpoints are up to date
+    OnlineTaskService.instance.createTask(task).then((savedOnline) {
+      final idx = _tasks.indexWhere((t) => t.id == task.id);
+      if (idx != -1 && savedOnline.id != task.id) {
+        _tasks[idx] = savedOnline;
+        _saveTasks();
+        notifyListeners();
+      }
+    }).catchError((e) {
+      debugPrint("Online task create notice: $e");
+    });
   }
 
   void updateTaskTime(String taskId, int timeSpentSeconds) {

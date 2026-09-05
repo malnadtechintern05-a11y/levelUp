@@ -96,19 +96,46 @@ class ProfileScreen extends StatelessWidget {
                 alignment: Alignment.bottomCenter,
                 children: [
                   // Banner Image
-                  Container(
-                    height: 180,
-                    margin: const EdgeInsets.only(bottom: 60),
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(20), bottomRight: Radius.circular(20)),
-                      image: DecorationImage(
-                        image: const AssetImage('assets/images/banner_hero.jpg'),
-                        fit: BoxFit.cover,
-                        colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.55), BlendMode.darken),
+                  Builder(builder: (context) {
+                    DecorationImage? bannerImg;
+                    final bPath = state.customBannerPath ?? state.heroBannerUrl;
+                    if (bPath != null && bPath.isNotEmpty && !bPath.startsWith('gradient:')) {
+                      if (bPath.startsWith('http://') || bPath.startsWith('https://')) {
+                        bannerImg = DecorationImage(
+                          image: NetworkImage(bPath),
+                          fit: BoxFit.cover,
+                          colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.55), BlendMode.darken),
+                        );
+                      } else {
+                        try {
+                          final f = File(bPath);
+                          if (f.existsSync()) {
+                            bannerImg = DecorationImage(
+                              image: FileImage(f),
+                              fit: BoxFit.cover,
+                              colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.55), BlendMode.darken),
+                            );
+                          }
+                        } catch (_) {}
+                      }
+                    }
+                    return Container(
+                      height: 180,
+                      margin: const EdgeInsets.only(bottom: 60),
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(20), bottomRight: Radius.circular(20)),
+                        gradient: bannerImg == null
+                            ? const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [Color(0xFF1E293B), Color(0xFF0F172A), Color(0xFF090D16)],
+                              )
+                            : null,
+                        image: bannerImg,
                       ),
-                    ),
-                  ),
+                    );
+                  }),
                   // Avatar
                   Container(
                     decoration: BoxDecoration(

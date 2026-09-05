@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../services/sound_service.dart';
 import '../screens/alarm_sound_screen.dart';
+import '../config/api_config.dart';
+import '../services/api_client.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -12,6 +14,90 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  void _showServerConfigDialog() {
+    final controller = TextEditingController(text: ApiConfig.baseUrl);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF162033),
+        title: Row(
+          children: const [
+            Icon(Icons.dns_rounded, color: Color(0xFFF5B942)),
+            SizedBox(width: 8),
+            Text('Server Configuration', style: TextStyle(color: Colors.white, fontSize: 18)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Set the backend server URL. For physical phones, tap your Wi-Fi PC IP.',
+              style: TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                ActionChip(
+                  label: const Text('Wi-Fi PC (192.168.31.170:8080)', style: TextStyle(fontSize: 11)),
+                  onPressed: () => controller.text = 'http://192.168.31.170:8080/api',
+                ),
+                ActionChip(
+                  label: const Text('Apache XAMPP (Port 80)', style: TextStyle(fontSize: 11)),
+                  onPressed: () => controller.text = 'http://192.168.31.170/real-life-rpg/backend/api',
+                ),
+                ActionChip(
+                  label: const Text('Localhost (127.0.0.1:8080)', style: TextStyle(fontSize: 11)),
+                  onPressed: () => controller.text = 'http://127.0.0.1:8080/api',
+                ),
+                ActionChip(
+                  label: const Text('Emulator (10.0.2.2:8080)', style: TextStyle(fontSize: 11)),
+                  onPressed: () => controller.text = 'http://10.0.2.2:8080/api',
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: 'API Base URL',
+                hintText: 'http://192.168.31.170:8080/api',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              await ApiConfig.resetToDefault();
+              if (ctx.mounted) Navigator.pop(ctx);
+              if (mounted) setState(() {});
+            },
+            child: const Text('Reset Default', style: TextStyle(color: Colors.white54)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF5B942), foregroundColor: Colors.black),
+            onPressed: () async {
+              final newUrl = controller.text.trim();
+              if (newUrl.isNotEmpty) {
+                await ApiConfig.setBaseUrl(newUrl);
+                if (ctx.mounted) Navigator.pop(ctx);
+                if (mounted) setState(() {});
+                if (mounted) {
+                  context.read<AppState>().refreshAllData();
+                }
+              }
+            },
+            child: const Text('Save & Sync'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -220,6 +306,98 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               );
             },
+          ),
+
+          const SizedBox(height: 24),
+          Padding(
+            padding: const EdgeInsets.only(left: 4.0, bottom: 8.0),
+            child: Text(
+              'SERVER & ONLINE SYNC',
+              style: TextStyle(
+                color: isDark ? const Color(0xFFF5B942) : const Color(0xFFD97706),
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.cloud_sync, color: Color(0xFFF5B942)),
+                  title: const Text('Server Connection URL', style: TextStyle(fontWeight: FontWeight.w600)),
+                  subtitle: Text(ApiConfig.baseUrl, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
+                  trailing: const Icon(Icons.edit_outlined, size: 20),
+                  onTap: _showServerConfigDialog,
+                ),
+                Divider(height: 1, color: theme.colorScheme.outline),
+                ListTile(
+                  leading: const Icon(Icons.network_check_rounded, color: Colors.greenAccent),
+                  title: const Text('Test Connection to PC', style: TextStyle(fontWeight: FontWeight.w500)),
+                  subtitle: Text('Check if your phone reaches the server', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
+                  trailing: const Icon(Icons.play_arrow_rounded, color: Colors.greenAccent),
+                  onTap: () async {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Testing connection to server...'), duration: Duration(seconds: 1)),
+                    );
+                    try {
+                      final res = await ApiClient.instance.get('/settings/get.php');
+                      if (context.mounted) {
+                        if (res['status'] == 'success') {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('✅ Connected to LevelUp server successfully!'),
+                              backgroundColor: Color(0xFF16A34A),
+                              duration: Duration(seconds: 3),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('⚠️ Server responded with error: ${res['message']}'),
+                              backgroundColor: Colors.orange,
+                            ),
+                          );
+                        }
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('❌ Cannot connect: $e\nMake sure PC and Phone are on same Wi-Fi and use IP 192.168.31.170:8080'),
+                            backgroundColor: Colors.redAccent,
+                            duration: const Duration(seconds: 5),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                ),
+                Divider(height: 1, color: theme.colorScheme.outline),
+                ListTile(
+                  leading: const Icon(Icons.sync_rounded, color: Color(0xFFF5B942)),
+                  title: const Text('Sync All Data Now', style: TextStyle(fontWeight: FontWeight.w500)),
+                  subtitle: Text('Pull latest XP, quests & admin settings', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () async {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('🔄 Syncing with server...'), duration: Duration(milliseconds: 900)),
+                    );
+                    await context.read<AppState>().refreshAllData();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('✨ Sync complete!'),
+                          backgroundColor: Color(0xFF16A34A),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ],
+            ),
           ),
 
           const SizedBox(height: 24),

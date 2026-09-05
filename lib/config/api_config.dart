@@ -5,10 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ApiConfig {
   static const String _customUrlKey = 'custom_api_base_url';
 
-  // Default host per platform
   static String get defaultHost {
-    // 127.0.0.1 works on Windows, and works directly on physical Android phones connected via USB (adb reverse)
-    return 'http://127.0.0.1:8080/api';
+    return 'http://192.168.31.170:8080/api';
   }
 
   static String _currentBaseUrl = '';

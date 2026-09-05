@@ -34,15 +34,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        $password = trim($_POST['password'] ?? '');
+        if (empty($password)) {
+            $password = '123456';
+        }
+        $passwordHash = password_hash($password, PASSWORD_BCRYPT);
+
         if (empty($errors)) {
             $defaultSkills = json_encode(['Strength' => 50, 'Knowledge' => 50, 'Discipline' => 50]);
             $insertStmt = $db->prepare("
-                INSERT INTO users (username, email, avatar_id, level, total_xp, gold, current_streak, best_streak, skills_json, is_active, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?, 1, NOW())
+                INSERT INTO users (username, email, password_hash, avatar_id, level, total_xp, gold, current_streak, best_streak, skills_json, is_active, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, ?, 1, NOW())
             ");
             $insertStmt->execute([
                 $username,
                 empty($email) ? null : $email,
+                $passwordHash,
                 $avatarId,
                 $level,
                 $totalXp,
@@ -103,6 +110,11 @@ require_once __DIR__ . '/includes/sidebar.php';
                     <div class="col-12 col-md-6">
                         <label for="email" class="form-label-rpg">Hero Email Address (Optional)</label>
                         <input type="email" class="form-control form-control-rpg" id="email" name="email" placeholder="hero@levelup.com" value="<?= e($_POST['email'] ?? '') ?>">
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label for="password" class="form-label-rpg">Hero Password (Default: 123456)</label>
+                        <input type="password" class="form-control form-control-rpg" id="password" name="password" placeholder="Leave empty for default: 123456">
                     </div>
 
                     <div class="col-6 col-md-4">

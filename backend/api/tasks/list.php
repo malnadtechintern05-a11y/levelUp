@@ -11,23 +11,44 @@ require_once __DIR__ . '/../../middleware/auth.php';
 handleCors();
 
 $db = getDB();
-$user = requireAuth($db);
+$user = getOptionalAuth($db);
+
+$userId = null;
+if ($user) {
+    $userId = (int)$user['id'];
+} elseif (!empty($_GET['user_id'])) {
+    $userId = (int)$_GET['user_id'];
+} elseif (!empty($_GET['username'])) {
+    $uStmt = $db->prepare("SELECT id FROM users WHERE username = ? LIMIT 1");
+    $uStmt->execute([$_GET['username']]);
+    $userId = $uStmt->fetchColumn() ? (int)$uStmt->fetchColumn() : null;
+}
 
 $date = $_GET['date'] ?? null;
 $category = $_GET['category'] ?? null;
 
-$query = "
-    SELECT *
-    FROM tasks
-    WHERE (user_id = ? OR assigned_user_id = ?) AND is_active = 1
-";
-$params = [$user['id'], $user['id']];
+$params = [];
+if ($userId !== null) {
+    $query = "
+        SELECT *
+        FROM tasks
+        WHERE (user_id = ? OR assigned_user_id = ? OR user_id IS NULL) AND is_active = 1
+    ";
+    $params[] = $userId;
+    $params[] = $userId;
+} else {
+    $query = "
+        SELECT *
+        FROM tasks
+        WHERE is_active = 1
+    ";
+}
 
 if (!empty($date)) {
-    $query .= " AND scheduled_date = ?";
+    $query .= " AND (scheduled_date = ? OR scheduled_date IS NULL)";
     $params[] = $date;
 }
-if (!empty($category)) {
+if (!empty($category) && $category !== 'All') {
     $query .= " AND category = ?";
     $params[] = $category;
 }

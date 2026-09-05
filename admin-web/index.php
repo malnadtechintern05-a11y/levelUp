@@ -5,8 +5,8 @@
 require_once __DIR__ . '/includes/auth.php';
 
 if (is_admin_logged_in()) {
-    header("Location: dashboard.php");
+    header("Location: /admin-web/dashboard.php");
 } else {
-    header("Location: login.php");
+    header("Location: /admin-web/login.php");
 }
 exit;

@@ -13,18 +13,36 @@ handleCors();
 $db = getDB();
 
 $userId = (int)($_GET['id'] ?? 0);
-if ($userId <= 0) {
-    sendJson(400, ['status' => 'error', 'message' => 'Invalid user ID.']);
-}
+$username = trim($_GET['username'] ?? '');
 
-$stmt = $db->prepare("
-    SELECT id, username, display_name, avatar_id, level, total_xp, current_streak, best_streak, skills_json, created_at, show_on_leaderboard
-    FROM users
-    WHERE id = ? AND is_active = 1
-    LIMIT 1
-");
-$stmt->execute([$userId]);
-$user = $stmt->fetch();
+if ($userId <= 0 && (empty($username) || $username === 'Hero')) {
+    $stmt = $db->query("
+        SELECT id, username, display_name, avatar_id, profile_image_path, level, total_xp, gold, current_streak, best_streak, skills_json, created_at, show_on_leaderboard
+        FROM users
+        WHERE is_active = 1
+        ORDER BY id ASC
+        LIMIT 1
+    ");
+    $user = $stmt->fetch();
+} elseif ($userId > 0) {
+    $stmt = $db->prepare("
+        SELECT id, username, display_name, avatar_id, profile_image_path, level, total_xp, gold, current_streak, best_streak, skills_json, created_at, show_on_leaderboard
+        FROM users
+        WHERE id = ? AND is_active = 1
+        LIMIT 1
+    ");
+    $stmt->execute([$userId]);
+    $user = $stmt->fetch();
+} else {
+    $stmt = $db->prepare("
+        SELECT id, username, display_name, avatar_id, profile_image_path, level, total_xp, gold, current_streak, best_streak, skills_json, created_at, show_on_leaderboard
+        FROM users
+        WHERE username = ? AND is_active = 1
+        LIMIT 1
+    ");
+    $stmt->execute([$username]);
+    $user = $stmt->fetch();
+}
 
 if (!$user) {
     sendJson(404, ['status' => 'error', 'message' => 'Hero not found or inactive.']);
@@ -32,11 +50,11 @@ if (!$user) {
 
 // Count completed tasks and trophies
 $tStmt = $db->prepare("SELECT COUNT(*) FROM task_completions WHERE user_id = ?");
-$tStmt->execute([$userId]);
+$tStmt->execute([$user['id']]);
 $completedCount = (int)$tStmt->fetchColumn();
 
 $aStmt = $db->prepare("SELECT COUNT(*) FROM user_achievements WHERE user_id = ?");
-$aStmt->execute([$userId]);
+$aStmt->execute([$user['id']]);
 $achievementsCount = (int)$aStmt->fetchColumn();
 
 // Determine XP rank

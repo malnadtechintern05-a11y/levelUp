@@ -61,6 +61,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        $newPassword = trim($_POST['new_password'] ?? '');
+        if (!empty($newPassword)) {
+            if (strlen($newPassword) < 4) {
+                $errors[] = 'New password must be at least 4 characters long.';
+            } else {
+                $passHash = password_hash($newPassword, PASSWORD_BCRYPT);
+                $pStmt = $db->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
+                $pStmt->execute([$passHash, $userId]);
+            }
+        }
+
         if (empty($errors)) {
             $updateStmt = $db->prepare("
                 UPDATE users SET 
@@ -148,6 +159,12 @@ require_once __DIR__ . '/includes/sidebar.php';
                     <div class="col-12 col-md-6">
                         <label for="email" class="form-label-rpg">Hero Email Address</label>
                         <input type="email" class="form-control form-control-rpg" id="email" name="email" value="<?= e($_POST['email'] ?? $user['email']) ?>">
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label for="new_password" class="form-label-rpg"><i class="bi bi-key-fill text-warning me-1"></i>Reset Password (Optional)</label>
+                        <input type="text" class="form-control form-control-rpg" id="new_password" name="new_password" placeholder="Leave empty to keep unchanged">
+                        <small class="text-secondary">Enter a new password here to reset this hero's login credentials.</small>
                     </div>
 
                     <div class="col-6 col-md-3">

@@ -275,7 +275,8 @@ INSERT INTO `app_settings` (`setting_key`, `setting_value`) VALUES
 ('achievement_notifications', '1'),
 ('task_completion_notifications', '1'),
 ('streak_notifications', '1'),
-('maintenance_mode', '0')
+('maintenance_mode', '0'),
+('hero_banner_image', '')
 ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`);
 
 -- Activity Logs

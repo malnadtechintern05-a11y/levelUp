@@ -20,12 +20,14 @@ import 'screens/rankings_screen.dart';
 import 'screens/alarm_sound_screen.dart';
 import 'screens/register_screen.dart';
 import 'services/api_client.dart';
+import 'config/api_config.dart';
 
 final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await ApiConfig.init();
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
