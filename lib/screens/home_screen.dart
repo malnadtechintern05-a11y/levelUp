@@ -498,7 +498,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             DrawerHeader(
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF0A0F1C) : const Color(0xFF1E293B),
-                gradient: _resolveBannerImage(appState) == null ? _resolveBannerGradient(appState) : null,
+                gradient: _resolveBannerGradient(appState),
                 image: _resolveBannerImage(appState),
               ),
               child: const Column(
@@ -887,7 +887,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 height: 165,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
-                  gradient: _resolveBannerImage(state) == null ? _resolveBannerGradient(state) : null,
+                  gradient: _resolveBannerGradient(state),
                   image: _resolveBannerImage(state),
                   border: Border.all(
                     color: const Color(0xFFF5B942).withValues(alpha: 0.35),

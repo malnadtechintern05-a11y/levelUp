@@ -41,19 +41,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
               runSpacing: 8,
               children: [
                 ActionChip(
-                  label: const Text('Wi-Fi PC (192.168.31.170:8080)', style: TextStyle(fontSize: 11)),
-                  onPressed: () => controller.text = 'http://192.168.31.170:8080/api',
+                  label: const Text('Emulator XAMPP (10.0.2.2)', style: TextStyle(fontSize: 11)),
+                  onPressed: () => controller.text = 'http://10.0.2.2/real-life-rpg/backend/api',
                 ),
                 ActionChip(
-                  label: const Text('Apache XAMPP (Port 80)', style: TextStyle(fontSize: 11)),
+                  label: const Text('Wi-Fi PC XAMPP (192.168.31.170)', style: TextStyle(fontSize: 11)),
                   onPressed: () => controller.text = 'http://192.168.31.170/real-life-rpg/backend/api',
                 ),
                 ActionChip(
-                  label: const Text('Localhost (127.0.0.1:8080)', style: TextStyle(fontSize: 11)),
-                  onPressed: () => controller.text = 'http://127.0.0.1:8080/api',
+                  label: const Text('Localhost XAMPP (127.0.0.1)', style: TextStyle(fontSize: 11)),
+                  onPressed: () => controller.text = 'http://127.0.0.1/real-life-rpg/backend/api',
                 ),
                 ActionChip(
-                  label: const Text('Emulator (10.0.2.2:8080)', style: TextStyle(fontSize: 11)),
+                  label: const Text('Dev Server (8080)', style: TextStyle(fontSize: 11)),
                   onPressed: () => controller.text = 'http://10.0.2.2:8080/api',
                 ),
               ],
@@ -64,7 +64,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: const TextStyle(color: Colors.white),
               decoration: const InputDecoration(
                 labelText: 'API Base URL',
-                hintText: 'http://192.168.31.170:8080/api',
+                hintText: 'http://10.0.2.2/real-life-rpg/backend/api',
                 border: OutlineInputBorder(),
               ),
             ),

@@ -72,11 +72,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
 
     <!-- Bootstrap 5 & Icons (Local Offline Assets) -->
-    <link href="/admin-web/assets/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/admin-web/assets/css/bootstrap-icons.min.css">
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/bootstrap-icons.min.css">
 
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="/admin-web/assets/css/admin.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="assets/css/admin.css?v=<?= time() ?>">
 </head>
 <body class="d-flex align-items-center justify-content-center py-5" style="background: radial-gradient(circle at top center, #162544 0%, #0A0F1C 75%); min-height: 100vh;">
 
@@ -155,7 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <!-- Bootstrap & JS (Local Offline Assets) -->
-<script src="/admin-web/assets/js/bootstrap.bundle.min.js"></script>
-<script src="/admin-web/assets/js/admin.js?v=<?= time() ?>"></script>
+<script src="assets/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/admin.js?v=<?= time() ?>"></script>
 </body>
 </html>

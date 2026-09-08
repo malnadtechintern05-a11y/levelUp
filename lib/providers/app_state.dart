@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
@@ -241,19 +243,25 @@ class AppState extends ChangeNotifier {
       final res = await ApiClient.instance.get('/settings/get.php');
       if (res['status'] == 'success' && res['settings'] is Map) {
         final settings = res['settings'] as Map<String, dynamic>;
-        final rawBanner = settings['hero_banner_image']?.toString()?.trim();
+        final fullBannerFromApi = settings['hero_banner_url']?.toString().trim();
+        final rawBanner = settings['hero_banner_image']?.toString().trim();
 
-        if (rawBanner != null && rawBanner.isNotEmpty) {
+        if (fullBannerFromApi != null && fullBannerFromApi.isNotEmpty && (fullBannerFromApi.startsWith('http://') || fullBannerFromApi.startsWith('https://'))) {
+          _heroBannerUrl = fullBannerFromApi;
+        } else if (rawBanner != null && rawBanner.isNotEmpty) {
           if (rawBanner.startsWith('http://') || rawBanner.startsWith('https://')) {
             _heroBannerUrl = rawBanner;
           } else {
-            // Build full URL from current ApiConfig origin
+            // Build full URL from current ApiConfig origin & path context
             final apiUri = Uri.tryParse(ApiConfig.baseUrl);
             if (apiUri != null) {
               final portStr = (apiUri.port == 80 || apiUri.port == 443 || apiUri.port == 0) ? '' : ':${apiUri.port}';
-              final origin = '${apiUri.scheme}://${apiUri.host}$portStr';
+              String basePath = '';
+              if (apiUri.path.contains('/real-life-rpg')) {
+                basePath = '/real-life-rpg';
+              }
               final cleanPath = rawBanner.startsWith('/') ? rawBanner : '/$rawBanner';
-              _heroBannerUrl = '$origin$cleanPath';
+              _heroBannerUrl = '${apiUri.scheme}://${apiUri.host}$portStr$basePath$cleanPath';
             } else {
               _heroBannerUrl = rawBanner;
             }
@@ -262,17 +270,26 @@ class AppState extends ChangeNotifier {
           _heroBannerUrl = null;
         }
 
-        final title = settings['hero_banner_title']?.toString()?.trim();
+        // Translate localhost/127.0.0.1 for Android Emulator to ensure reachability
+        if (_heroBannerUrl != null && !kIsWeb && Platform.isAndroid) {
+          if (_heroBannerUrl!.contains('://localhost') || _heroBannerUrl!.contains('://127.0.0.1')) {
+            _heroBannerUrl = _heroBannerUrl!
+                .replaceAll('://localhost', '://10.0.2.2')
+                .replaceAll('://127.0.0.1', '://10.0.2.2');
+          }
+        }
+
+        final title = settings['hero_banner_title']?.toString().trim();
         _heroBannerTitle = (title != null && title.isNotEmpty) ? title : null;
 
-        final subtitle = settings['hero_banner_subtitle']?.toString()?.trim();
+        final subtitle = settings['hero_banner_subtitle']?.toString().trim();
         _heroBannerSubtitle = (subtitle != null && subtitle.isNotEmpty) ? subtitle : null;
 
         _heroBannerEnabled = settings['hero_banner_enabled'] != false && settings['hero_banner_enabled'] != '0';
         _isMaintenanceMode = settings['maintenance_mode'] == true || settings['maintenance_mode'] == '1';
         _maintenanceMessage = settings['maintenance_message']?.toString() ?? 'LevelUp realm is currently undergoing maintenance.';
 
-        final quote = settings['quote_of_the_day']?.toString()?.trim();
+        final quote = settings['quote_of_the_day']?.toString().trim();
         if (quote != null && quote.isNotEmpty) {
           _quoteOfTheDay = quote;
           if (!_motivationalQuotes.contains(quote)) {

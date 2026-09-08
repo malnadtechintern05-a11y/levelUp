@@ -31,11 +31,19 @@ try {
         if (str_starts_with($rawBanner, 'http://') || str_starts_with($rawBanner, 'https://')) {
             $bannerUrl = $rawBanner;
         } else {
-            // Build full URL based on current host & scheme
+            // Build full URL based on current host, scheme, and any subfolder context
             $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
-            $host = $_SERVER['HTTP_HOST'] ?? '127.0.0.1:8080';
+            $host = $_SERVER['HTTP_HOST'] ?? '127.0.0.1';
             $cleanedPath = ltrim($rawBanner, '/');
-            $bannerUrl = "{$scheme}://{$host}/{$cleanedPath}";
+
+            // Detect if served under a subfolder (e.g., /real-life-rpg)
+            $scriptDir = dirname($_SERVER['SCRIPT_NAME'] ?? '');
+            $baseSubdir = '';
+            if (str_contains($scriptDir, '/real-life-rpg')) {
+                $baseSubdir = '/real-life-rpg';
+            }
+
+            $bannerUrl = "{$scheme}://{$host}{$baseSubdir}/{$cleanedPath}";
         }
     }
 

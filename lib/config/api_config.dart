@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Centralized API Configuration
@@ -6,7 +8,10 @@ class ApiConfig {
   static const String _customUrlKey = 'custom_api_base_url';
 
   static String get defaultHost {
-    return 'http://192.168.31.170:8080/api';
+    if (!kIsWeb && Platform.isAndroid) {
+      return 'http://10.0.2.2/real-life-rpg/backend/api';
+    }
+    return 'http://127.0.0.1/real-life-rpg/backend/api';
   }
 
   static String _currentBaseUrl = '';

@@ -20,10 +20,10 @@
 </div> <!-- End .admin-wrapper -->
 
 <!-- Bootstrap 5 Bundle JS (Local Offline Asset) -->
-<script src="/admin-web/assets/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/bootstrap.bundle.min.js"></script>
 
 <!-- Custom Admin JS -->
-<script src="/admin-web/assets/js/admin.js?v=<?= time() ?>"></script>
+<script src="assets/js/admin.js?v=<?= time() ?>"></script>
 
 </body>
 </html>

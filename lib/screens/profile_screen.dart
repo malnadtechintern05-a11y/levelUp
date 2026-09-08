@@ -98,7 +98,9 @@ class ProfileScreen extends StatelessWidget {
                   // Banner Image
                   Builder(builder: (context) {
                     DecorationImage? bannerImg;
-                    final bPath = state.customBannerPath ?? state.heroBannerUrl;
+                    final bPath = (state.heroBannerEnabled && state.heroBannerUrl != null && state.heroBannerUrl!.trim().isNotEmpty)
+                        ? state.heroBannerUrl!.trim()
+                        : state.customBannerPath;
                     if (bPath != null && bPath.isNotEmpty && !bPath.startsWith('gradient:')) {
                       if (bPath.startsWith('http://') || bPath.startsWith('https://')) {
                         bannerImg = DecorationImage(
@@ -125,13 +127,11 @@ class ProfileScreen extends StatelessWidget {
                       width: double.infinity,
                       decoration: BoxDecoration(
                         borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(20), bottomRight: Radius.circular(20)),
-                        gradient: bannerImg == null
-                            ? const LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [Color(0xFF1E293B), Color(0xFF0F172A), Color(0xFF090D16)],
-                              )
-                            : null,
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF1E293B), Color(0xFF0F172A), Color(0xFF090D16)],
+                        ),
                         image: bannerImg,
                       ),
                     );
