@@ -39,7 +39,7 @@ try {
             // Detect if served under a subfolder (e.g., /real-life-rpg)
             $scriptDir = dirname($_SERVER['SCRIPT_NAME'] ?? '');
             $baseSubdir = '';
-            if (str_contains($scriptDir, '/real-life-rpg')) {
+            if (str_contains($scriptDir, '/real-life-rpg') && !str_starts_with($cleanedPath, 'real-life-rpg/')) {
                 $baseSubdir = '/real-life-rpg';
             }
 

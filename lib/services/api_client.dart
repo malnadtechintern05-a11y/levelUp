@@ -50,72 +50,104 @@ class ApiClient {
     Map<String, String>? queryParams,
     Map<String, dynamic>? body,
   }) async {
-    final baseUrl = ApiConfig.baseUrl;
-    final fullPath = endpoint.startsWith('/') ? '$baseUrl$endpoint' : '$baseUrl/$endpoint';
+    final currentBase = ApiConfig.baseUrl;
+    final List<String> candidateBases = [currentBase];
 
-    Uri uri = Uri.parse(fullPath);
-    if (queryParams != null && queryParams.isNotEmpty) {
-      uri = uri.replace(queryParameters: queryParams);
+    const lanHost = ApiConfig.lanHost;
+    if (!candidateBases.contains(lanHost)) {
+      candidateBases.add(lanHost);
+    }
+    const emuHost = 'http://10.0.2.2/real-life-rpg/backend/api';
+    if (!candidateBases.contains(emuHost)) {
+      candidateBases.add(emuHost);
     }
 
-    try {
-      final request = await _httpClient.openUrl(method, uri).timeout(const Duration(seconds: 10));
+    dynamic lastError;
 
-      request.headers.set(HttpHeaders.contentTypeHeader, 'application/json; charset=utf-8');
-      request.headers.set(HttpHeaders.acceptHeader, 'application/json');
-
-      final token = await _getToken();
-      if (token != null && token.isNotEmpty) {
-        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+    for (int i = 0; i < candidateBases.length; i++) {
+      final base = candidateBases[i];
+      final fullPath = endpoint.startsWith('/') ? '$base$endpoint' : '$base/$endpoint';
+      Uri uri = Uri.parse(fullPath);
+      if (queryParams != null && queryParams.isNotEmpty) {
+        uri = uri.replace(queryParameters: queryParams);
       }
 
-      if (body != null) {
-        final jsonString = jsonEncode(body);
-        request.headers.set(HttpHeaders.contentLengthHeader, utf8.encode(jsonString).length);
-        request.write(jsonString);
-      }
-
-      final response = await request.close().timeout(const Duration(seconds: 10));
-      final responseBody = await response.transform(utf8.decoder).join();
-
-      Map<String, dynamic> jsonResponse = {};
       try {
-        if (responseBody.isNotEmpty) {
-          jsonResponse = jsonDecode(responseBody);
+        final timeoutDuration = (i == 0 && candidateBases.length > 1 && uri.host == '10.0.2.2')
+            ? const Duration(seconds: 3)
+            : const Duration(seconds: 8);
+
+        final request = await _httpClient.openUrl(method, uri).timeout(timeoutDuration);
+
+        request.headers.set(HttpHeaders.contentTypeHeader, 'application/json; charset=utf-8');
+        request.headers.set(HttpHeaders.acceptHeader, 'application/json');
+
+        final token = await _getToken();
+        if (token != null && token.isNotEmpty) {
+          request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
         }
-      } catch (_) {
-        throw ApiException('Invalid server response format.', statusCode: response.statusCode);
-      }
 
-      if (response.statusCode == 401) {
-        onUnauthorized?.call();
-        final msg = jsonResponse['message'] ?? 'Your session has expired. Please log in again.';
-        throw ApiException(msg, statusCode: 401, code: jsonResponse['code'] ?? 'UNAUTHORIZED');
-      }
+        if (body != null) {
+          final jsonString = jsonEncode(body);
+          request.headers.set(HttpHeaders.contentLengthHeader, utf8.encode(jsonString).length);
+          request.write(jsonString);
+        }
 
-      if (response.statusCode >= 400) {
-        final msg = jsonResponse['message'] ?? 'Request failed with status ${response.statusCode}.';
-        throw ApiException(msg, statusCode: response.statusCode, code: jsonResponse['code']);
-      }
+        final response = await request.close().timeout(const Duration(seconds: 10));
+        final responseBody = await response.transform(utf8.decoder).join();
 
-      return jsonResponse;
-    } on SocketException catch (e) {
-      final host = uri.host;
-      String hint = '';
-      if (host == '127.0.0.1' || host == 'localhost') {
-        hint = ' (Note: on a phone, localhost refers to the phone itself. Use your PC\'s Wi-Fi IP or tap the server icon at top right to configure).';
+        Map<String, dynamic> jsonResponse = {};
+        try {
+          if (responseBody.isNotEmpty) {
+            jsonResponse = jsonDecode(responseBody);
+          }
+        } catch (_) {
+          throw ApiException('Invalid server response format.', statusCode: response.statusCode);
+        }
+
+        if (response.statusCode == 401) {
+          onUnauthorized?.call();
+          final msg = jsonResponse['message'] ?? 'Your session has expired. Please log in again.';
+          throw ApiException(msg, statusCode: 401, code: jsonResponse['code'] ?? 'UNAUTHORIZED');
+        }
+
+        if (response.statusCode >= 400) {
+          final msg = jsonResponse['message'] ?? 'Request failed with status ${response.statusCode}.';
+          throw ApiException(msg, statusCode: response.statusCode, code: jsonResponse['code']);
+        }
+
+        // If a fallback candidate succeeded, save it automatically so all future requests use it!
+        if (base != currentBase) {
+          ApiConfig.setBaseUrl(base);
+        }
+
+        return jsonResponse;
+      } on SocketException catch (e) {
+        lastError = e;
+        debugPrint('ApiClient connection failed on $fullPath: $e. Trying candidate fallback if available...');
+        continue;
+      } on TimeoutException catch (e) {
+        lastError = e;
+        debugPrint('ApiClient connection timed out on $fullPath. Trying candidate fallback if available...');
+        continue;
+      } on HandshakeException catch (_) {
+        throw ApiException('Secure connection could not be established.', statusCode: 0);
+      } on ApiException {
+        rethrow;
+      } catch (e) {
+        debugPrint('ApiClient error on $fullPath: $e');
+        lastError = e;
+        continue;
       }
-      debugPrint('ApiClient SocketException on $fullPath: $e');
-      throw ApiException('Cannot reach server at $fullPath$hint. Error: ${e.message}', statusCode: 0);
-    } on TimeoutException catch (_) {
-      throw ApiException('Connection timed out. Server did not respond in time.', statusCode: 408);
-    } on HandshakeException catch (_) {
-      throw ApiException('Secure connection could not be established.', statusCode: 0);
-    } on ApiException {
-      rethrow;
-    } catch (e) {
-      debugPrint('ApiClient error: $e');
-      throw ApiException('Unable to connect to server. Please try again.');
     }
+
+    if (lastError is SocketException) {
+      throw ApiException('Cannot reach server. Please ensure your phone is connected to the same Wi-Fi as your PC.', statusCode: 0);
+    } else if (lastError is TimeoutException) {
+      throw ApiException('Connection timed out. Server did not respond in time.', statusCode: 408);
+    } else if (lastError is ApiException) {
+      throw lastError;
+    }
+    throw ApiException('Unable to connect to server. Please check Wi-Fi connection.');
   }
 }

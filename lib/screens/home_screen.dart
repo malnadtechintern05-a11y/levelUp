@@ -46,34 +46,71 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   DecorationImage? _resolveBannerImage(AppState state) {
     if (!state.heroBannerEnabled) return null;
-    final adminBanner = (state.heroBannerUrl != null && state.heroBannerUrl!.trim().isNotEmpty)
-        ? state.heroBannerUrl!.trim()
-        : null;
     final custom = (state.customBannerPath != null && state.customBannerPath!.trim().isNotEmpty)
         ? state.customBannerPath!.trim()
         : null;
-    final banner = adminBanner ?? custom;
-    if (banner == null || banner.isEmpty) return null;
-    if (banner.startsWith('gradient:')) return null;
+    final adminBanner = (state.heroBannerUrl != null && state.heroBannerUrl!.trim().isNotEmpty)
+        ? state.heroBannerUrl!.trim()
+        : null;
 
-    if (banner.startsWith('http://') || banner.startsWith('https://')) {
-      return DecorationImage(
-        image: NetworkImage(banner),
-        fit: BoxFit.cover,
-        colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.45), BlendMode.darken),
-      );
-    }
-
-    try {
-      final file = File(banner);
-      if (file.existsSync()) {
+    if (custom != null && custom.isNotEmpty) {
+      if (custom.startsWith('gradient:')) {
+        return null;
+      }
+      if (custom.startsWith('http://') || custom.startsWith('https://')) {
         return DecorationImage(
-          image: FileImage(file),
+          image: NetworkImage(custom),
           fit: BoxFit.cover,
+          onError: (exception, stackTrace) {
+            debugPrint('Custom banner NetworkImage error on $custom: $exception');
+          },
           colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.45), BlendMode.darken),
         );
       }
-    } catch (_) {}
+      try {
+        final file = File(custom);
+        if (file.existsSync()) {
+          return DecorationImage(
+            image: FileImage(file),
+            fit: BoxFit.cover,
+            onError: (exception, stackTrace) {
+              debugPrint('Custom banner FileImage error on $custom: $exception');
+            },
+            colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.45), BlendMode.darken),
+          );
+        }
+      } catch (_) {}
+      // If custom file does not exist, fall through to adminBanner
+    }
+
+    if (adminBanner != null && adminBanner.isNotEmpty) {
+      if (adminBanner.startsWith('gradient:')) {
+        return null;
+      }
+      if (adminBanner.startsWith('http://') || adminBanner.startsWith('https://')) {
+        return DecorationImage(
+          image: NetworkImage(adminBanner),
+          fit: BoxFit.cover,
+          onError: (exception, stackTrace) {
+            debugPrint('Admin hero banner NetworkImage error on $adminBanner: $exception');
+          },
+          colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.45), BlendMode.darken),
+        );
+      }
+      try {
+        final file = File(adminBanner);
+        if (file.existsSync()) {
+          return DecorationImage(
+            image: FileImage(file),
+            fit: BoxFit.cover,
+            onError: (exception, stackTrace) {
+              debugPrint('Admin hero banner FileImage error on $adminBanner: $exception');
+            },
+            colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.45), BlendMode.darken),
+          );
+        }
+      } catch (_) {}
+    }
 
     return null;
   }
@@ -110,9 +147,19 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         end: Alignment.bottomRight,
         colors: [Color(0xFF3B2F0B), Color(0xFF53410A), Color(0xFF1E1705)],
       );
+    } else if (path == 'gradient:obsidian') {
+      return const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Color(0xFF1E293B),
+          Color(0xFF131D2F),
+          Color(0xFF0B111E),
+        ],
+      );
     }
 
-    // Default clean dark RPG gradient (No photos, sleek & modern)
+    // Default clean dark RPG gradient (Used when image is loading or as dark base)
     return const LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
@@ -214,6 +261,89 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: 20),
+
+                // Live Server Banner Card (if available from admin)
+                if (state.heroBannerUrl != null && state.heroBannerUrl!.isNotEmpty) ...[
+                  GestureDetector(
+                    onTap: () async {
+                      await state.setCustomBanner(null);
+                      if (context.mounted) {
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('✨ Active Live Realm Banner applied!'),
+                            backgroundColor: Color(0xFF16A34A),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        color: const Color(0xFF0F172A),
+                        border: Border.all(
+                          color: (state.customBannerPath == null) ? const Color(0xFFF5B942) : Colors.white24,
+                          width: (state.customBannerPath == null) ? 2 : 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.network(
+                              state.heroBannerUrl!,
+                              width: 60,
+                              height: 44,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                width: 60,
+                                height: 44,
+                                color: const Color(0xFF1E293B),
+                                child: const Icon(Icons.image, size: 20, color: Color(0xFFF5B942)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Text('Live Server Banner', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF5B942),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: const Text('LIVE', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 9)),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  state.customBannerPath == null ? 'Currently Active' : 'Tap to use server banner',
+                                  style: TextStyle(
+                                    color: state.customBannerPath == null ? const Color(0xFF4CAF50) : const Color(0xFF94A3B8),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (state.customBannerPath == null)
+                            const Icon(Icons.check_circle, color: Color(0xFFF5B942), size: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
 
                 // 1. Pick from Gallery
                 ElevatedButton.icon(
@@ -343,15 +473,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   spacing: 10,
                   runSpacing: 10,
                   children: gradients.map((g) {
-                    final isSelected = state.customBannerPath == g['id'] ||
-                        (state.customBannerPath == null && g['id'] == 'gradient:obsidian');
+                    final isSelected = state.customBannerPath == g['id'];
                     return GestureDetector(
                       onTap: () async {
-                        if (g['id'] == 'gradient:obsidian') {
-                          await state.setCustomBanner(null);
-                        } else {
-                          await state.setCustomBanner(g['id'] as String);
-                        }
+                        await state.setCustomBanner(g['id'] as String);
                         if (context.mounted) {
                           Navigator.pop(ctx);
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -400,21 +525,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       Navigator.pop(ctx);
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('🔄 Reset to default clean dark theme (no image).'),
+                          content: Text('✨ Reset to Live Server Banner!'),
+                          backgroundColor: Color(0xFF16A34A),
                           behavior: SnackBarBehavior.floating,
                         ),
                       );
                     }
                   },
-                  icon: const Icon(Icons.restart_alt_rounded, color: Colors.white70),
+                  icon: const Icon(Icons.refresh_rounded, color: Color(0xFFF5B942)),
                   label: const Text(
-                    'Reset to Default Theme (No Image)',
-                    style: TextStyle(color: Colors.white70),
+                    'Reset to Live Server Banner',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.white24),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    side: const BorderSide(color: Color(0xFFF5B942), width: 1.5),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -901,78 +1027,81 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     )
                   ],
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(18.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () => _showChangeBackgroundSheet(context, state),
+                    child: Padding(
+                      padding: const EdgeInsets.all(18.0),
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  state.heroBannerTitle ?? 'Level ${state.userProfile.level}',
-                                  style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, height: 1.1),
-                                  overflow: TextOverflow.ellipsis,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      state.heroBannerTitle ?? 'Level ${state.userProfile.level}',
+                                      style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, height: 1.1),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      state.heroBannerSubtitle ?? 'Hero Rank: ${state.userProfile.username}',
+                                      style: const TextStyle(color: Color(0xFFF5B942), fontSize: 12, fontWeight: FontWeight.w600),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  state.heroBannerSubtitle ?? 'Hero Rank: ${state.userProfile.username}',
-                                  style: const TextStyle(color: Color(0xFFF5B942), fontSize: 12, fontWeight: FontWeight.w600),
-                                  overflow: TextOverflow.ellipsis,
+                              ),
+                              // Option to change background
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.45),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: const Color(0xFFF5B942).withValues(alpha: 0.4), width: 1),
                                 ),
-                              ],
-                            ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: const [
+                                    Icon(Icons.palette_outlined, size: 14, color: Color(0xFFF5B942)),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Background',
+                                      style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                          // Option to change background
-                          InkWell(
-                            onTap: () => _showChangeBackgroundSheet(context, state),
-                            borderRadius: BorderRadius.circular(20),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.45),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: const Color(0xFFF5B942).withValues(alpha: 0.4), width: 1),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: const [
-                                  Icon(Icons.palette_outlined, size: 14, color: Color(0xFFF5B942)),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'Background',
-                                    style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                              ),
+                          const Spacer(),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('XP Progress', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                              Text('${state.userProfile.totalXP} / ${state.userProfile.level * 100} XP', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: LinearProgressIndicator(
+                              value: (state.userProfile.totalXP / (state.userProfile.level * 100)).clamp(0.0, 1.0),
+                              backgroundColor: Colors.white24,
+                              color: const Color(0xFFF5B942),
+                              minHeight: 8,
                             ),
                           ),
                         ],
                       ),
-                      const Spacer(),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('XP Progress', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                          Text('${state.userProfile.totalXP} / ${state.userProfile.level * 100} XP', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: LinearProgressIndicator(
-                          value: (state.userProfile.totalXP / (state.userProfile.level * 100)).clamp(0.0, 1.0),
-                          backgroundColor: Colors.white24,
-                          color: const Color(0xFFF5B942),
-                          minHeight: 8,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),

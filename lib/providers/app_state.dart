@@ -207,33 +207,45 @@ class AppState extends ChangeNotifier {
         } catch (_) {}
       }
 
-      final onlineTasks = await OnlineTaskService.instance.fetchTasks();
-      if (onlineTasks.isNotEmpty) {
-        final taskMap = {for (var t in _tasks) t.id: t};
-        for (var ot in onlineTasks) {
-          if (taskMap.containsKey(ot.id)) {
-            final existing = taskMap[ot.id]!;
-            if (ot.taskType == 'hydration' && existing.waterLogs.isNotEmpty && ot.waterLogs.isEmpty) {
-              ot.waterLogs = existing.waterLogs;
-              ot.reminders = existing.reminders;
-              ot.currentWaterMl = existing.currentWaterMl;
+      try {
+        final onlineTasks = await OnlineTaskService.instance.fetchTasks();
+        if (onlineTasks.isNotEmpty) {
+          final taskMap = {for (var t in _tasks) t.id: t};
+          for (var ot in onlineTasks) {
+            if (taskMap.containsKey(ot.id)) {
+              final existing = taskMap[ot.id]!;
+              if (ot.taskType == 'hydration' && existing.waterLogs.isNotEmpty && ot.waterLogs.isEmpty) {
+                ot.waterLogs = existing.waterLogs;
+                ot.reminders = existing.reminders;
+                ot.currentWaterMl = existing.currentWaterMl;
+              }
             }
+            taskMap[ot.id] = ot;
           }
-          taskMap[ot.id] = ot;
+          _tasks = taskMap.values.toList();
+          await _saveTasks();
         }
-        _tasks = taskMap.values.toList();
-        await _saveTasks();
+      } catch (e) {
+        debugPrint("Online tasks sync fallback to local cache: $e");
       }
 
-      final onlineAchievements = await OnlineAchievementService.instance.fetchAchievements();
-      if (onlineAchievements.isNotEmpty) {
-        _achievements = onlineAchievements;
-        await _saveAchievements();
+      try {
+        final onlineAchievements = await OnlineAchievementService.instance.fetchAchievements();
+        if (onlineAchievements.isNotEmpty) {
+          _achievements = onlineAchievements;
+          await _saveAchievements();
+        }
+      } catch (e) {
+        debugPrint("Online achievements sync fallback: $e");
       }
 
-      await fetchAppSettings();
+      try {
+        await fetchAppSettings();
+      } catch (e) {
+        debugPrint("Online settings sync fallback: $e");
+      }
     } catch (e) {
-      debugPrint("Online sync fallback to local cache: $e");
+      debugPrint("Online sync error: $e");
     }
     notifyListeners();
   }
@@ -246,38 +258,45 @@ class AppState extends ChangeNotifier {
         final fullBannerFromApi = settings['hero_banner_url']?.toString().trim();
         final rawBanner = settings['hero_banner_image']?.toString().trim();
 
-        if (fullBannerFromApi != null && fullBannerFromApi.isNotEmpty && (fullBannerFromApi.startsWith('http://') || fullBannerFromApi.startsWith('https://'))) {
-          _heroBannerUrl = fullBannerFromApi;
+        String? resolvedUrl;
+        if (fullBannerFromApi != null && fullBannerFromApi.isNotEmpty) {
+          final bannerUri = Uri.tryParse(fullBannerFromApi);
+          final apiUri = Uri.tryParse(ApiConfig.baseUrl);
+          if (bannerUri != null && apiUri != null && (bannerUri.host == 'localhost' || bannerUri.host == '127.0.0.1' || bannerUri.host == '10.0.2.2')) {
+            final portStr = (apiUri.port == 80 || apiUri.port == 443 || apiUri.port == 0) ? '' : ':${apiUri.port}';
+            resolvedUrl = '${apiUri.scheme}://${apiUri.host}$portStr${bannerUri.path}${bannerUri.hasQuery ? '?${bannerUri.query}' : ''}';
+          } else {
+            resolvedUrl = fullBannerFromApi;
+          }
         } else if (rawBanner != null && rawBanner.isNotEmpty) {
           if (rawBanner.startsWith('http://') || rawBanner.startsWith('https://')) {
-            _heroBannerUrl = rawBanner;
+            final rawUri = Uri.tryParse(rawBanner);
+            final apiUri = Uri.tryParse(ApiConfig.baseUrl);
+            if (rawUri != null && apiUri != null && (rawUri.host == 'localhost' || rawUri.host == '127.0.0.1' || rawUri.host == '10.0.2.2')) {
+              final portStr = (apiUri.port == 80 || apiUri.port == 443 || apiUri.port == 0) ? '' : ':${apiUri.port}';
+              resolvedUrl = '${apiUri.scheme}://${apiUri.host}$portStr${rawUri.path}';
+            } else {
+              resolvedUrl = rawBanner;
+            }
           } else {
-            // Build full URL from current ApiConfig origin & path context
             final apiUri = Uri.tryParse(ApiConfig.baseUrl);
             if (apiUri != null) {
               final portStr = (apiUri.port == 80 || apiUri.port == 443 || apiUri.port == 0) ? '' : ':${apiUri.port}';
-              String basePath = '';
-              if (apiUri.path.contains('/real-life-rpg')) {
-                basePath = '/real-life-rpg';
+              String prefix = '';
+              final clean = rawBanner.startsWith('/') ? rawBanner : '/$rawBanner';
+              if (!clean.startsWith('/real-life-rpg') && (apiUri.path.contains('/real-life-rpg') || clean.startsWith('/admin-web') || clean.startsWith('/backend'))) {
+                prefix = '/real-life-rpg';
               }
-              final cleanPath = rawBanner.startsWith('/') ? rawBanner : '/$rawBanner';
-              _heroBannerUrl = '${apiUri.scheme}://${apiUri.host}$portStr$basePath$cleanPath';
+              resolvedUrl = '${apiUri.scheme}://${apiUri.host}$portStr$prefix$clean';
             } else {
-              _heroBannerUrl = rawBanner;
+              resolvedUrl = rawBanner;
             }
           }
         } else {
-          _heroBannerUrl = null;
+          resolvedUrl = null;
         }
 
-        // Translate localhost/127.0.0.1 for Android Emulator to ensure reachability
-        if (_heroBannerUrl != null && !kIsWeb && Platform.isAndroid) {
-          if (_heroBannerUrl!.contains('://localhost') || _heroBannerUrl!.contains('://127.0.0.1')) {
-            _heroBannerUrl = _heroBannerUrl!
-                .replaceAll('://localhost', '://10.0.2.2')
-                .replaceAll('://127.0.0.1', '://10.0.2.2');
-          }
-        }
+        _heroBannerUrl = resolvedUrl;
 
         final title = settings['hero_banner_title']?.toString().trim();
         _heroBannerTitle = (title != null && title.isNotEmpty) ? title : null;

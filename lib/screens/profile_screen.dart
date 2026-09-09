@@ -98,29 +98,67 @@ class ProfileScreen extends StatelessWidget {
                   // Banner Image
                   Builder(builder: (context) {
                     DecorationImage? bannerImg;
-                    final bPath = (state.heroBannerEnabled && state.heroBannerUrl != null && state.heroBannerUrl!.trim().isNotEmpty)
+                    final custom = (state.customBannerPath != null && state.customBannerPath!.trim().isNotEmpty)
+                        ? state.customBannerPath!.trim()
+                        : null;
+                    final adminBanner = (state.heroBannerEnabled && state.heroBannerUrl != null && state.heroBannerUrl!.trim().isNotEmpty)
                         ? state.heroBannerUrl!.trim()
-                        : state.customBannerPath;
-                    if (bPath != null && bPath.isNotEmpty && !bPath.startsWith('gradient:')) {
-                      if (bPath.startsWith('http://') || bPath.startsWith('https://')) {
+                        : null;
+
+                    if (custom != null && custom.isNotEmpty && !custom.startsWith('gradient:')) {
+                      if (custom.startsWith('http://') || custom.startsWith('https://')) {
                         bannerImg = DecorationImage(
-                          image: NetworkImage(bPath),
+                          image: NetworkImage(custom),
                           fit: BoxFit.cover,
+                          onError: (exception, stackTrace) {
+                            debugPrint('Profile custom banner NetworkImage error on $custom: $exception');
+                          },
                           colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.55), BlendMode.darken),
                         );
                       } else {
                         try {
-                          final f = File(bPath);
+                          final f = File(custom);
                           if (f.existsSync()) {
                             bannerImg = DecorationImage(
                               image: FileImage(f),
                               fit: BoxFit.cover,
+                              onError: (exception, stackTrace) {
+                                debugPrint('Profile custom banner FileImage error on $custom: $exception');
+                              },
                               colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.55), BlendMode.darken),
                             );
                           }
                         } catch (_) {}
                       }
                     }
+
+                    if (bannerImg == null && adminBanner != null && adminBanner.isNotEmpty && !adminBanner.startsWith('gradient:')) {
+                      if (adminBanner.startsWith('http://') || adminBanner.startsWith('https://')) {
+                        bannerImg = DecorationImage(
+                          image: NetworkImage(adminBanner),
+                          fit: BoxFit.cover,
+                          onError: (exception, stackTrace) {
+                            debugPrint('Profile admin banner NetworkImage error on $adminBanner: $exception');
+                          },
+                          colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.55), BlendMode.darken),
+                        );
+                      } else {
+                        try {
+                          final f = File(adminBanner);
+                          if (f.existsSync()) {
+                            bannerImg = DecorationImage(
+                              image: FileImage(f),
+                              fit: BoxFit.cover,
+                              onError: (exception, stackTrace) {
+                                debugPrint('Profile admin banner FileImage error on $adminBanner: $exception');
+                              },
+                              colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.55), BlendMode.darken),
+                            );
+                          }
+                        } catch (_) {}
+                      }
+                    }
+
                     return Container(
                       height: 180,
                       margin: const EdgeInsets.only(bottom: 60),

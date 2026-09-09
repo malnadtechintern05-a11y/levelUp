@@ -192,7 +192,9 @@ class HydrationQuestCard extends StatelessWidget {
               const SizedBox(height: 14),
 
               // Streak and Reward badges
-              Row(
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -217,7 +219,6 @@ class HydrationQuestCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
@@ -255,12 +256,15 @@ class HydrationQuestCard extends StatelessWidget {
                   children: [
                     const Icon(Icons.schedule, size: 14, color: brightAqua),
                     const SizedBox(width: 6),
-                    Text(
-                      'Next reminder: ${task.getNextReminder()!.time} — ${task.getNextReminder()!.amountMl} ml',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    Expanded(
+                      child: Text(
+                        'Next reminder: ${task.getNextReminder()!.time} — ${task.getNextReminder()!.amountMl} ml',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],

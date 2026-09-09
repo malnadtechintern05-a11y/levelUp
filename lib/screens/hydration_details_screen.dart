@@ -712,32 +712,39 @@ class _HydrationDetailsScreenState extends State<HydrationDetailsScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: brightAqua.withValues(alpha: 0.15),
-                            shape: BoxShape.circle,
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: brightAqua.withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.water_drop, color: brightAqua, size: 20),
                           ),
-                          child: const Icon(Icons.water_drop, color: brightAqua, size: 20),
-                        ),
-                        const SizedBox(width: 8),
-                        const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '💧 Health / Hydration',
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: brightAqua),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '💧 Health / Hydration',
+                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: brightAqua),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  'Daily Water Goal',
+                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ),
-                            Text(
-                              'Daily Water Goal',
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-                            ),
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
@@ -746,6 +753,7 @@ class _HydrationDetailsScreenState extends State<HydrationDetailsScreen> {
                         border: Border.all(color: task.isCompleted ? successGreen : brightAqua),
                       ),
                       child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
                             task.isCompleted ? Icons.check_circle : Icons.water_drop,
@@ -811,24 +819,34 @@ class _HydrationDetailsScreenState extends State<HydrationDetailsScreen> {
 
                 // Volume numbers
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
-                      '$currentLiters L',
-                      style: const TextStyle(fontSize: 34, fontWeight: FontWeight.bold, color: brightAqua),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          '$currentLiters L',
+                          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: brightAqua),
+                        ),
+                        Text(
+                          ' / $goalLiters L',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF94A3B8)),
+                        ),
+                      ],
                     ),
-                    Text(
-                      ' / $goalLiters L',
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF94A3B8)),
-                    ),
-                    const Spacer(),
-                    Text(
-                      task.isCompleted ? 'Goal Completed! 🎉' : 'Remaining: ${remainingMl >= 1000 ? "$remainingL L" : "$remainingMl ml"}',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: task.isCompleted ? successGreen : const Color(0xFF94A3B8),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        task.isCompleted ? 'Goal Completed! 🎉' : 'Remaining: ${remainingMl >= 1000 ? "$remainingL L" : "$remainingMl ml"}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: task.isCompleted ? successGreen : const Color(0xFF94A3B8),
+                        ),
+                        textAlign: TextAlign.end,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -1077,26 +1095,31 @@ class _HydrationDetailsScreenState extends State<HydrationDetailsScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '⚠️ Missed ${rem.time}',
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-                            ),
-                            Text(
-                              '${rem.amountMl} ml scheduled drink',
-                              style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                            ),
-                          ],
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '⚠️ Missed ${rem.time}',
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                              Text(
+                                '${rem.amountMl} ml scheduled drink',
+                                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                              ),
+                            ],
+                          ),
                         ),
+                        const SizedBox(width: 8),
                         ElevatedButton.icon(
-                          icon: const Icon(Icons.water_drop, size: 16),
+                          icon: const Icon(Icons.water_drop, size: 15),
                           label: const Text('Drink Now'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.redAccent,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
                           onPressed: () => state.completeHydrationReminder(task.id, rem.id, context),
@@ -1148,6 +1171,7 @@ class _HydrationDetailsScreenState extends State<HydrationDetailsScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.schedule, color: goldColor, size: 18),
                   SizedBox(width: 6),
@@ -1160,6 +1184,11 @@ class _HydrationDetailsScreenState extends State<HydrationDetailsScreen> {
               TextButton.icon(
                 icon: const Icon(Icons.add, size: 16, color: brightAqua),
                 label: const Text('Add Reminder', style: TextStyle(color: brightAqua, fontWeight: FontWeight.bold, fontSize: 13)),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
                 onPressed: () => _showAddEditReminderSheet(context, state, task),
               ),
             ],
@@ -1205,20 +1234,21 @@ class _HydrationDetailsScreenState extends State<HydrationDetailsScreen> {
                 final isMissed = rem.isMissed();
 
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
                     color: isMissed
-                        ? Colors.red.withValues(alpha: 0.1)
+                        ? Colors.red.withValues(alpha: 0.08)
                         : rem.isCompleted
                             ? successGreen.withValues(alpha: 0.08)
                             : cardBg,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                       color: isMissed
-                          ? Colors.redAccent.withValues(alpha: 0.5)
+                          ? Colors.redAccent.withValues(alpha: 0.45)
                           : rem.isCompleted
-                              ? successGreen.withValues(alpha: 0.4)
+                              ? successGreen.withValues(alpha: 0.35)
                               : borderColor,
+                      width: 1.2,
                     ),
                   ),
                   child: Row(
@@ -1231,11 +1261,12 @@ class _HydrationDetailsScreenState extends State<HydrationDetailsScreen> {
                           }
                         },
                         child: Container(
-                          padding: const EdgeInsets.all(6),
+                          width: 32,
+                          height: 32,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: rem.isCompleted
-                                ? successGreen
+                                ? successGreen.withValues(alpha: 0.2)
                                 : isMissed
                                     ? Colors.redAccent.withValues(alpha: 0.2)
                                     : const Color(0xFF0F172A),
@@ -1244,7 +1275,8 @@ class _HydrationDetailsScreenState extends State<HydrationDetailsScreen> {
                                   ? successGreen
                                   : isMissed
                                       ? Colors.redAccent
-                                      : const Color(0xFF64748B),
+                                      : const Color(0xFF475569),
+                              width: 1.5,
                             ),
                           ),
                           child: Icon(
@@ -1252,20 +1284,26 @@ class _HydrationDetailsScreenState extends State<HydrationDetailsScreen> {
                                 ? Icons.check
                                 : isMissed
                                     ? Icons.priority_high
-                                    : Icons.circle_outlined,
+                                    : Icons.schedule,
                             size: 16,
-                            color: rem.isCompleted ? Colors.black : isMissed ? Colors.redAccent : Colors.white70,
+                            color: rem.isCompleted
+                                ? successGreen
+                                : isMissed
+                                    ? Colors.redAccent
+                                    : const Color(0xFF94A3B8),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
 
-                      // Time & Amount
+                      // Time & Amount + Repeat status
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
                                   rem.time,
@@ -1276,13 +1314,32 @@ class _HydrationDetailsScreenState extends State<HydrationDetailsScreen> {
                                     decoration: rem.isCompleted ? TextDecoration.lineThrough : null,
                                   ),
                                 ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '💧 ${rem.amountMl} ml',
-                                  style: const TextStyle(color: brightAqua, fontWeight: FontWeight.w600, fontSize: 13),
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: brightAqua.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.water_drop, size: 10, color: brightAqua),
+                                      const SizedBox(width: 2),
+                                      Text(
+                                        '${rem.amountMl} ml',
+                                        style: const TextStyle(
+                                          color: brightAqua,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
+                            const SizedBox(height: 3),
                             Text(
                               rem.isCompleted
                                   ? 'Completed ✓'
@@ -1298,81 +1355,111 @@ class _HydrationDetailsScreenState extends State<HydrationDetailsScreen> {
                                         : const Color(0xFF94A3B8),
                                 fontWeight: FontWeight.w600,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
                       ),
+                      const SizedBox(width: 6),
 
-                      // Drink Now button if missed or pending
-                      if (!rem.isCompleted)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 6.0),
-                          child: InkWell(
-                            onTap: () => state.completeHydrationReminder(task.id, rem.id, context),
-                            borderRadius: BorderRadius.circular(8),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: isMissed ? Colors.redAccent : brightAqua.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: isMissed ? Colors.redAccent : brightAqua),
+                      // Drink Button if pending or missed
+                      if (!rem.isCompleted) ...[
+                        InkWell(
+                          onTap: () => state.completeHydrationReminder(task.id, rem.id, context),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: isMissed ? Colors.redAccent : brightAqua.withValues(alpha: 0.18),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: isMissed ? Colors.redAccent : brightAqua,
+                                width: 1,
                               ),
-                              child: Text(
-                                'Drink Now',
-                                style: TextStyle(
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.water_drop,
+                                  size: 12,
                                   color: isMissed ? Colors.white : brightAqua,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
                                 ),
-                              ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  'Drink',
+                                  style: TextStyle(
+                                    color: isMissed ? Colors.white : brightAqua,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
+                        const SizedBox(width: 2),
+                      ],
 
-                      // Reminder Notification Toggle
-                      IconButton(
-                        icon: Icon(
-                          rem.isEnabled ? Icons.notifications_active : Icons.notifications_off_outlined,
-                          size: 18,
-                          color: rem.isEnabled ? goldColor : const Color(0xFF64748B),
+                      // Notification Toggle (Compact)
+                      SizedBox(
+                        width: 32,
+                        height: 32,
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                          splashRadius: 16,
+                          icon: Icon(
+                            rem.isEnabled ? Icons.notifications_active : Icons.notifications_off_outlined,
+                            size: 18,
+                            color: rem.isEnabled ? goldColor : const Color(0xFF64748B),
+                          ),
+                          tooltip: rem.isEnabled ? 'Mute Reminder' : 'Enable Reminder',
+                          onPressed: () => state.toggleHydrationReminder(task.id, rem.id, !rem.isEnabled),
                         ),
-                        tooltip: rem.isEnabled ? 'Mute Reminder' : 'Enable Reminder',
-                        onPressed: () => state.toggleHydrationReminder(task.id, rem.id, !rem.isEnabled),
                       ),
 
-                      // Menu: Edit / Delete
-                      PopupMenuButton<String>(
-                        icon: const Icon(Icons.more_vert, size: 18, color: Color(0xFF94A3B8)),
-                        color: const Color(0xFF162033),
-                        onSelected: (val) {
-                          if (val == 'edit') {
-                            _showAddEditReminderSheet(context, state, task, rem);
-                          } else if (val == 'delete') {
-                            state.deleteHydrationReminder(task.id, rem.id);
-                          }
-                        },
-                        itemBuilder: (ctx) => [
-                          const PopupMenuItem(
-                            value: 'edit',
-                            child: Row(
-                              children: [
-                                Icon(Icons.edit, color: brightAqua, size: 16),
-                                SizedBox(width: 8),
-                                Text('Edit', style: TextStyle(color: Colors.white, fontSize: 13)),
-                              ],
+                      // Menu (Edit/Delete) (Compact)
+                      SizedBox(
+                        width: 24,
+                        height: 32,
+                        child: PopupMenuButton<String>(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(minWidth: 24, minHeight: 32),
+                          splashRadius: 16,
+                          icon: const Icon(Icons.more_vert, size: 18, color: Color(0xFF94A3B8)),
+                          color: const Color(0xFF162033),
+                          onSelected: (val) {
+                            if (val == 'edit') {
+                              _showAddEditReminderSheet(context, state, task, rem);
+                            } else if (val == 'delete') {
+                              state.deleteHydrationReminder(task.id, rem.id);
+                            }
+                          },
+                          itemBuilder: (ctx) => [
+                            const PopupMenuItem(
+                              value: 'edit',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.edit, color: brightAqua, size: 16),
+                                  SizedBox(width: 8),
+                                  Text('Edit', style: TextStyle(color: Colors.white, fontSize: 13)),
+                                ],
+                              ),
                             ),
-                          ),
-                          const PopupMenuItem(
-                            value: 'delete',
-                            child: Row(
-                              children: [
-                                Icon(Icons.delete, color: Colors.redAccent, size: 16),
-                                SizedBox(width: 8),
-                                Text('Delete', style: TextStyle(color: Colors.redAccent, fontSize: 13)),
-                              ],
+                            const PopupMenuItem(
+                              value: 'delete',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.delete, color: Colors.redAccent, size: 16),
+                                  SizedBox(width: 8),
+                                  Text('Delete', style: TextStyle(color: Colors.redAccent, fontSize: 13)),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -1469,48 +1556,67 @@ class _HydrationDetailsScreenState extends State<HydrationDetailsScreen> {
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Text(
-                                              rem.time,
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 14,
-                                                decoration: rem.isCompleted ? TextDecoration.lineThrough : null,
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                rem.time,
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14,
+                                                  decoration: rem.isCompleted ? TextDecoration.lineThrough : null,
+                                                ),
                                               ),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Text('${rem.amountMl} ml', style: TextStyle(color: stateColor, fontWeight: FontWeight.w600, fontSize: 13)),
-                                          ],
-                                        ),
-                                        Text(
-                                          rem.isCompleted
-                                              ? '✓ Completed'
-                                              : isMissed
-                                                  ? '⚠️ Missed Drink'
-                                                  : '○ Upcoming',
-                                          style: TextStyle(
-                                            color: stateColor,
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w600,
+                                              const SizedBox(width: 8),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                                decoration: BoxDecoration(
+                                                  color: stateColor.withValues(alpha: 0.15),
+                                                  borderRadius: BorderRadius.circular(4),
+                                                ),
+                                                child: Text(
+                                                  '${rem.amountMl} ml',
+                                                  style: TextStyle(color: stateColor, fontWeight: FontWeight.w600, fontSize: 11),
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                        ),
-                                      ],
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            rem.isCompleted
+                                                ? '✓ Completed'
+                                                : isMissed
+                                                    ? '⚠️ Missed Drink'
+                                                    : '○ Upcoming',
+                                            style: TextStyle(
+                                              color: stateColor,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                     if (isMissed && !rem.isCompleted)
-                                      ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.redAccent,
-                                          foregroundColor: Colors.white,
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 8.0),
+                                        child: ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.redAccent,
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                            minimumSize: Size.zero,
+                                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                          ),
+                                          onPressed: () => state.completeHydrationReminder(task.id, rem.id, context),
+                                          child: const Text('Drink', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                                         ),
-                                        onPressed: () => state.completeHydrationReminder(task.id, rem.id, context),
-                                        child: const Text('Drink Now', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                                       ),
                                   ],
                                 ),
