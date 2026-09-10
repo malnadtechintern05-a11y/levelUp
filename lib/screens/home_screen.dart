@@ -11,6 +11,7 @@ import '../screens/privacy_policy_screen.dart';
 import '../screens/rankings_screen.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../widgets/smooth_transitions.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -563,7 +564,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 6.0),
-      child: GestureDetector(
+      child: BounceTap(
         onTap: () {
           setState(() {
             _selectedCategory = label;
@@ -1264,15 +1265,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         );
       },
     ),
-    floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
+    floatingActionButton: BounceTap(
+        onTap: () {
           Navigator.push(context, MaterialPageRoute(builder: (context) => const AddQuestScreen()));
         },
-        backgroundColor: const Color(0xFFF5B942),
-        foregroundColor: Colors.black,
-        icon: const Icon(Icons.add, size: 24),
-        label: const Text('Add Task', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        elevation: 4,
+        child: FloatingActionButton.extended(
+          onPressed: () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const AddQuestScreen()));
+          },
+          backgroundColor: const Color(0xFFF5B942),
+          foregroundColor: Colors.black,
+          icon: const Icon(Icons.add, size: 24),
+          label: const Text('Add Task', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          elevation: 4,
+        ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../providers/app_state.dart';
+import '../widgets/smooth_transitions.dart';
 
 class HydrationDetailsScreen extends StatefulWidget {
   final String taskId;
@@ -1807,9 +1808,8 @@ class _HydrationDetailsScreenState extends State<HydrationDetailsScreen> {
     String label,
     IconData icon,
   ) {
-    return InkWell(
+    return BounceTap(
       onTap: () => state.addWater(task.id, amountMl, context),
-      borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(

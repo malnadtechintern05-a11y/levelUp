@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../providers/app_state.dart';
+import '../widgets/smooth_transitions.dart';
 import 'hydration_details_screen.dart';
 
 class QuestDetailsScreen extends StatefulWidget {
@@ -1015,19 +1016,22 @@ class _QuestDetailsScreenState extends State<QuestDetailsScreen> {
                           ],
                         ),
                       )
-                    : ElevatedButton.icon(
-                        icon: const Icon(Icons.check_circle_outline, size: 22),
-                        label: const Text(
-                          'COMPLETE QUEST',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+                    : BounceTap(
+                        onTap: () => _handleCompleteQuest(context, state, liveTask),
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.check_circle_outline, size: 22),
+                          label: const Text(
+                            'COMPLETE QUEST',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF4CAF50),
+                            foregroundColor: Colors.white,
+                            elevation: 3,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          ),
+                          onPressed: () => _handleCompleteQuest(context, state, liveTask),
                         ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF4CAF50),
-                          foregroundColor: Colors.white,
-                          elevation: 3,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        ),
-                        onPressed: () => _handleCompleteQuest(context, state, liveTask),
                       ),
               ),
             ),
@@ -1196,35 +1200,44 @@ class _QuestDetailsScreenState extends State<QuestDetailsScreen> {
             alignment: WrapAlignment.center,
             children: [
               if (!isRunning)
-                ElevatedButton.icon(
-                  onPressed: task.isCompleted ? null : () => state.startTaskTimer(task.id),
-                  icon: const Icon(Icons.play_arrow, size: 18),
-                  label: Text(isPaused ? 'RESUME' : 'START', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF5B942),
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                BounceTap(
+                  onTap: task.isCompleted ? null : () => state.startTaskTimer(task.id),
+                  child: ElevatedButton.icon(
+                    onPressed: task.isCompleted ? null : () => state.startTaskTimer(task.id),
+                    icon: const Icon(Icons.play_arrow, size: 18),
+                    label: Text(isPaused ? 'RESUME' : 'START', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF5B942),
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
                   ),
                 ),
               if (isRunning)
-                ElevatedButton.icon(
-                  onPressed: () => state.pauseTaskTimer(task.id),
-                  icon: const Icon(Icons.pause, size: 18),
-                  label: const Text('PAUSE', style: TextStyle(fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orangeAccent,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                BounceTap(
+                  onTap: () => state.pauseTaskTimer(task.id),
+                  child: ElevatedButton.icon(
+                    onPressed: () => state.pauseTaskTimer(task.id),
+                    icon: const Icon(Icons.pause, size: 18),
+                    label: const Text('PAUSE', style: TextStyle(fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orangeAccent,
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
                   ),
                 ),
-              OutlinedButton.icon(
-                onPressed: task.isCompleted ? null : () => state.resetTaskTimer(task.id),
-                icon: const Icon(Icons.refresh, size: 18),
-                label: const Text('RESET', style: TextStyle(fontWeight: FontWeight.bold)),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF94A3B8),
-                  side: const BorderSide(color: Color(0xFF334155)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              BounceTap(
+                onTap: task.isCompleted ? null : () => state.resetTaskTimer(task.id),
+                child: OutlinedButton.icon(
+                  onPressed: task.isCompleted ? null : () => state.resetTaskTimer(task.id),
+                  icon: const Icon(Icons.refresh, size: 18),
+                  label: const Text('RESET', style: TextStyle(fontWeight: FontWeight.bold)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF94A3B8),
+                    side: const BorderSide(color: Color(0xFF334155)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
                 ),
               ),
             ],

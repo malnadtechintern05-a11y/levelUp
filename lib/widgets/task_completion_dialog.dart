@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
+import 'smooth_transitions.dart';
 
 class TaskCompletionCelebrationDialog extends StatelessWidget {
   final RPGTask task;
@@ -297,21 +298,27 @@ class TaskCompletionCelebrationDialog extends StatelessWidget {
             // Continue Button
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF5B942),
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 4,
-                ),
-                onPressed: () {
+              child: BounceTap(
+                onTap: () {
                   Navigator.of(context).pop();
                   onDismiss();
                 },
-                child: const Text(
-                  'GREAT JOB! KEEP LEVELING UP',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF5B942),
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 4,
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    onDismiss();
+                  },
+                  child: const Text(
+                    'GREAT JOB! KEEP LEVELING UP',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+                  ),
                 ),
               ),
             ),
@@ -422,22 +429,28 @@ class LevelUpCelebrationDialog extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF5B942),
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  onDismiss();
-                },
-                child: const Text(
-                  'CLAIM REWARDS & CONTINUE',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            BounceTap(
+              onTap: () {
+                Navigator.of(context).pop();
+                onDismiss();
+              },
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF5B942),
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    onDismiss();
+                  },
+                  child: const Text(
+                    'CLAIM REWARDS & CONTINUE',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ),
@@ -544,20 +557,26 @@ class AchievementUnlockedCelebrationDialog extends StatelessWidget {
             ],
             const SizedBox(height: 24),
 
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.amber,
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            BounceTap(
+              onTap: () {
+                Navigator.of(context).pop();
+                onDismiss();
+              },
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.amber,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    onDismiss();
+                  },
+                  child: const Text('AWESOME!', style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  onDismiss();
-                },
-                child: const Text('AWESOME!', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ),
           ],

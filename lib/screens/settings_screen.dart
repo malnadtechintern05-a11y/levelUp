@@ -5,6 +5,7 @@ import '../services/sound_service.dart';
 import '../screens/alarm_sound_screen.dart';
 import '../config/api_config.dart';
 import '../services/api_client.dart';
+import '../widgets/smooth_transitions.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -79,9 +80,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
             child: const Text('Reset Default', style: TextStyle(color: Colors.white54)),
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF5B942), foregroundColor: Colors.black),
-            onPressed: () async {
+          BounceTap(
+            onTap: () async {
               final newUrl = controller.text.trim();
               if (newUrl.isNotEmpty) {
                 await ApiConfig.setBaseUrl(newUrl);
@@ -92,7 +92,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 }
               }
             },
-            child: const Text('Save & Sync'),
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF5B942), foregroundColor: Colors.black),
+              onPressed: () async {
+                final newUrl = controller.text.trim();
+                if (newUrl.isNotEmpty) {
+                  await ApiConfig.setBaseUrl(newUrl);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  if (mounted) setState(() {});
+                  if (mounted) {
+                    context.read<AppState>().refreshAllData();
+                  }
+                }
+              },
+              child: const Text('Save & Sync'),
+            ),
           ),
         ],
       ),

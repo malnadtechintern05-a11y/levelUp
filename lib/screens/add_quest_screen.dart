@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/app_state.dart';
 import '../models/models.dart';
+import '../widgets/smooth_transitions.dart';
 
 class AddQuestScreen extends StatefulWidget {
   const AddQuestScreen({Key? key}) : super(key: key);
@@ -401,20 +402,23 @@ class _AddQuestScreenState extends State<AddQuestScreen> {
                 }).toList(),
               ),
               const SizedBox(height: 40),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _taskType == 'hydration' ? const Color(0xFF38BDF8) : const Color(0xFFF5B942),
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    elevation: 3,
-                  ),
-                  onPressed: _submit,
-                  child: Text(
-                    _taskType == 'hydration' ? 'START HYDRATION QUEST' : 'CREATE TASK',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              BounceTap(
+                onTap: _submit,
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _taskType == 'hydration' ? const Color(0xFF38BDF8) : const Color(0xFFF5B942),
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      elevation: 3,
+                    ),
+                    onPressed: _submit,
+                    child: Text(
+                      _taskType == 'hydration' ? 'START HYDRATION QUEST' : 'CREATE TASK',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ),
               ),

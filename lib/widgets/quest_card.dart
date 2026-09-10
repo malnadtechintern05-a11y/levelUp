@@ -4,6 +4,7 @@ import '../models/models.dart';
 import '../screens/quest_details_screen.dart';
 import '../providers/app_state.dart';
 import 'hydration_quest_card.dart';
+import 'smooth_transitions.dart';
 
 class QuestCard extends StatelessWidget {
   final RPGTask task;
@@ -285,17 +286,20 @@ class QuestCard extends StatelessWidget {
                         else if (task.timerStatus == 'Not Started')
                           SizedBox(
                             width: double.infinity,
-                            child: OutlinedButton.icon(
-                              icon: const Icon(Icons.play_arrow, size: 18),
-                              label: const Text('Start Task'),
-                              style: OutlinedButton.styleFrom(
-                                backgroundColor: actionBtnBg,
-                                foregroundColor: const Color(0xFFF5B942),
-                                side: BorderSide(color: actionBtnBorder),
-                                padding: const EdgeInsets.symmetric(vertical: 8),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            child: BounceTap(
+                              onTap: () => state.startTaskTimer(task.id),
+                              child: OutlinedButton.icon(
+                                icon: const Icon(Icons.play_arrow, size: 18),
+                                label: const Text('Start Task'),
+                                style: OutlinedButton.styleFrom(
+                                  backgroundColor: actionBtnBg,
+                                  foregroundColor: const Color(0xFFF5B942),
+                                  side: BorderSide(color: actionBtnBorder),
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                onPressed: () => state.startTaskTimer(task.id),
                               ),
-                              onPressed: () => state.startTaskTimer(task.id),
                             ),
                           )
                         else ...[
@@ -307,38 +311,53 @@ class QuestCard extends StatelessWidget {
                           Row(
                             children: [
                               Expanded(
-                                child: OutlinedButton(
-                                  style: OutlinedButton.styleFrom(
-                                    backgroundColor: actionBtnBg,
-                                    foregroundColor: actionBtnText,
-                                    side: BorderSide(color: actionBtnBorder),
-                                    padding: EdgeInsets.zero,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                  ),
-                                  onPressed: () {
+                                child: BounceTap(
+                                  onTap: () {
                                     if (task.timerStatus == 'Running') {
                                       state.pauseTaskTimer(task.id);
                                     } else {
                                       state.startTaskTimer(task.id);
                                     }
                                   },
-                                  child: Text(task.timerStatus == 'Running' ? 'Pause' : 'Resume', style: const TextStyle(fontWeight: FontWeight.w600)),
+                                  child: OutlinedButton(
+                                    style: OutlinedButton.styleFrom(
+                                      backgroundColor: actionBtnBg,
+                                      foregroundColor: actionBtnText,
+                                      side: BorderSide(color: actionBtnBorder),
+                                      padding: EdgeInsets.zero,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    ),
+                                    onPressed: () {
+                                      if (task.timerStatus == 'Running') {
+                                        state.pauseTaskTimer(task.id);
+                                      } else {
+                                        state.startTaskTimer(task.id);
+                                      }
+                                    },
+                                    child: Text(task.timerStatus == 'Running' ? 'Pause' : 'Resume', style: const TextStyle(fontWeight: FontWeight.w600)),
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 8),
                               Expanded(
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFFF5B942),
-                                    foregroundColor: Colors.black,
-                                    padding: EdgeInsets.zero,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                  ),
-                                  onPressed: () {
+                                child: BounceTap(
+                                  onTap: () {
                                     state.pauseTaskTimer(task.id); // Pause while in dialog
                                     _showEarlyFinishDialog(context, state);
                                   },
-                                  child: const Text('Finish', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFFF5B942),
+                                      foregroundColor: Colors.black,
+                                      padding: EdgeInsets.zero,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    ),
+                                    onPressed: () {
+                                      state.pauseTaskTimer(task.id); // Pause while in dialog
+                                      _showEarlyFinishDialog(context, state);
+                                    },
+                                    child: const Text('Finish', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  ),
                                 ),
                               ),
                             ],

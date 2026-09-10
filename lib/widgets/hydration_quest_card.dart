@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../providers/app_state.dart';
 import '../screens/hydration_details_screen.dart';
+import 'smooth_transitions.dart';
 
 class HydrationQuestCard extends StatelessWidget {
   final RPGTask task;
@@ -365,16 +366,8 @@ class HydrationQuestCard extends StatelessWidget {
               // View Details Button
               SizedBox(
                 width: double.infinity,
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.show_chart, size: 16),
-                  label: const Text('VIEW HYDRATION DETAILS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: brightAqua,
-                    side: BorderSide(color: brightAqua.withValues(alpha: 0.4)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                  ),
-                  onPressed: () {
+                child: BounceTap(
+                  onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -382,6 +375,24 @@ class HydrationQuestCard extends StatelessWidget {
                       ),
                     );
                   },
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.show_chart, size: 16),
+                    label: const Text('VIEW HYDRATION DETAILS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: brightAqua,
+                      side: BorderSide(color: brightAqua.withValues(alpha: 0.4)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => HydrationDetailsScreen(taskId: task.id),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ],
@@ -400,9 +411,8 @@ class HydrationQuestCard extends StatelessWidget {
     required Color btnBorder,
     required Color textColor,
   }) {
-    return InkWell(
+    return BounceTap(
       onTap: () => state.addWater(task.id, amountMl, context),
-      borderRadius: BorderRadius.circular(8),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
