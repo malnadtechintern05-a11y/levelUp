@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Login | LevelUp RPG Command Center</title>
+    <title>Admin Login | LevelUp Command Center</title>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -87,11 +87,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <!-- Branding Header -->
             <div class="text-center mb-4">
                 <div class="d-inline-flex align-items-center justify-content-center mb-3">
-                    <div class="brand-badge p-3 fs-3 rounded-4">
-                        <i class="bi bi-shield-shaded"></i>
-                    </div>
+                    <img src="assets/img/logo.png" alt="LevelUp Logo" style="width: 80px; height: 80px; border-radius: 18px; object-fit: contain; box-shadow: 0 8px 24px rgba(0,0,0,0.4);">
                 </div>
-                <h2 class="fw-bold text-white mb-1">LEVELUP COMMAND</h2>
+                <h2 class="fw-bold text-white mb-1" style="letter-spacing: 1px;">LEVELUP COMMAND</h2>
                 <p class="text-secondary small mb-0">Authorized Administrator Access Only</p>
             </div>
 
@@ -140,14 +138,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </form>
 
                 <div class="mt-4 pt-3 border-top border-secondary text-center">
-                    <small class="text-muted d-block mb-1">Default Development Account:</small>
-                    <code class="text-warning small bg-dark px-2 py-1 rounded">admin@levelup.com / admin123</code>
+                    <small class="text-muted d-block mb-1">Development Access Credentials:</small>
+                    <code class="text-warning small bg-dark px-2 py-1 rounded">admin / admin123</code>
                 </div>
             </div>
 
             <!-- Footer info -->
             <div class="text-center mt-4 text-muted small">
-                LevelUp Real-Life RPG Security Gateway &copy; <?= date('Y') ?>
+                LevelUp Security Gateway &copy; <?= date('Y') ?>
             </div>
 
         </div>

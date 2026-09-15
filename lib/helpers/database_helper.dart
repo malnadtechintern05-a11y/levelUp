@@ -20,7 +20,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 5,
+      version: 6,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -75,12 +75,77 @@ class DatabaseHelper {
         await db.execute('ALTER TABLE tasks ADD COLUMN extraDataJson TEXT NOT NULL DEFAULT "{}";');
       } catch (_) {}
     }
+    if (oldVersion < 6) {
+      // Version 6: Complete User Data Isolation schema additions
+      try {
+        await db.execute('ALTER TABLE user_profile ADD COLUMN user_id TEXT;');
+      } catch (_) {}
+      try {
+        await db.execute('ALTER TABLE tasks ADD COLUMN user_id TEXT;');
+      } catch (_) {}
+      try {
+        await db.execute('ALTER TABLE notifications ADD COLUMN user_id TEXT;');
+      } catch (_) {}
+
+      // Recreate achievements with composite primary key (id, user_id)
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS achievements_new (
+            id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            description TEXT NOT NULL,
+            isUnlocked INTEGER NOT NULL,
+            xpReward INTEGER NOT NULL DEFAULT 0,
+            unlockRequirement TEXT NOT NULL DEFAULT '',
+            iconPath TEXT,
+            isActive INTEGER NOT NULL DEFAULT 1,
+            PRIMARY KEY (id, user_id)
+          )
+        ''');
+        await db.execute('''
+          INSERT OR IGNORE INTO achievements_new (id, user_id, name, description, isUnlocked, xpReward, unlockRequirement, iconPath, isActive)
+          SELECT id, 'hero', name, description, isUnlocked, COALESCE(xpReward, 0), COALESCE(unlockRequirement, ''), iconPath, COALESCE(isActive, 1)
+          FROM achievements
+        ''');
+        await db.execute('DROP TABLE achievements;');
+        await db.execute('ALTER TABLE achievements_new RENAME TO achievements;');
+      } catch (_) {}
+
+      try {
+        await db.execute('CREATE INDEX IF NOT EXISTS idx_user_profile_user_id ON user_profile (user_id);');
+      } catch (_) {}
+      try {
+        await db.execute('CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON tasks (user_id);');
+      } catch (_) {}
+      try {
+        await db.execute('CREATE INDEX IF NOT EXISTS idx_achievements_user_id ON achievements (user_id);');
+      } catch (_) {}
+      try {
+        await db.execute('CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications (user_id);');
+      } catch (_) {}
+
+      // Backfill default user_id if null on existing records
+      try {
+        await db.execute("UPDATE user_profile SET user_id = LOWER(username) WHERE user_id IS NULL OR user_id = '';");
+      } catch (_) {}
+      try {
+        await db.execute("UPDATE tasks SET user_id = 'hero' WHERE user_id IS NULL OR user_id = '';");
+      } catch (_) {}
+      try {
+        await db.execute("UPDATE achievements SET user_id = 'hero' WHERE user_id IS NULL OR user_id = '';");
+      } catch (_) {}
+      try {
+        await db.execute("UPDATE notifications SET user_id = 'hero' WHERE user_id IS NULL OR user_id = '';");
+      } catch (_) {}
+    }
   }
 
   Future _createDB(Database db, int version) async {
     await db.execute('''
       CREATE TABLE user_profile (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL UNIQUE,
         username TEXT NOT NULL,
         avatarId TEXT NOT NULL,
         profileImagePath TEXT,
@@ -102,6 +167,7 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE tasks (
         id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
         title TEXT NOT NULL,
         description TEXT NOT NULL,
         category TEXT NOT NULL,
@@ -125,20 +191,23 @@ class DatabaseHelper {
 
     await db.execute('''
       CREATE TABLE achievements (
-        id TEXT PRIMARY KEY,
+        id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
         name TEXT NOT NULL,
         description TEXT NOT NULL,
         isUnlocked INTEGER NOT NULL,
         xpReward INTEGER NOT NULL DEFAULT 0,
         unlockRequirement TEXT NOT NULL DEFAULT "",
         iconPath TEXT,
-        isActive INTEGER NOT NULL DEFAULT 1
+        isActive INTEGER NOT NULL DEFAULT 1,
+        PRIMARY KEY (id, user_id)
       )
     ''');
 
     await db.execute('''
       CREATE TABLE notifications (
         id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
         title TEXT NOT NULL,
         body TEXT NOT NULL,
         category TEXT NOT NULL,
@@ -150,25 +219,54 @@ class DatabaseHelper {
         isRead INTEGER NOT NULL DEFAULT 0
       )
     ''');
+
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_user_profile_user_id ON user_profile (user_id);');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON tasks (user_id);');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_achievements_user_id ON achievements (user_id);');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications (user_id);');
   }
 
-  // --- Profile CRUD ---
-  Future<void> saveProfile(UserProfile profile) async {
+  // --- Profile CRUD with User ID Isolation ---
+  Future<void> saveProfile(UserProfile profile, [dynamic userId]) async {
     final db = await instance.database;
-    final data = profile.toMapSql();
-    data['id'] = 1; // Enforce single row
+    final uStr = userId?.toString();
+    final effectiveUserId = (uStr ?? profile.userId ?? profile.username).trim().toLowerCase();
+    final data = profile.toMapSql(effectiveUserId);
     
-    final count = Sqflite.firstIntValue(await db.rawQuery('SELECT COUNT(*) FROM user_profile'));
-    if (count == 0 || count == null) {
-      await db.insert('user_profile', data);
+    final existing = await db.query(
+      'user_profile',
+      where: 'user_id = ? OR LOWER(username) = ?',
+      whereArgs: [effectiveUserId, profile.username.toLowerCase()],
+      limit: 1,
+    );
+    
+    if (existing.isEmpty) {
+      await db.insert('user_profile', data, conflictAlgorithm: ConflictAlgorithm.replace);
     } else {
-      await db.update('user_profile', data, where: 'id = 1');
+      await db.update(
+        'user_profile',
+        data,
+        where: 'user_id = ? OR id = ?',
+        whereArgs: [effectiveUserId, existing.first['id']],
+      );
     }
   }
 
-  Future<UserProfile?> getProfile() async {
+  Future<UserProfile?> getProfile([dynamic userId]) async {
     final db = await instance.database;
-    final maps = await db.query('user_profile', limit: 1);
+    final uStr = userId?.toString();
+    List<Map<String, dynamic>> maps;
+    if (uStr != null && uStr.trim().isNotEmpty) {
+      final cleanId = uStr.trim().toLowerCase();
+      maps = await db.query(
+        'user_profile',
+        where: 'user_id = ? OR LOWER(username) = ?',
+        whereArgs: [cleanId, cleanId],
+        limit: 1,
+      );
+    } else {
+      maps = await db.query('user_profile', limit: 1);
+    }
     
     if (maps.isNotEmpty) {
       return UserProfile.fromMapSql(maps.first);
@@ -182,54 +280,104 @@ class DatabaseHelper {
     return maps.map((map) => UserProfile.fromMapSql(map)).toList();
   }
 
-  // --- Tasks CRUD ---
-  Future<void> insertTask(RPGTask task) async {
+  // --- Tasks CRUD with User ID Scoping ---
+  Future<void> insertTask(RPGTask task, [dynamic userId]) async {
     final db = await instance.database;
+    final uStr = userId?.toString();
+    final effectiveUserId = (uStr ?? task.userId ?? task.username ?? 'hero').trim().toLowerCase();
     await db.insert(
       'tasks',
-      task.toMapSql(),
+      task.toMapSql(effectiveUserId),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
-  Future<void> updateTask(RPGTask task) async {
+  Future<int> updateTask(RPGTask task, [dynamic userId]) async {
     final db = await instance.database;
-    await db.update(
-      'tasks',
-      task.toMapSql(),
-      where: 'id = ?',
-      whereArgs: [task.id],
-    );
-  }
-
-  Future<void> saveAllTasks(List<RPGTask> tasks) async {
-    final db = await instance.database;
-    Batch batch = db.batch();
-    for (var task in tasks) {
-      batch.insert(
+    final uStr = userId?.toString() ?? task.userId;
+    if (uStr != null && uStr.trim().isNotEmpty) {
+      return await db.update(
+        'tasks',
+        task.toMapSql(uStr.trim().toLowerCase()),
+        where: 'id = ? AND (user_id = ? OR user_id IS NULL)',
+        whereArgs: [task.id, uStr.trim().toLowerCase()],
+      );
+    } else {
+      return await db.update(
         'tasks',
         task.toMapSql(),
+        where: 'id = ?',
+        whereArgs: [task.id],
+      );
+    }
+  }
+
+  Future<int> deleteTask(String taskId, [dynamic userId]) async {
+    final db = await instance.database;
+    final uStr = userId?.toString();
+    if (uStr != null && uStr.trim().isNotEmpty) {
+      return await db.delete(
+        'tasks',
+        where: 'id = ? AND user_id = ?',
+        whereArgs: [taskId, uStr.trim().toLowerCase()],
+      );
+    } else {
+      return await db.delete(
+        'tasks',
+        where: 'id = ?',
+        whereArgs: [taskId],
+      );
+    }
+  }
+
+  Future<void> saveAllTasks(List<RPGTask> tasks, [dynamic userId]) async {
+    final db = await instance.database;
+    final uStr = userId?.toString();
+    Batch batch = db.batch();
+    for (var task in tasks) {
+      final effectiveUserId = (uStr ?? task.userId ?? task.username ?? 'hero').trim().toLowerCase();
+      batch.insert(
+        'tasks',
+        task.toMapSql(effectiveUserId),
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
     }
     await batch.commit(noResult: true);
   }
 
-  Future<List<RPGTask>> getAllTasks() async {
+  Future<List<RPGTask>> getTasksForUser(dynamic userId) async {
+    final db = await instance.database;
+    final cleanId = userId.toString().trim().toLowerCase();
+    final result = await db.query(
+      'tasks',
+      where: 'user_id = ?',
+      whereArgs: [cleanId],
+    );
+    return result.map((json) => RPGTask.fromMapSql(json)).toList();
+  }
+
+  Future<List<RPGTask>> getAllTasks([dynamic userId]) async {
+    final uStr = userId?.toString();
+    if (uStr != null && uStr.trim().isNotEmpty) {
+      return getTasksForUser(uStr);
+    }
     final db = await instance.database;
     final result = await db.query('tasks');
     return result.map((json) => RPGTask.fromMapSql(json)).toList();
   }
 
-  // --- Achievements CRUD ---
-  Future<void> saveAllAchievements(List<Achievement> achievements) async {
+  // --- Achievements CRUD with User ID Scoping ---
+  Future<void> saveAllAchievements(List<Achievement> achievements, [dynamic userId]) async {
     final db = await instance.database;
+    final uStr = userId?.toString();
     Batch batch = db.batch();
     for (var a in achievements) {
+      final effectiveUserId = (uStr ?? a.userId ?? 'hero').trim().toLowerCase();
       batch.insert(
         'achievements',
         {
           'id': a.id,
+          'user_id': effectiveUserId,
           'name': a.name,
           'description': a.description,
           'xpReward': a.xpReward,
@@ -244,13 +392,19 @@ class DatabaseHelper {
     await batch.commit(noResult: true);
   }
 
-  Future<List<Achievement>> getAllAchievements() async {
+  Future<List<Achievement>> getAchievementsForUser(dynamic userId) async {
     final db = await instance.database;
-    final result = await db.query('achievements');
+    final cleanId = userId.toString().trim().toLowerCase();
+    final result = await db.query(
+      'achievements',
+      where: 'user_id = ?',
+      whereArgs: [cleanId],
+    );
     
     return result.map((json) {
       return Achievement(
         id: json['id'] as String,
+        userId: json['user_id'] as String?,
         name: json['name'] as String,
         description: json['description'] as String,
         xpReward: json['xpReward'] as int? ?? 0,
@@ -262,34 +416,113 @@ class DatabaseHelper {
     }).toList();
   }
 
-  // --- Notifications CRUD ---
-  Future<void> saveNotification(AppNotification notification) async {
+  Future<List<Achievement>> getAllAchievements([dynamic userId]) async {
+    final uStr = userId?.toString();
+    if (uStr != null && uStr.trim().isNotEmpty) {
+      return getAchievementsForUser(uStr);
+    }
     final db = await instance.database;
+    final result = await db.query('achievements');
+    
+    return result.map((json) {
+      return Achievement(
+        id: json['id'] as String,
+        userId: json['user_id'] as String?,
+        name: json['name'] as String,
+        description: json['description'] as String,
+        xpReward: json['xpReward'] as int? ?? 0,
+        unlockRequirement: json['unlockRequirement'] as String? ?? '',
+        iconPath: json['iconPath'] as String?,
+        isUnlocked: (json['isUnlocked'] as int) == 1,
+        isActive: json.containsKey('isActive') ? ((json['isActive'] as int) == 1) : true,
+      );
+    }).toList();
+  }
+
+  // --- Notifications CRUD with User ID Scoping ---
+  Future<void> saveNotification(AppNotification notification, [dynamic userId]) async {
+    final db = await instance.database;
+    final uStr = userId?.toString();
+    final effectiveUserId = (uStr ?? notification.userId ?? 'hero').trim().toLowerCase();
     await db.insert(
       'notifications',
-      notification.toMapSql(),
+      notification.toMapSql(effectiveUserId),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
-  Future<List<AppNotification>> getAllNotifications() async {
+  Future<List<AppNotification>> getNotificationsForUser(dynamic userId) async {
+    final db = await instance.database;
+    final cleanId = userId.toString().trim().toLowerCase();
+    final result = await db.query(
+      'notifications',
+      where: 'user_id = ?',
+      whereArgs: [cleanId],
+      orderBy: 'timestamp DESC',
+    );
+    return result.map((json) => AppNotification.fromMapSql(json)).toList();
+  }
+
+  Future<List<AppNotification>> getAllNotifications([dynamic userId]) async {
+    final uStr = userId?.toString();
+    if (uStr != null && uStr.trim().isNotEmpty) {
+      return getNotificationsForUser(uStr);
+    }
     final db = await instance.database;
     final result = await db.query('notifications', orderBy: 'timestamp DESC');
     return result.map((json) => AppNotification.fromMapSql(json)).toList();
   }
 
-  Future<void> markNotificationAsRead(String id) async {
+  Future<void> markNotificationAsRead(String id, [dynamic userId]) async {
     final db = await instance.database;
-    await db.update('notifications', {'isRead': 1}, where: 'id = ?', whereArgs: [id]);
+    final uStr = userId?.toString();
+    if (uStr != null && uStr.trim().isNotEmpty) {
+      await db.update(
+        'notifications',
+        {'isRead': 1},
+        where: 'id = ? AND user_id = ?',
+        whereArgs: [id, uStr.trim().toLowerCase()],
+      );
+    } else {
+      await db.update('notifications', {'isRead': 1}, where: 'id = ?', whereArgs: [id]);
+    }
   }
 
-  Future<void> markAllNotificationsAsRead() async {
+  Future<void> markAllNotificationsAsRead([dynamic userId]) async {
     final db = await instance.database;
-    await db.update('notifications', {'isRead': 1});
+    final uStr = userId?.toString();
+    if (uStr != null && uStr.trim().isNotEmpty) {
+      await db.update(
+        'notifications',
+        {'isRead': 1},
+        where: 'user_id = ?',
+        whereArgs: [uStr.trim().toLowerCase()],
+      );
+    } else {
+      await db.update('notifications', {'isRead': 1});
+    }
   }
 
-  Future<void> clearAllNotifications() async {
+  Future<void> clearAllNotifications([dynamic userId]) async {
     final db = await instance.database;
-    await db.delete('notifications');
+    final uStr = userId?.toString();
+    if (uStr != null && uStr.trim().isNotEmpty) {
+      await db.delete(
+        'notifications',
+        where: 'user_id = ?',
+        whereArgs: [uStr.trim().toLowerCase()],
+      );
+    } else {
+      await db.delete('notifications');
+    }
+  }
+
+  Future<void> clearUserData(dynamic userId) async {
+    final db = await instance.database;
+    final cleanId = userId.toString().trim().toLowerCase();
+    await db.delete('tasks', where: 'user_id = ?', whereArgs: [cleanId]);
+    await db.delete('achievements', where: 'user_id = ?', whereArgs: [cleanId]);
+    await db.delete('notifications', where: 'user_id = ?', whereArgs: [cleanId]);
+    await db.delete('user_profile', where: 'user_id = ?', whereArgs: [cleanId]);
   }
 }

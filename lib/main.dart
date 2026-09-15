@@ -338,7 +338,7 @@ class RealLifeRPGApp extends StatelessWidget {
     return Consumer<AppState>(
       builder: (context, state, child) {
         return MaterialApp(
-          title: 'Real Life RPG',
+          title: 'LevelUp',
           navigatorKey: rootNavigatorKey,
           scaffoldMessengerKey: rootScaffoldMessengerKey,
           debugShowCheckedModeBanner: false,

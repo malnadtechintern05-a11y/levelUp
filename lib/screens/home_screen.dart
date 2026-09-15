@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../providers/app_state.dart';
+import '../config/api_config.dart';
 import '../widgets/quest_card.dart';
 import '../screens/add_quest_screen.dart';
 import '../screens/settings_screen.dart';
@@ -88,24 +89,25 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       if (adminBanner.startsWith('gradient:')) {
         return null;
       }
-      if (adminBanner.startsWith('http://') || adminBanner.startsWith('https://')) {
+      final resolved = ApiConfig.resolveUrl(adminBanner);
+      if (resolved.startsWith('http://') || resolved.startsWith('https://')) {
         return DecorationImage(
-          image: NetworkImage(adminBanner),
+          image: NetworkImage(resolved),
           fit: BoxFit.cover,
           onError: (exception, stackTrace) {
-            debugPrint('Admin hero banner NetworkImage error on $adminBanner: $exception');
+            debugPrint('Admin hero banner NetworkImage error on $resolved: $exception');
           },
           colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.45), BlendMode.darken),
         );
       }
       try {
-        final file = File(adminBanner);
+        final file = File(resolved);
         if (file.existsSync()) {
           return DecorationImage(
             image: FileImage(file),
             fit: BoxFit.cover,
             onError: (exception, stackTrace) {
-              debugPrint('Admin hero banner FileImage error on $adminBanner: $exception');
+              debugPrint('Admin hero banner FileImage error on $resolved: $exception');
             },
             colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.45), BlendMode.darken),
           );
@@ -632,9 +634,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Text('Real-Life RPG', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                  Text('LevelUp', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                   SizedBox(height: 8),
-                  Text('Level up your life.', style: TextStyle(color: Color(0xFFF5B942), fontSize: 14)),
+                  Text('Level up your real life.', style: TextStyle(color: Color(0xFFF5B942), fontSize: 14)),
                 ],
               ),
             ),

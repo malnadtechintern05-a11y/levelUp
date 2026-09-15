@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
+import '../config/api_config.dart';
 import '../screens/settings_screen.dart';
 import '../screens/edit_profile_screen.dart';
 import '../screens/rankings_screen.dart';
@@ -134,24 +135,25 @@ class ProfileScreen extends StatelessWidget {
                     }
 
                     if (bannerImg == null && adminBanner != null && adminBanner.isNotEmpty && !adminBanner.startsWith('gradient:')) {
-                      if (adminBanner.startsWith('http://') || adminBanner.startsWith('https://')) {
+                      final resolvedAdmin = ApiConfig.resolveUrl(adminBanner);
+                      if (resolvedAdmin.startsWith('http://') || resolvedAdmin.startsWith('https://')) {
                         bannerImg = DecorationImage(
-                          image: NetworkImage(adminBanner),
+                          image: NetworkImage(resolvedAdmin),
                           fit: BoxFit.cover,
                           onError: (exception, stackTrace) {
-                            debugPrint('Profile admin banner NetworkImage error on $adminBanner: $exception');
+                            debugPrint('Profile admin banner NetworkImage error on $resolvedAdmin: $exception');
                           },
                           colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.55), BlendMode.darken),
                         );
                       } else {
                         try {
-                          final f = File(adminBanner);
+                          final f = File(resolvedAdmin);
                           if (f.existsSync()) {
                             bannerImg = DecorationImage(
                               image: FileImage(f),
                               fit: BoxFit.cover,
                               onError: (exception, stackTrace) {
-                                debugPrint('Profile admin banner FileImage error on $adminBanner: $exception');
+                                debugPrint('Profile admin banner FileImage error on $resolvedAdmin: $exception');
                               },
                               colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.55), BlendMode.darken),
                             );

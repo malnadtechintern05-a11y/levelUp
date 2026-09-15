@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($formType === 'app_settings') {
         $settingsToSave = [
-            'app_name' => trim($_POST['app_name'] ?? 'LevelUp - Real-Life RPG'),
+            'app_name' => trim($_POST['app_name'] ?? 'LevelUp - Level Up Your Real Life'),
             'app_description' => trim($_POST['app_description'] ?? ''),
             'hero_banner_title' => trim($_POST['hero_banner_title'] ?? ''),
             'hero_banner_subtitle' => trim($_POST['hero_banner_subtitle'] ?? ''),
@@ -315,18 +315,20 @@ require_once __DIR__ . '/includes/sidebar.php';
                             <button type="submit" class="btn btn-gold px-3">
                                 <i class="bi bi-check2-circle me-1"></i> Save & Apply Image
                             </button>
+                        </div>
                     </form>
 
                     <?php if (!empty($settings['hero_banner_image'])): ?>
-                        <form method="POST" action="settings.php" onsubmit="return confirm('Remove background image? The mobile app will revert back to the default clean dark RPG gradient.');">
-                            <?php csrf_field(); ?>
-                            <input type="hidden" name="form_type" value="remove_banner">
-                            <button type="submit" class="btn btn-outline-danger px-3">
-                                <i class="bi bi-trash3 me-1"></i> Remove Image
-                            </button>
-                        </form>
-                    <?php endif; ?>
+                        <div class="mt-2">
+                            <form method="POST" action="settings.php" onsubmit="return confirm('Remove background image? The mobile app will revert back to the default clean dark RPG gradient.');">
+                                <?php csrf_field(); ?>
+                                <input type="hidden" name="form_type" value="remove_banner">
+                                <button type="submit" class="btn btn-outline-danger px-3">
+                                    <i class="bi bi-trash3 me-1"></i> Remove Image
+                                </button>
+                            </form>
                         </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -343,7 +345,7 @@ require_once __DIR__ . '/includes/sidebar.php';
 
                         <div class="mb-3">
                             <label class="form-label-rpg">Application Name</label>
-                            <input type="text" name="app_name" class="form-control form-control-rpg" value="<?= e($settings['app_name'] ?? 'LevelUp - Real-Life RPG') ?>" required>
+                            <input type="text" name="app_name" class="form-control form-control-rpg" value="<?= e($settings['app_name'] ?? 'LevelUp - Level Up Your Real Life') ?>" required>
                         </div>
 
                         <div class="mb-3">

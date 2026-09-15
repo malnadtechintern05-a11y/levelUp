@@ -42,6 +42,51 @@ class _AdminLayoutState extends State<AdminLayout> {
 
   @override
   Widget build(BuildContext context) {
+    final adminState = context.watch<AdminState>();
+
+    // Route guard: Deny access if not logged in as admin
+    if (!adminState.isAdminLoggedIn) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF0A0F1C),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.gpp_bad, color: Colors.redAccent, size: 72),
+                const SizedBox(height: 16),
+                const Text(
+                  'Access Denied',
+                  style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Administrator authorization is required to access this portal.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.amber,
+                    foregroundColor: Colors.black,
+                  ),
+                  onPressed: () => Navigator.pushReplacementNamed(context, '/admin'),
+                  child: const Text('Admin Login', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () => Navigator.pushReplacementNamed(context, '/main'),
+                  child: const Text('Return to Main App', style: TextStyle(color: Colors.grey)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     // Basic responsive layout: sidebar for desktop/tablet, drawer for mobile
     final isDesktop = MediaQuery.of(context).size.width > 800;
 

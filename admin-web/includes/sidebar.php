@@ -9,13 +9,11 @@ $currentPage = $currentPage ?? '';
 
 <aside id="adminSidebar" class="admin-sidebar">
     <div class="sidebar-header">
-        <a href="dashboard.php" class="brand-logo">
-            <div class="brand-badge">
-                <i class="bi bi-shield-fill-check"></i>
-            </div>
+        <a href="dashboard.php" class="brand-logo d-flex align-items-center gap-2 text-decoration-none">
+            <img src="assets/img/logo.png" alt="LevelUp Logo" style="width: 42px; height: 42px; border-radius: 10px; object-fit: contain;">
             <div>
-                <div class="brand-title">LEVELUP</div>
-                <div class="brand-sub">Real-Life RPG</div>
+                <div class="brand-title" style="letter-spacing: 1px;">LEVELUP</div>
+                <div class="brand-sub" style="font-size: 0.72rem;">Level Up Your Real Life</div>
             </div>
         </a>
     </div>

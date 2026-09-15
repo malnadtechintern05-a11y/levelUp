@@ -15,15 +15,8 @@ $db = getDB();
 $userId = (int)($_GET['id'] ?? 0);
 $username = trim($_GET['username'] ?? '');
 
-if ($userId <= 0 && (empty($username) || $username === 'Hero')) {
-    $stmt = $db->query("
-        SELECT id, username, display_name, avatar_id, profile_image_path, level, total_xp, gold, current_streak, best_streak, skills_json, created_at, show_on_leaderboard
-        FROM users
-        WHERE is_active = 1
-        ORDER BY id ASC
-        LIMIT 1
-    ");
-    $user = $stmt->fetch();
+if ($userId <= 0 && empty($username)) {
+    sendJson(400, ['status' => 'error', 'message' => 'User ID or username is required.']);
 } elseif ($userId > 0) {
     $stmt = $db->prepare("
         SELECT id, username, display_name, avatar_id, profile_image_path, level, total_xp, gold, current_streak, best_streak, skills_json, created_at, show_on_leaderboard

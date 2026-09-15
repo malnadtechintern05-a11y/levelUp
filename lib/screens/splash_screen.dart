@@ -20,6 +20,12 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _checkSessionAndNavigate() async {
     await ApiConfig.init();
+    if (mounted) {
+      try {
+        final state = Provider.of<AppState>(context, listen: false);
+        state.fetchAppSettings();
+      } catch (_) {}
+    }
     await Future.delayed(const Duration(milliseconds: 1500));
     if (!mounted) return;
 
@@ -58,9 +64,9 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            const Text('LEVEL UP', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+            const Text('LEVELUP', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
             const SizedBox(height: 4),
-            const Text('REAL LIFE RPG', style: TextStyle(color: Color(0xFFF5B942), fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+            const Text('LEVEL UP YOUR REAL LIFE', style: TextStyle(color: Color(0xFFF5B942), fontWeight: FontWeight.bold, letterSpacing: 1.2)),
             const SizedBox(height: 40),
             const CircularProgressIndicator(color: Color(0xFFF5B942)),
           ],

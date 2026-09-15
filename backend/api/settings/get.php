@@ -50,7 +50,7 @@ try {
     echo json_encode([
         'status' => 'success',
         'settings' => [
-            'app_name' => $settings['app_name'] ?? 'LevelUp - Real-Life RPG',
+            'app_name' => $settings['app_name'] ?? 'LevelUp - Level Up Your Real Life',
             'app_description' => $settings['app_description'] ?? '',
             'default_xp' => (int)($settings['default_xp'] ?? 50),
             'default_task_duration' => (int)($settings['default_task_duration'] ?? 30),

@@ -8,7 +8,7 @@
         <footer class="mt-auto py-3 px-4 text-center border-top" style="background-color: #0A0F1C; border-color: #1E293B !important;">
             <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center text-muted small gap-2">
                 <div>
-                    <span class="text-warning fw-bold">LEVELUP</span> &bull; Real-Life RPG Management System &copy; <?= date('Y') ?>
+                    <span class="text-warning fw-bold">LEVELUP</span> &bull; Level Up Your Real Life &copy; <?= date('Y') ?>
                 </div>
                 <div class="d-flex gap-3">
                     <span class="badge badge-gold px-2 py-1"><i class="bi bi-shield-lock-fill me-1"></i>Secure Admin Engine</span>

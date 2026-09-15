@@ -28,6 +28,29 @@ void main() {
       await ApiConfig.resetToDefault();
       expect(ApiConfig.baseUrl, equals(ApiConfig.defaultHost));
     });
+
+    test('ApiConfig.resolveUrl resolves relative paths and aligns local LAN origins', () async {
+      await ApiConfig.setBaseUrl('http://192.168.31.170/real-life-rpg/backend/api');
+
+      // Relative path resolution
+      final rel1 = ApiConfig.resolveUrl('/admin-web/uploads/banners/hero1.jpg');
+      expect(rel1, equals('http://192.168.31.170/real-life-rpg/admin-web/uploads/banners/hero1.jpg'));
+
+      // Relative path without leading slash
+      final rel2 = ApiConfig.resolveUrl('admin-web/uploads/banners/hero2.jpg');
+      expect(rel2, equals('http://192.168.31.170/real-life-rpg/admin-web/uploads/banners/hero2.jpg'));
+
+      // Localhost/127.0.0.1 alignment to active LAN mobile IP
+      final local1 = ApiConfig.resolveUrl('http://127.0.0.1/real-life-rpg/admin-web/uploads/banners/hero3.jpg');
+      expect(local1, equals('http://192.168.31.170/real-life-rpg/admin-web/uploads/banners/hero3.jpg'));
+
+      // External CDN URLs stay unchanged
+      final externalUrl = 'https://images.unsplash.com/photo-12345';
+      expect(ApiConfig.resolveUrl(externalUrl), equals(externalUrl));
+
+      // Gradient identifiers stay unchanged
+      expect(ApiConfig.resolveUrl('gradient:cyber'), equals('gradient:cyber'));
+    });
   });
 
   group('Online Model Deserialization Tests', () {

@@ -114,6 +114,7 @@ class HydrationReminder {
 }
 
 class UserProfile {
+  String? userId;
   String username;
   String? email;
   String avatarId;
@@ -131,12 +132,15 @@ class UserProfile {
   String? hydrationXpAwardedDate;
 
   UserProfile({
+    this.userId,
+    dynamic id,
     required this.username,
     this.email,
     this.avatarId = 'hero1',
     this.profileImagePath,
     this.level = 1,
-    this.totalXP = 0,
+    int totalXP = 0,
+    int? currentXP,
     this.gold = 0,
     this.currentStreak = 0,
     this.bestStreak = 0,
@@ -145,11 +149,18 @@ class UserProfile {
     this.hydrationBestStreak = 0,
     this.lastHydrationCompletedDate,
     this.hydrationXpAwardedDate,
+    String? title,
+    String? rank,
     Map<String, int>? skills,
-  }) : skills = skills ?? {'Strength': 0, 'Knowledge': 0, 'Discipline': 0};
+  }) : totalXP = currentXP ?? totalXP,
+       skills = skills ?? {'Strength': 0, 'Knowledge': 0, 'Discipline': 0};
+
+  int get currentXP => totalXP;
+  set currentXP(int val) => totalXP = val;
 
   Map<String, dynamic> toMap() {
     return {
+      'userId': userId,
       'username': username,
       'email': email,
       'avatarId': avatarId,
@@ -170,6 +181,7 @@ class UserProfile {
 
   factory UserProfile.fromMap(Map<String, dynamic> map) {
     return UserProfile(
+      userId: map['userId']?.toString() ?? map['user_id']?.toString(),
       username: map['username'] ?? 'Hero',
       email: map['email'],
       avatarId: map['avatarId'] ?? 'hero1',
@@ -188,8 +200,9 @@ class UserProfile {
     );
   }
 
-  Map<String, dynamic> toMapSql() {
+  Map<String, dynamic> toMapSql([String? forcedUserId]) {
     return {
+      'user_id': forcedUserId ?? userId ?? username.toLowerCase(),
       'username': username,
       'email': email,
       'avatarId': avatarId,
@@ -210,6 +223,7 @@ class UserProfile {
 
   factory UserProfile.fromMapSql(Map<String, dynamic> map) {
     return UserProfile(
+      userId: map['user_id'] as String?,
       username: map['username'] as String,
       email: map['email'] as String?,
       avatarId: map['avatarId'] as String,
@@ -262,6 +276,7 @@ class QuestObjective {
 
 class RPGTask {
   String id;
+  String? userId;
   String title;
   String description;
   String category; // Study, Fitness, Health, Work, Personal, Coding, Reading, etc.
@@ -306,12 +321,13 @@ class RPGTask {
 
   RPGTask({
     required this.id,
+    this.userId,
     required this.title,
-    required this.description,
+    this.description = '',
     required this.category,
     required this.xpReward,
     this.isCompleted = false,
-    required this.dueDate,
+    DateTime? dueDate,
     this.time,
     this.timeSpentSeconds = 0,
     this.durationMinutes = 0,
@@ -341,7 +357,8 @@ class RPGTask {
     this.streak,
     this.isHabit = false,
     this.createdAt,
-  })  : waterLogs = waterLogs ?? [],
+  })  : dueDate = dueDate ?? DateTime.now(),
+        waterLogs = waterLogs ?? [],
         reminders = reminders ?? [],
         objectives = objectives ?? [],
         tips = tips ?? [];
@@ -644,7 +661,7 @@ class RPGTask {
     );
   }
 
-  Map<String, dynamic> toMapSql() {
+  Map<String, dynamic> toMapSql([String? forcedUserId]) {
     final extraData = {
       'difficulty': difficulty,
       'coinReward': coinReward,
@@ -668,6 +685,7 @@ class RPGTask {
 
     return {
       'id': id,
+      'user_id': forcedUserId ?? userId ?? username ?? '',
       'title': title,
       'description': description,
       'category': category,
@@ -757,6 +775,7 @@ class RPGTask {
 
     return RPGTask(
       id: map['id'] as String,
+      userId: map['user_id'] as String?,
       title: map['title'] as String,
       description: map['description'] as String,
       category: map['category'] as String,
@@ -797,10 +816,91 @@ class RPGTask {
 
   String toJson() => json.encode(toMap());
   factory RPGTask.fromJson(String source) => RPGTask.fromMap(json.decode(source));
+
+  RPGTask copyWith({
+    String? id,
+    String? userId,
+    String? title,
+    String? description,
+    String? category,
+    int? xpReward,
+    bool? isCompleted,
+    DateTime? dueDate,
+    String? time,
+    int? timeSpentSeconds,
+    int? durationMinutes,
+    int? remainingSeconds,
+    String? timerStatus,
+    int? timerStartTimeEpoch,
+    bool? isActive,
+    String? taskType,
+    int? waterGoalMl,
+    int? currentWaterMl,
+    List<WaterLogEntry>? waterLogs,
+    int? drinkAmountMl,
+    List<HydrationReminder>? reminders,
+    bool? notificationsEnabled,
+    String? reminderStartTime,
+    String? reminderEndTime,
+    int? reminderIntervalMinutes,
+    String? username,
+    String? difficulty,
+    int? coinReward,
+    int? staminaReward,
+    List<QuestObjective>? objectives,
+    List<String>? tips,
+    bool? requiresProof,
+    String? proofImagePath,
+    String? personalNote,
+    int? streak,
+    bool? isHabit,
+    DateTime? createdAt,
+  }) {
+    return RPGTask(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      category: category ?? this.category,
+      xpReward: xpReward ?? this.xpReward,
+      isCompleted: isCompleted ?? this.isCompleted,
+      dueDate: dueDate ?? this.dueDate,
+      time: time ?? this.time,
+      timeSpentSeconds: timeSpentSeconds ?? this.timeSpentSeconds,
+      durationMinutes: durationMinutes ?? this.durationMinutes,
+      remainingSeconds: remainingSeconds ?? this.remainingSeconds,
+      timerStatus: timerStatus ?? this.timerStatus,
+      timerStartTimeEpoch: timerStartTimeEpoch ?? this.timerStartTimeEpoch,
+      isActive: isActive ?? this.isActive,
+      taskType: taskType ?? this.taskType,
+      waterGoalMl: waterGoalMl ?? this.waterGoalMl,
+      currentWaterMl: currentWaterMl ?? this.currentWaterMl,
+      waterLogs: waterLogs ?? this.waterLogs,
+      drinkAmountMl: drinkAmountMl ?? this.drinkAmountMl,
+      reminders: reminders ?? this.reminders,
+      notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
+      reminderStartTime: reminderStartTime ?? this.reminderStartTime,
+      reminderEndTime: reminderEndTime ?? this.reminderEndTime,
+      reminderIntervalMinutes: reminderIntervalMinutes ?? this.reminderIntervalMinutes,
+      username: username ?? this.username,
+      difficulty: difficulty ?? this.difficulty,
+      coinReward: coinReward ?? this.coinReward,
+      staminaReward: staminaReward ?? this.staminaReward,
+      objectives: objectives ?? this.objectives,
+      tips: tips ?? this.tips,
+      requiresProof: requiresProof ?? this.requiresProof,
+      proofImagePath: proofImagePath ?? this.proofImagePath,
+      personalNote: personalNote ?? this.personalNote,
+      streak: streak ?? this.streak,
+      isHabit: isHabit ?? this.isHabit,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
 }
 
 class Achievement {
   String id;
+  String? userId;
   String name;
   String description;
   int xpReward;
@@ -808,21 +908,34 @@ class Achievement {
   String? iconPath;
   bool isUnlocked;
   bool isActive;
+  DateTime? unlockedAt;
+
+  String get title => name;
+  set title(String val) => name = val;
+
+  String? get icon => iconPath;
+  set icon(String? val) => iconPath = val;
 
   Achievement({
     required this.id,
-    required this.name,
+    this.userId,
+    String? name,
+    String? title,
     required this.description,
     this.xpReward = 0,
     this.unlockRequirement = '',
-    this.iconPath,
+    String? iconPath,
+    String? icon,
     this.isUnlocked = false,
     this.isActive = true,
-  });
+    this.unlockedAt,
+  })  : name = name ?? title ?? '',
+        iconPath = iconPath ?? icon;
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      'userId': userId,
       'name': name,
       'description': description,
       'xpReward': xpReward,
@@ -830,19 +943,50 @@ class Achievement {
       'iconPath': iconPath,
       'isUnlocked': isUnlocked,
       'isActive': isActive,
+      'unlockedAt': unlockedAt?.toIso8601String(),
     };
   }
 
   factory Achievement.fromMap(Map<String, dynamic> map) {
     return Achievement(
       id: map['id'] ?? '',
-      name: map['name'] ?? '',
+      userId: map['userId']?.toString() ?? map['user_id']?.toString(),
+      name: map['name'] ?? map['title'] ?? '',
       description: map['description'] ?? '',
       xpReward: map['xpReward']?.toInt() ?? 0,
       unlockRequirement: map['unlockRequirement'] ?? '',
-      iconPath: map['iconPath'],
+      iconPath: map['iconPath'] ?? map['icon'],
       isUnlocked: map['isUnlocked'] ?? false,
       isActive: map['isActive'] ?? true,
+      unlockedAt: map['unlockedAt'] != null ? DateTime.tryParse(map['unlockedAt'].toString()) : null,
+    );
+  }
+
+  Map<String, dynamic> toMapSql([String? forcedUserId]) {
+    return {
+      'id': id,
+      'user_id': forcedUserId ?? userId ?? '',
+      'name': name,
+      'description': description,
+      'xpReward': xpReward,
+      'unlockRequirement': unlockRequirement,
+      'iconPath': iconPath,
+      'isUnlocked': isUnlocked ? 1 : 0,
+      'isActive': isActive ? 1 : 0,
+    };
+  }
+
+  factory Achievement.fromMapSql(Map<String, dynamic> map) {
+    return Achievement(
+      id: map['id'] as String,
+      userId: map['user_id'] as String?,
+      name: map['name'] as String,
+      description: map['description'] as String,
+      xpReward: map['xpReward'] as int? ?? 0,
+      unlockRequirement: map['unlockRequirement'] as String? ?? '',
+      iconPath: map['iconPath'] as String?,
+      isUnlocked: (map['isUnlocked'] as int) == 1,
+      isActive: map.containsKey('isActive') ? ((map['isActive'] as int) == 1) : true,
     );
   }
 
@@ -883,6 +1027,7 @@ class Reward {
 
 class AppNotification {
   final String id;
+  final String? userId;
   final String title;
   final String body;
   final String category; // Fitness, Study, Health, Work, Personal, LevelUp, Achievement, System
@@ -893,22 +1038,28 @@ class AppNotification {
   final String? motivationalQuote;
   bool isRead;
 
+  String get message => body;
+
   AppNotification({
     required this.id,
+    this.userId,
     required this.title,
-    required this.body,
-    required this.category,
-    required this.type,
-    required this.timestamp,
+    String? body,
+    String? message,
+    this.category = 'System',
+    this.type = 'system',
+    DateTime? timestamp,
     this.xpReward,
     this.streakDays,
     this.motivationalQuote,
     this.isRead = false,
-  });
+  })  : body = body ?? message ?? '',
+        timestamp = timestamp ?? DateTime.now();
 
-  Map<String, dynamic> toMapSql() {
+  Map<String, dynamic> toMapSql([String? forcedUserId]) {
     return {
       'id': id,
+      'user_id': forcedUserId ?? userId ?? '',
       'title': title,
       'body': body,
       'category': category,
@@ -924,6 +1075,7 @@ class AppNotification {
   factory AppNotification.fromMapSql(Map<String, dynamic> map) {
     return AppNotification(
       id: map['id'] ?? '',
+      userId: map['user_id'] as String?,
       title: map['title'] ?? '',
       body: map['body'] ?? '',
       category: map['category'] ?? 'Personal',

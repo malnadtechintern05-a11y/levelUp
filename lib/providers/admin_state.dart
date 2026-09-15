@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../helpers/database_helper.dart';
+import '../services/auth_service.dart';
 
 class AdminState extends ChangeNotifier {
   bool _isAdminLoggedIn = false;
@@ -10,9 +11,9 @@ class AdminState extends ChangeNotifier {
   List<RPGTask> _tasks = [];
   List<Achievement> _achievements = [];
 
-  List<UserProfile> get users => _users;
-  List<RPGTask> get tasks => _tasks;
-  List<Achievement> get achievements => _achievements;
+  List<UserProfile> get users => _isAdminLoggedIn ? _users : [];
+  List<RPGTask> get tasks => _isAdminLoggedIn ? _tasks : [];
+  List<Achievement> get achievements => _isAdminLoggedIn ? _achievements : [];
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -21,16 +22,28 @@ class AdminState extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     
-    await Future.delayed(const Duration(seconds: 1)); // Simulate network/DB
-    
-    _isLoading = false;
-    if (email == 'admin@levelup.com' && password == 'admin123') {
-      _isAdminLoggedIn = true;
-      notifyListeners();
-      await loadData();
-      return true;
+    try {
+      final res = await AuthService.instance.login(email, password);
+      _isLoading = false;
+      
+      if (res['status'] == 'success') {
+        final role = await AuthService.instance.getRole();
+        final user = res['user'] as Map<String, dynamic>?;
+        final isUserAdmin = role.toLowerCase() == 'admin' ||
+            (user != null && (user['role'] == 'admin' || user['is_admin'] == 1 || user['is_admin'] == true));
+
+        if (isUserAdmin) {
+          _isAdminLoggedIn = true;
+          notifyListeners();
+          await loadData();
+          return true;
+        }
+      }
+    } catch (_) {
+      _isLoading = false;
     }
     
+    _isAdminLoggedIn = false;
     notifyListeners();
     return false;
   }
@@ -44,6 +57,8 @@ class AdminState extends ChangeNotifier {
   }
 
   Future<void> loadData() async {
+    if (!_isAdminLoggedIn) return;
+    
     _isLoading = true;
     notifyListeners();
     
@@ -57,11 +72,10 @@ class AdminState extends ChangeNotifier {
 
   // --- Users ---
   Future<void> toggleUserStatus(String username) async {
+    if (!_isAdminLoggedIn) throw StateError('Unauthorized admin access');
     final index = _users.indexWhere((u) => u.username == username);
     if (index != -1) {
       _users[index].isActive = !_users[index].isActive;
-      // Because we only enforce id=1 for the primary user currently, saving is tricky if there were multiple.
-      // We'll assume the primary user is the only one right now.
       await DatabaseHelper.instance.saveProfile(_users[index]);
       notifyListeners();
     }
@@ -69,12 +83,14 @@ class AdminState extends ChangeNotifier {
 
   // --- Tasks ---
   Future<void> addTask(RPGTask task) async {
+    if (!_isAdminLoggedIn) throw StateError('Unauthorized admin access');
     await DatabaseHelper.instance.insertTask(task);
     _tasks.add(task);
     notifyListeners();
   }
 
   Future<void> updateTask(RPGTask task) async {
+    if (!_isAdminLoggedIn) throw StateError('Unauthorized admin access');
     await DatabaseHelper.instance.updateTask(task);
     final index = _tasks.indexWhere((t) => t.id == task.id);
     if (index != -1) {
@@ -84,7 +100,7 @@ class AdminState extends ChangeNotifier {
   }
 
   Future<void> deleteTask(String taskId) async {
-    // We shouldn't actually delete to preserve history, maybe just deactivate
+    if (!_isAdminLoggedIn) throw StateError('Unauthorized admin access');
     final index = _tasks.indexWhere((t) => t.id == taskId);
     if (index != -1) {
       _tasks[index].isActive = false;
@@ -94,6 +110,7 @@ class AdminState extends ChangeNotifier {
   }
   
   Future<void> toggleTaskStatus(String taskId) async {
+    if (!_isAdminLoggedIn) throw StateError('Unauthorized admin access');
     final index = _tasks.indexWhere((t) => t.id == taskId);
     if (index != -1) {
       _tasks[index].isActive = !_tasks[index].isActive;
@@ -104,15 +121,17 @@ class AdminState extends ChangeNotifier {
 
   // --- Achievements ---
   Future<void> saveAchievements(List<Achievement> achievementsList) async {
+    if (!_isAdminLoggedIn) throw StateError('Unauthorized admin access');
     await DatabaseHelper.instance.saveAllAchievements(achievementsList);
     _achievements = achievementsList;
     notifyListeners();
   }
 
   // Analytics Helpers
-  int get totalTaskCompletions => _tasks.where((t) => t.isCompleted).length;
+  int get totalTaskCompletions => _isAdminLoggedIn ? _tasks.where((t) => t.isCompleted).length : 0;
   int get totalXPAwarded {
+    if (!_isAdminLoggedIn) return 0;
     return _users.fold(0, (sum, user) => sum + user.totalXP);
   }
-  int get activeUsersCount => _users.where((u) => u.isActive).length;
+  int get activeUsersCount => _isAdminLoggedIn ? _users.where((u) => u.isActive).length : 0;
 }

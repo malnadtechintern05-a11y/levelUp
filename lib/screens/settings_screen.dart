@@ -432,10 +432,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 ListTile(
                   leading: Icon(Icons.info_outline, color: theme.colorScheme.onSurface),
-                  title: Text('About Real Life RPG', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
+                  title: Text('About LevelUp', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
                   trailing: Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('LevelUp RPG v1.0.0. Level up your life!')));
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('LevelUp RPG v1.0.0. Level up your real life!')));
                   },
                 ),
                 Divider(height: 1, color: theme.colorScheme.outline),

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../models/models.dart';
 import '../models/alarm_song.dart';
 import '../helpers/database_helper.dart';
+import '../helpers/security_helper.dart';
 import '../main.dart'; // Import to use rootScaffoldMessengerKey and rootNavigatorKey
 import '../widgets/task_completion_dialog.dart';
 import '../services/sound_service.dart';
@@ -59,6 +60,7 @@ class AppState extends ChangeNotifier {
   bool _isLoggedIn = false;
   bool _soundEffectsEnabled = true;
   String? _heroBannerUrl;
+  String? _rawHeroBannerImage;
   String? _customBannerPath;
   String? _heroBannerTitle;
   String? _heroBannerSubtitle;
@@ -77,7 +79,10 @@ class AppState extends ChangeNotifier {
   bool get isDarkMode => _isDarkMode;
   bool get isLoggedIn => _isLoggedIn;
   bool get soundEffectsEnabled => _soundEffectsEnabled;
-  String? get heroBannerUrl => _heroBannerUrl;
+  String? get heroBannerUrl {
+    if (_heroBannerUrl == null || _heroBannerUrl!.trim().isEmpty) return null;
+    return ApiConfig.resolveUrl(_heroBannerUrl!);
+  }
   String? get customBannerPath => _customBannerPath;
   String? get heroBannerTitle => _heroBannerTitle;
   String? get heroBannerSubtitle => _heroBannerSubtitle;
@@ -85,11 +90,34 @@ class AppState extends ChangeNotifier {
   bool get isMaintenanceMode => _isMaintenanceMode;
   String get maintenanceMessage => _maintenanceMessage;
   String? get quoteOfTheDay => _quoteOfTheDay;
-  int get dailyWaterGoalMl => _dailyWaterGoalMl;
+  String? _userRole;
+  String get currentUserId => (_userProfile.userId ?? _userProfile.username).trim().toLowerCase();
   bool get isAdmin =>
       _userProfile.email?.toLowerCase() == 'admin@levelup.com' ||
-      _userProfile.username.toLowerCase() == 'admin' ||
-      _userProfile.username.toLowerCase() == 'zenmaster';
+      _userRole == 'admin';
+
+  void setCurrentUserId(String? id) {
+    _userProfile.userId = id;
+    if (id != null && id.isNotEmpty) {
+      _userProfile.username = id;
+    }
+    notifyListeners();
+  }
+
+  void addNotification(String title, String message, {String category = 'System'}) {
+    final notif = AppNotification(
+      id: 'notif_${DateTime.now().millisecondsSinceEpoch}',
+      userId: currentUserId,
+      title: title,
+      body: message,
+      category: category,
+      type: 'system',
+      timestamp: DateTime.now(),
+    );
+    _notifications.insert(0, notif);
+    DatabaseHelper.instance.saveNotification(notif, currentUserId);
+    notifyListeners();
+  }
 
   Future<void> setCustomBanner(String? path) async {
     final clean = (path != null && path.trim().isNotEmpty) ? path.trim() : null;
@@ -108,26 +136,54 @@ class AppState extends ChangeNotifier {
   NotificationSettings get notificationSettings => _notificationSettings;
   List<String> get motivationalQuotes => _motivationalQuotes;
 
+  List<Achievement> _getDefaultAchievements([String? userId]) {
+    final uid = userId ?? currentUserId;
+    return [
+      Achievement(id: 'a1', userId: uid, name: 'First Quest', description: 'Complete your first quest'),
+      Achievement(id: 'a2', userId: uid, name: 'On Fire', description: 'Maintain a 7-day streak'),
+      Achievement(id: 'a3', userId: uid, name: 'Quest Master', description: 'Complete 50 quests'),
+      Achievement(id: 'a4', userId: uid, name: 'Legend', description: 'Reach Level 50'),
+    ];
+  }
+
   Future<Map<String, dynamic>> loginUser(String identifier, [String? password]) async {
-    // If password provided, use online backend
+    // If password provided, use online backend / local auth
     if (password != null && password.isNotEmpty) {
       final res = await AuthService.instance.login(identifier, password);
       if (res['status'] == 'success') {
         _isLoggedIn = true;
+        final cleanId = (res['user'] != null && res['user']['id'] != null)
+            ? res['user']['id'].toString()
+            : identifier.trim().toLowerCase();
+        
+        // Reset in-memory state completely before loading new user data to prevent cross-contamination
+        _tasks = [];
+        _achievements = _getDefaultAchievements(cleanId);
+        _notifications = [];
+        _userProfile = UserProfile(username: identifier.trim(), userId: cleanId);
+
         if (res['user'] != null) {
           _applyUserData(res['user'] as Map<String, dynamic>);
         }
+        await _loadUserDataFromDb(cleanId);
         await refreshAllData();
         notifyListeners();
       }
       return res;
     } else {
-      // Local fallback compatibility
+      // Local fallback with isolated user ID
+      final cleanId = identifier.trim().toLowerCase();
       _isLoggedIn = true;
-      _userProfile.username = identifier;
+      _tasks = [];
+      _achievements = _getDefaultAchievements(cleanId);
+      _notifications = [];
+      _userProfile = UserProfile(username: identifier.trim(), userId: cleanId);
+
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('is_logged_in', true);
-      await prefs.setString('logged_in_username', identifier);
+      await prefs.setString('logged_in_username', identifier.trim());
+      await prefs.setString('current_username', identifier.trim());
+      await _loadUserDataFromDb(cleanId);
       notifyListeners();
       return {'status': 'success'};
     }
@@ -151,9 +207,20 @@ class AppState extends ChangeNotifier {
     );
     if (res['status'] == 'success') {
       _isLoggedIn = true;
+      final cleanId = (res['user'] != null && res['user']['id'] != null)
+          ? res['user']['id'].toString()
+          : username.trim().toLowerCase();
+      
+      _tasks = [];
+      _achievements = _getDefaultAchievements(cleanId);
+      _notifications = [];
+      _userProfile = UserProfile(username: username.trim(), email: email, avatarId: avatarId, userId: cleanId);
+
       if (res['user'] != null) {
         _applyUserData(res['user'] as Map<String, dynamic>);
       }
+      await _saveProfile();
+      _ensureDailyTasks(cleanId);
       await refreshAllData();
       notifyListeners();
     }
@@ -161,6 +228,12 @@ class AppState extends ChangeNotifier {
   }
 
   void _applyUserData(Map<String, dynamic> data) {
+    if (data['id'] != null) {
+      _userProfile.userId = data['id'].toString();
+    }
+    if (data['role'] != null) {
+      _userRole = data['role'].toString();
+    }
     final displayName = data['display_name']?.toString().trim();
     final rawUsername = data['username']?.toString().trim();
     if (displayName != null && displayName.isNotEmpty) {
@@ -260,42 +333,14 @@ class AppState extends ChangeNotifier {
 
         String? resolvedUrl;
         if (fullBannerFromApi != null && fullBannerFromApi.isNotEmpty) {
-          final bannerUri = Uri.tryParse(fullBannerFromApi);
-          final apiUri = Uri.tryParse(ApiConfig.baseUrl);
-          if (bannerUri != null && apiUri != null && (bannerUri.host == 'localhost' || bannerUri.host == '127.0.0.1' || bannerUri.host == '10.0.2.2')) {
-            final portStr = (apiUri.port == 80 || apiUri.port == 443 || apiUri.port == 0) ? '' : ':${apiUri.port}';
-            resolvedUrl = '${apiUri.scheme}://${apiUri.host}$portStr${bannerUri.path}${bannerUri.hasQuery ? '?${bannerUri.query}' : ''}';
-          } else {
-            resolvedUrl = fullBannerFromApi;
-          }
+          resolvedUrl = ApiConfig.resolveUrl(fullBannerFromApi);
         } else if (rawBanner != null && rawBanner.isNotEmpty) {
-          if (rawBanner.startsWith('http://') || rawBanner.startsWith('https://')) {
-            final rawUri = Uri.tryParse(rawBanner);
-            final apiUri = Uri.tryParse(ApiConfig.baseUrl);
-            if (rawUri != null && apiUri != null && (rawUri.host == 'localhost' || rawUri.host == '127.0.0.1' || rawUri.host == '10.0.2.2')) {
-              final portStr = (apiUri.port == 80 || apiUri.port == 443 || apiUri.port == 0) ? '' : ':${apiUri.port}';
-              resolvedUrl = '${apiUri.scheme}://${apiUri.host}$portStr${rawUri.path}';
-            } else {
-              resolvedUrl = rawBanner;
-            }
-          } else {
-            final apiUri = Uri.tryParse(ApiConfig.baseUrl);
-            if (apiUri != null) {
-              final portStr = (apiUri.port == 80 || apiUri.port == 443 || apiUri.port == 0) ? '' : ':${apiUri.port}';
-              String prefix = '';
-              final clean = rawBanner.startsWith('/') ? rawBanner : '/$rawBanner';
-              if (!clean.startsWith('/real-life-rpg') && (apiUri.path.contains('/real-life-rpg') || clean.startsWith('/admin-web') || clean.startsWith('/backend'))) {
-                prefix = '/real-life-rpg';
-              }
-              resolvedUrl = '${apiUri.scheme}://${apiUri.host}$portStr$prefix$clean';
-            } else {
-              resolvedUrl = rawBanner;
-            }
-          }
+          resolvedUrl = ApiConfig.resolveUrl(rawBanner);
         } else {
           resolvedUrl = null;
         }
 
+        _rawHeroBannerImage = (rawBanner != null && rawBanner.isNotEmpty) ? rawBanner : null;
         _heroBannerUrl = resolvedUrl;
 
         final title = settings['hero_banner_title']?.toString().trim();
@@ -326,6 +371,27 @@ class AppState extends ChangeNotifier {
         } else {
           await prefs.remove('cached_hero_banner_url');
         }
+        if (_rawHeroBannerImage != null && _rawHeroBannerImage!.isNotEmpty) {
+          await prefs.setString('cached_raw_banner_image', _rawHeroBannerImage!);
+        } else {
+          await prefs.remove('cached_raw_banner_image');
+        }
+        if (_heroBannerTitle != null) {
+          await prefs.setString('cached_hero_banner_title', _heroBannerTitle!);
+        } else {
+          await prefs.remove('cached_hero_banner_title');
+        }
+        if (_heroBannerSubtitle != null) {
+          await prefs.setString('cached_hero_banner_subtitle', _heroBannerSubtitle!);
+        } else {
+          await prefs.remove('cached_hero_banner_subtitle');
+        }
+        await prefs.setBool('cached_hero_banner_enabled', _heroBannerEnabled);
+        await prefs.setBool('cached_maintenance_mode', _isMaintenanceMode);
+        await prefs.setString('cached_maintenance_message', _maintenanceMessage);
+        if (_quoteOfTheDay != null) {
+          await prefs.setString('cached_quote_of_the_day', _quoteOfTheDay!);
+        }
         notifyListeners();
       }
     } catch (e) {
@@ -336,8 +402,15 @@ class AppState extends ChangeNotifier {
   Future<void> logout() async {
     await AuthService.instance.logout();
     _isLoggedIn = false;
-    _userProfile = UserProfile(username: 'Hero');
+    _userRole = null;
+    _userProfile = UserProfile(username: 'Hero', userId: 'hero');
     _tasks = [];
+    _achievements = _getDefaultAchievements('hero');
+    _notifications = [];
+    _weeklyXp = {};
+    _customBannerPath = null;
+    _globalTimer?.cancel();
+    _globalTimer = null;
     notifyListeners();
   }
 
@@ -433,60 +506,91 @@ class AppState extends ChangeNotifier {
   }
 
   AppState() {
+    ApiConfig.addListener(_onApiConfigChanged);
     _loadData();
+  }
+
+  void _onApiConfigChanged() {
+    if (_heroBannerUrl != null && _heroBannerUrl!.isNotEmpty) {
+      _heroBannerUrl = ApiConfig.resolveUrl(_rawHeroBannerImage ?? _heroBannerUrl!);
+      notifyListeners();
+    }
+  }
+
+  @override
+  void dispose() {
+    ApiConfig.removeListener(_onApiConfigChanged);
+    _globalTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadUserDataFromDb(String userId) async {
+    final cleanId = userId.trim().toLowerCase();
+    final dbHelper = DatabaseHelper.instance;
+
+    try {
+      final profile = await dbHelper.getProfile(cleanId);
+      if (profile != null) {
+        _userProfile = profile;
+        _userProfile.userId = cleanId;
+      }
+    } catch (e) {
+      debugPrint("Error loading profile from DB: $e");
+    }
+
+    try {
+      final tasksList = await dbHelper.getTasksForUser(cleanId);
+      if (tasksList.isNotEmpty) {
+        _tasks = tasksList;
+      } else {
+        _tasks = [];
+      }
+      _ensureDailyTasks(cleanId);
+    } catch (e) {
+      debugPrint("Error loading tasks from DB: $e");
+      _ensureDailyTasks(cleanId);
+    }
+
+    try {
+      final achievementsList = await dbHelper.getAchievementsForUser(cleanId);
+      if (achievementsList.isNotEmpty) {
+        _achievements = achievementsList;
+      } else {
+        _achievements = _getDefaultAchievements(cleanId);
+        await dbHelper.saveAllAchievements(_achievements, cleanId);
+      }
+    } catch (e) {
+      debugPrint("Error loading achievements from DB: $e");
+    }
+
+    try {
+      final notifsList = await dbHelper.getNotificationsForUser(cleanId);
+      _notifications = notifsList;
+    } catch (e) {
+      debugPrint("Error loading notifications from DB: $e");
+    }
   }
 
   Future<void> _loadData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      _isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+      _userRole = prefs.getString('auth_role');
       final savedName = prefs.getString('current_username') ?? prefs.getString('hero_username');
+      final savedId = prefs.getInt('auth_user_id')?.toString() ??
+          (savedName != null && savedName.isNotEmpty ? savedName.toLowerCase() : 'hero');
+
       if (savedName != null && savedName.trim().isNotEmpty) {
         _userProfile.username = savedName.trim();
       }
+      _userProfile.userId = savedId;
+
       final savedAvatar = prefs.getString('hero_avatar');
       if (savedAvatar != null && savedAvatar.trim().isNotEmpty) {
         _userProfile.avatarId = savedAvatar.trim();
       }
-      final dbHelper = DatabaseHelper.instance;
-      
-      try {
-        final profile = await dbHelper.getProfile();
-        if (profile != null) {
-          _userProfile = profile;
-          if (savedName != null && savedName.trim().isNotEmpty && profile.username == 'Hero') {
-            _userProfile.username = savedName.trim();
-          }
-        }
-      } catch (e) {
-        debugPrint("Error loading profile from DB: $e");
-      }
-      
-      try {
-        final tasksList = await dbHelper.getAllTasks();
-        if (tasksList.isNotEmpty) {
-          _tasks = tasksList;
-        }
-        _ensureDailyTasks();
-      } catch (e) {
-        debugPrint("Error loading tasks from DB: $e");
-        _ensureDailyTasks();
-      }
-      
-      try {
-        final achievementsList = await dbHelper.getAllAchievements();
-        if (achievementsList.isNotEmpty) {
-          _achievements = achievementsList;
-        }
-      } catch (e) {
-        debugPrint("Error loading achievements from DB: $e");
-      }
 
-      try {
-        final notifsList = await dbHelper.getAllNotifications();
-        _notifications = notifsList;
-      } catch (e) {
-        debugPrint("Error loading notifications from DB: $e");
-      }
+      await _loadUserDataFromDb(savedId);
 
       _notificationSettings = NotificationSettings(
         taskCompletionNotifications: prefs.getBool('notif_task_completion') ?? true,
@@ -495,15 +599,31 @@ class AppState extends ChangeNotifier {
         streakReminders: prefs.getBool('notif_streak_reminders') ?? true,
         achievementNotifications: prefs.getBool('notif_achievements') ?? true,
       );
-      
-      _isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+
       _soundEffectsEnabled = prefs.getBool('sound_effects_enabled') ?? true;
       _isDarkMode = prefs.getBool('isDarkMode') ?? true;
-      
+
       final cachedBanner = prefs.getString('cached_hero_banner_url');
       if (cachedBanner != null && cachedBanner.trim().isNotEmpty) {
-        _heroBannerUrl = cachedBanner.trim();
+        _heroBannerUrl = ApiConfig.resolveUrl(cachedBanner.trim());
       }
+
+      final cachedRawBanner = prefs.getString('cached_raw_banner_image');
+      if (cachedRawBanner != null && cachedRawBanner.trim().isNotEmpty) {
+        _rawHeroBannerImage = cachedRawBanner.trim();
+        _heroBannerUrl ??= ApiConfig.resolveUrl(cachedRawBanner.trim());
+      }
+
+      _heroBannerTitle = prefs.getString('cached_hero_banner_title');
+      _heroBannerSubtitle = prefs.getString('cached_hero_banner_subtitle');
+      if (prefs.containsKey('cached_hero_banner_enabled')) {
+        _heroBannerEnabled = prefs.getBool('cached_hero_banner_enabled') ?? true;
+      }
+      _quoteOfTheDay = prefs.getString('cached_quote_of_the_day') ?? _quoteOfTheDay;
+      if (prefs.containsKey('cached_maintenance_mode')) {
+        _isMaintenanceMode = prefs.getBool('cached_maintenance_mode') ?? false;
+      }
+      _maintenanceMessage = prefs.getString('cached_maintenance_message') ?? _maintenanceMessage;
 
       final savedCustomBanner = prefs.getString('custom_banner_path');
       if (savedCustomBanner != null && savedCustomBanner.trim().isNotEmpty) {
@@ -511,15 +631,13 @@ class AppState extends ChangeNotifier {
       }
 
       _updateStreak();
-      
-      // For demo purposes, we randomly populate weekly XP if empty
+
       _weeklyXp = {
         'Mon': 120, 'Tue': 80, 'Wed': 150, 'Thu': 200, 'Fri': 100, 'Sat': 0, 'Sun': 0,
       };
 
       // Asynchronously fetch latest realm settings from online backend
       fetchAppSettings();
-      
     } catch (e) {
       debugPrint("Critical error in _loadData: $e");
     } finally {
@@ -528,7 +646,8 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  void _ensureDailyTasks() {
+  void _ensureDailyTasks([String? userId]) {
+    final effectiveUserId = (userId ?? currentUserId).trim().toLowerCase();
     final now = DateTime.now();
     final yesterday = now.subtract(const Duration(days: 1));
     final tomorrow = now.add(const Duration(days: 1));
@@ -1316,18 +1435,19 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> _saveProfile() async {
-    await DatabaseHelper.instance.saveProfile(_userProfile);
+    await DatabaseHelper.instance.saveProfile(_userProfile, currentUserId);
   }
 
   Future<void> _saveTasks() async {
-    await DatabaseHelper.instance.saveAllTasks(_tasks);
+    await DatabaseHelper.instance.saveAllTasks(_tasks, currentUserId);
   }
 
   Future<void> _saveAchievements() async {
-    await DatabaseHelper.instance.saveAllAchievements(_achievements);
+    await DatabaseHelper.instance.saveAllAchievements(_achievements, currentUserId);
   }
 
   void addTask(RPGTask task) {
+    task.userId = (task.userId != null && task.userId!.isNotEmpty) ? task.userId : currentUserId;
     _tasks.add(task);
     _saveTasks();
     notifyListeners();
@@ -1336,6 +1456,7 @@ class AppState extends ChangeNotifier {
     OnlineTaskService.instance.createTask(task).then((savedOnline) {
       final idx = _tasks.indexWhere((t) => t.id == task.id);
       if (idx != -1 && savedOnline.id != task.id) {
+        savedOnline.userId = currentUserId;
         _tasks[idx] = savedOnline;
         _saveTasks();
         notifyListeners();
@@ -1538,6 +1659,14 @@ class AppState extends ChangeNotifier {
         return;
       }
 
+      // Check ownership
+      if (task.userId != null && task.userId!.isNotEmpty) {
+        if (!SecurityHelper.validateOwnership(currentUserId, task.userId)) {
+          debugPrint("Unauthorized attempt to complete another user's task.");
+          return;
+        }
+      }
+
       final int oldLevel = _userProfile.level;
 
       _pauseTimerLocally(task); // Stop timer if running
@@ -1636,6 +1765,7 @@ class AppState extends ChangeNotifier {
     // 3. Task Completion Notification
     final completionNotification = AppNotification(
       id: 'notif_${DateTime.now().millisecondsSinceEpoch}',
+      userId: currentUserId,
       title: categoryHeadline,
       body: categoryBody,
       category: task.category,
@@ -1646,13 +1776,14 @@ class AppState extends ChangeNotifier {
       motivationalQuote: quote,
     );
     _notifications.insert(0, completionNotification);
-    DatabaseHelper.instance.saveNotification(completionNotification);
+    DatabaseHelper.instance.saveNotification(completionNotification, currentUserId);
 
     // 4. Level Up Notification
     bool didLevelUp = _userProfile.level > oldLevel;
     if (didLevelUp) {
       final levelNotification = AppNotification(
         id: 'notif_lvl_${DateTime.now().millisecondsSinceEpoch}',
+        userId: currentUserId,
         title: '🎊 LEVEL UP!',
         body: 'Congratulations, Hero!\nYou reached Level ${_userProfile.level}.\nKeep completing quests to become stronger.',
         category: 'LevelUp',
@@ -1660,7 +1791,7 @@ class AppState extends ChangeNotifier {
         timestamp: DateTime.now(),
       );
       _notifications.insert(0, levelNotification);
-      DatabaseHelper.instance.saveNotification(levelNotification);
+      DatabaseHelper.instance.saveNotification(levelNotification, currentUserId);
     }
 
     // 5. Achievement Notification
@@ -1668,6 +1799,7 @@ class AppState extends ChangeNotifier {
       for (var ach in newlyUnlocked) {
         final achNotif = AppNotification(
           id: 'notif_ach_${ach.id}_${DateTime.now().millisecondsSinceEpoch}',
+          userId: currentUserId,
           title: '🏆 ACHIEVEMENT UNLOCKED!',
           body: '${ach.name}\n${ach.description}',
           category: 'Achievement',
@@ -1676,7 +1808,7 @@ class AppState extends ChangeNotifier {
           xpReward: ach.xpReward,
         );
         _notifications.insert(0, achNotif);
-        DatabaseHelper.instance.saveNotification(achNotif);
+        DatabaseHelper.instance.saveNotification(achNotif, currentUserId);
       }
     }
 
@@ -1819,7 +1951,7 @@ class AppState extends ChangeNotifier {
     final idx = _notifications.indexWhere((n) => n.id == id);
     if (idx != -1) {
       _notifications[idx].isRead = true;
-      await DatabaseHelper.instance.markNotificationAsRead(id);
+      await DatabaseHelper.instance.markNotificationAsRead(id, currentUserId);
       notifyListeners();
     }
   }
@@ -1828,13 +1960,13 @@ class AppState extends ChangeNotifier {
     for (var n in _notifications) {
       n.isRead = true;
     }
-    await DatabaseHelper.instance.markAllNotificationsAsRead();
+    await DatabaseHelper.instance.markAllNotificationsAsRead(currentUserId);
     notifyListeners();
   }
 
   Future<void> clearAllNotifications() async {
     _notifications.clear();
-    await DatabaseHelper.instance.clearAllNotifications();
+    await DatabaseHelper.instance.clearAllNotifications(currentUserId);
     notifyListeners();
   }
 

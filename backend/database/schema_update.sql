@@ -20,7 +20,7 @@ SET @preparedStatement = (SELECT IF(
       AND (COLUMN_NAME = @columnname)
   ) > 0,
   "SELECT 1",
-  "ALTER TABLE users ADD COLUMN password_hash VARCHAR(255) NULL AFTER email;"
+  "ALTER TABLE users ADD COLUMN password_hash VAR.CHAR(255) NULL AFTER email;"
 ));
 PREPARE alterIfNotExists FROM @preparedStatement;
 EXECUTE alterIfNotExists;

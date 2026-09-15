@@ -43,21 +43,20 @@ class LocalRankingRepository implements RankingRepository {
         return [];
       }
 
-      final allTasks = await _dbHelper.getAllTasks();
-      final allAchievements = await _dbHelper.getAllAchievements();
-      final unlockedAchievementsCount = allAchievements.where((a) => a.isUnlocked).length;
-
+      final List<RankingPlayer> players = [];
       final now = DateTime.now();
 
-      // Calculate metric for each local profile
-      List<RankingPlayer> players = [];
-
       for (var p in profiles) {
+        final profileKey = (p.userId ?? p.username).toLowerCase();
         final isMe = currentUsername != null &&
             p.username.toLowerCase() == currentUsername.toLowerCase();
 
+        final userTasks = await _dbHelper.getTasksForUser(profileKey);
+        final userAchievements = await _dbHelper.getAchievementsForUser(profileKey);
+        final unlockedAchievementsCount = userAchievements.where((a) => a.isUnlocked).length;
+
         // Calculate time-filtered stats for tasks completed
-        List<RPGTask> relevantTasks = allTasks.where((t) => t.isCompleted).toList();
+        List<RPGTask> relevantTasks = userTasks.where((t) => t.isCompleted).toList();
         if (period == RankingPeriod.today) {
           relevantTasks = relevantTasks.where((t) {
             final d = t.dueDate;
@@ -150,8 +149,9 @@ class LocalRankingRepository implements RankingRepository {
         orElse: () => profiles.first,
       );
 
-      final allTasks = await _dbHelper.getAllTasks();
-      final allAchievements = await _dbHelper.getAllAchievements();
+      final profileKey = (p.userId ?? p.username).toLowerCase();
+      final userTasks = await _dbHelper.getTasksForUser(profileKey);
+      final userAchievements = await _dbHelper.getAchievementsForUser(profileKey);
 
       return PlayerPublicProfile(
         id: p.username,
@@ -162,8 +162,8 @@ class LocalRankingRepository implements RankingRepository {
         totalXP: p.totalXP,
         currentStreak: p.currentStreak,
         bestStreak: p.bestStreak,
-        completedTasks: allTasks.where((t) => t.isCompleted).length,
-        achievementsCount: allAchievements.where((a) => a.isUnlocked).length,
+        completedTasks: userTasks.where((t) => t.isCompleted).length,
+        achievementsCount: userAchievements.where((a) => a.isUnlocked).length,
         rank: 1,
         skills: p.skills,
         joinedDate: 'Local Realm',

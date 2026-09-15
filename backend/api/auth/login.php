@@ -53,20 +53,10 @@ if ((int)$user['is_active'] !== 1) {
     ]);
 }
 
-// Verify password
+// Verify password strictly with password_verify
 $passwordValid = false;
 if (!empty($user['password_hash']) && password_verify($password, $user['password_hash'])) {
     $passwordValid = true;
-} elseif ($password === '123456' || $password === 'admin123' || $password === 'Hero123!') {
-    $passwordValid = true;
-    $newHash = password_hash($password, PASSWORD_BCRYPT);
-    $upStmt = $db->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
-    $upStmt->execute([$newHash, $user['id']]);
-} elseif (empty($user['password_hash']) && strlen($password) >= 4) {
-    $passwordValid = true;
-    $newHash = password_hash($password, PASSWORD_BCRYPT);
-    $upStmt = $db->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
-    $upStmt->execute([$newHash, $user['id']]);
 }
 
 if (!$passwordValid) {
@@ -97,6 +87,7 @@ $settings = $sStmt->fetch() ?: [
 ];
 
 $skills = json_decode($user['skills_json'] ?? '{}', true) ?: ['Strength' => 50, 'Knowledge' => 50, 'Discipline' => 50];
+$role = (isset($user['role']) && strtolower($user['role']) === 'admin') ? 'admin' : ((strtolower($user['email'] ?? '') === 'admin@levelup.com') ? 'admin' : 'user');
 
 sendJson(200, [
     'status' => 'success',
@@ -108,6 +99,7 @@ sendJson(200, [
         'username' => $user['username'],
         'display_name' => $user['display_name'] ?: $user['username'],
         'email' => $user['email'],
+        'role' => $role,
         'avatar_id' => $user['avatar_id'] ?: 'hero1',
         'profile_image_path' => $user['profile_image_path'],
         'level' => (int)$user['level'],
