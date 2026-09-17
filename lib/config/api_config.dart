@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ApiConfig {
   static const String _customUrlKey = 'custom_api_base_url';
 
-  static const String lanHost = 'http://192.168.31.170/real-life-rpg/backend/api';
+  static const String lanHost = 'http://192.168.31.173/real-life-rpg/backend/api';
 
   static String get defaultHost {
     if (!kIsWeb && Platform.isAndroid) {

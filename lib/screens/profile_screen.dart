@@ -162,6 +162,14 @@ class ProfileScreen extends StatelessWidget {
                       }
                     }
 
+                    if (bannerImg == null && custom == null && state.heroBannerEnabled) {
+                      bannerImg = DecorationImage(
+                        image: const AssetImage('assets/images/banner_hero.jpg'),
+                        fit: BoxFit.cover,
+                        colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.55), BlendMode.darken),
+                      );
+                    }
+
                     return Container(
                       height: 180,
                       margin: const EdgeInsets.only(bottom: 60),

@@ -115,6 +115,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       } catch (_) {}
     }
 
+    // Default asset fallback if hero banner is enabled and no custom gradient is chosen
+    if (custom == null) {
+      return DecorationImage(
+        image: const AssetImage('assets/images/banner_hero.jpg'),
+        fit: BoxFit.cover,
+        colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.45), BlendMode.darken),
+      );
+    }
+
     return null;
   }
 

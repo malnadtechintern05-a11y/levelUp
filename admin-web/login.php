@@ -26,8 +26,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         try {
             $db = getDB();
-            $stmt = $db->prepare("SELECT id, username, email, password_hash, role FROM admins WHERE email = ? LIMIT 1");
-            $stmt->execute([$email]);
+            $stmt = $db->prepare("SELECT id, username, email, password_hash, role FROM admins WHERE email = ? OR username = ? LIMIT 1");
+            $stmt->execute([$email, $email]);
             $admin = $stmt->fetch();
 
             if ($admin && password_verify($password, $admin['password_hash'])) {
@@ -108,13 +108,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?php csrf_field(); ?>
 
                     <div class="mb-3">
-                        <label for="email" class="form-label-rpg">Admin Email</label>
+                        <label for="email" class="form-label-rpg">Admin Email or Username</label>
                         <div class="input-group">
                             <span class="input-group-text bg-dark border-secondary text-secondary">
-                                <i class="bi bi-envelope-fill"></i>
+                                <i class="bi bi-person-fill"></i>
                             </span>
-                            <input type="email" class="form-control form-control-rpg" id="email" name="email" 
-                                   placeholder="admin@levelup.com" value="<?= e($_POST['email'] ?? 'admin@levelup.com') ?>" required autofocus>
+                            <input type="text" class="form-control form-control-rpg" id="email" name="email" 
+                                   placeholder="admin@levelup.com or username" value="<?= e($_POST['email'] ?? '') ?>" required autofocus>
                         </div>
                     </div>
 
@@ -125,7 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <i class="bi bi-key-fill"></i>
                             </span>
                             <input type="password" class="form-control form-control-rpg" id="password" name="password" 
-                                   placeholder="••••••••••••" value="admin123" required>
+                                   placeholder="••••••••••••" required>
                             <button type="button" class="btn btn-outline-secondary border-secondary toggle-password-btn" data-target="password" aria-label="Toggle password visibility">
                                 <i class="bi bi-eye"></i>
                             </button>
@@ -136,11 +136,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <i class="bi bi-box-arrow-in-right me-1"></i> Enter Command Center
                     </button>
                 </form>
-
-                <div class="mt-4 pt-3 border-top border-secondary text-center">
-                    <small class="text-muted d-block mb-1">Development Access Credentials:</small>
-                    <code class="text-warning small bg-dark px-2 py-1 rounded">admin / admin123</code>
-                </div>
             </div>
 
             <!-- Footer info -->
