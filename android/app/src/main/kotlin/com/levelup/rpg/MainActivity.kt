@@ -1,4 +1,4 @@
-package com.example.real_life_rpg
+package com.levelup.rpg
 
 import io.flutter.embedding.android.FlutterActivity
 

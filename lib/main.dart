@@ -20,6 +20,9 @@ import 'screens/rankings_screen.dart';
 import 'screens/alarm_sound_screen.dart';
 import 'screens/register_screen.dart';
 import 'services/api_client.dart';
+import 'services/firebase_service.dart';
+import 'services/analytics_service.dart';
+import 'services/notification_service.dart';
 import 'config/api_config.dart';
 import 'widgets/smooth_transitions.dart';
 
@@ -29,6 +32,10 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ApiConfig.init();
+
+  // Initialize Firebase asynchronously in background so app starts immediately
+  FirebaseService.instance.initialize();
+
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
@@ -341,6 +348,9 @@ class RealLifeRPGApp extends StatelessWidget {
           title: 'LevelUp',
           navigatorKey: rootNavigatorKey,
           scaffoldMessengerKey: rootScaffoldMessengerKey,
+          navigatorObservers: [
+            if (AnalyticsService.instance.observer != null) AnalyticsService.instance.observer!,
+          ],
           debugShowCheckedModeBanner: false,
           theme: lightTheme,
           darkTheme: darkTheme,

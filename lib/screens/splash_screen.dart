@@ -35,7 +35,10 @@ class _SplashScreenState extends State<SplashScreen> {
       if (!mounted) return;
       try {
         final state = Provider.of<AppState>(context, listen: false);
-        await state.refreshAllData();
+        await state.refreshAllData().timeout(
+          const Duration(seconds: 2),
+          onTimeout: () {},
+        );
       } catch (_) {
         // Continue with local cache if network is temporarily unreachable
       }

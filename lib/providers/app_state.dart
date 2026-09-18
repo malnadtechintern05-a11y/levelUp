@@ -15,6 +15,8 @@ import '../services/online_task_service.dart';
 import '../services/online_hydration_service.dart';
 import '../services/online_achievement_service.dart';
 import '../services/api_client.dart';
+import '../services/analytics_service.dart';
+import '../services/notification_service.dart';
 import '../config/api_config.dart';
 import 'package:flutter/material.dart';
 
@@ -116,6 +118,10 @@ class AppState extends ChangeNotifier {
     );
     _notifications.insert(0, notif);
     DatabaseHelper.instance.saveNotification(notif, currentUserId);
+    NotificationService.instance.showLocalNotification(
+      title: title,
+      body: message,
+    );
     notifyListeners();
   }
 
@@ -167,6 +173,8 @@ class AppState extends ChangeNotifier {
         }
         await _loadUserDataFromDb(cleanId);
         await refreshAllData();
+        AnalyticsService.instance.logLogin(loginMethod: 'online_auth');
+        AnalyticsService.instance.setUserProperties(userId: cleanId, level: _userProfile.level);
         notifyListeners();
       }
       return res;
@@ -184,6 +192,8 @@ class AppState extends ChangeNotifier {
       await prefs.setString('logged_in_username', identifier.trim());
       await prefs.setString('current_username', identifier.trim());
       await _loadUserDataFromDb(cleanId);
+      AnalyticsService.instance.logLogin(loginMethod: 'local_storage');
+      AnalyticsService.instance.setUserProperties(userId: cleanId, level: _userProfile.level);
       notifyListeners();
       return {'status': 'success'};
     }
@@ -219,6 +229,8 @@ class AppState extends ChangeNotifier {
       if (res['user'] != null) {
         _applyUserData(res['user'] as Map<String, dynamic>);
       }
+      AnalyticsService.instance.logSignUp(signUpMethod: 'email_password');
+      AnalyticsService.instance.setUserProperties(userId: cleanId, level: _userProfile.level);
       await _saveProfile();
       _ensureDailyTasks(cleanId);
       await refreshAllData();

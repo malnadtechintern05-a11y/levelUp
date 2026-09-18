@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "673974382308",
+    "project_id": "levelup-app-9528a",
+    "storage_bucket": "levelup-app-9528a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:673974382308:android:704f80432fe9ce188346f1",
+        "android_client_info": {
+          "package_name": "com.levelup.rpg"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD8_n0fEucr88Kp4QPL81h_hANZiNvEuBY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
