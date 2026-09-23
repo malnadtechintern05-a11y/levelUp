@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/app_state.dart';
-import '../config/api_config.dart';
 import '../services/api_client.dart';
 import '../services/analytics_service.dart';
 import '../widgets/social_auth_icons.dart';
@@ -73,30 +73,50 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       _loadingText = 'Connecting with $providerName...';
     });
 
-    // Simulate OAuth handshake
-    await Future.delayed(const Duration(milliseconds: 700));
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      String? savedSocialUsername = prefs.getString('saved_${providerName.toLowerCase()}_user');
+      if (savedSocialUsername == null || savedSocialUsername.isEmpty) {
+        final randSuffix = DateTime.now().millisecondsSinceEpoch.toString().substring(8);
+        savedSocialUsername = '${providerName.toLowerCase()}_hero_$randSuffix';
+        await prefs.setString('saved_${providerName.toLowerCase()}_user', savedSocialUsername);
+      }
 
-    if (!mounted) return;
+      if (!mounted) return;
+      final state = Provider.of<AppState>(context, listen: false);
+      final res = await state.loginSocial(
+        provider: providerName.toLowerCase(),
+        username: savedSocialUsername,
+        displayName: '$providerName Hero',
+        email: '$savedSocialUsername@${providerName.toLowerCase()}.levelup.com',
+      );
 
-    final state = Provider.of<AppState>(context, listen: false);
-    final socialUsername = '${providerName.toLowerCase()}_hero';
+      if (!mounted) return;
 
-    // Log in via local state / isolated hero profile
-    await state.loginUser(socialUsername);
-    AnalyticsService.instance.logLogin(loginMethod: providerName.toLowerCase());
+      if (res['status'] == 'success') {
+        final activeName = (res['user'] != null && res['user']['username'] != null)
+            ? res['user']['username']
+            : savedSocialUsername;
 
-    if (!mounted) return;
-    setState(() => _isLoading = false);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Successfully authenticated with $providerName! Welcome, $socialUsername!'),
-        backgroundColor: const Color(0xFF16A34A),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-
-    Navigator.pushReplacementNamed(context, '/main');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('🎉 Authenticated with $providerName! Welcome, $activeName!'),
+            backgroundColor: const Color(0xFF16A34A),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        Navigator.pushReplacementNamed(context, '/main');
+      } else {
+        _showErrorSnackBar(res['message'] ?? 'Failed to authenticate with $providerName.');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _showErrorSnackBar('Network error connecting with $providerName. Check Server Settings.');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   Future<void> _handleGuestQuickPlay() async {
@@ -105,26 +125,45 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       _loadingText = 'Creating your Hero Journey...';
     });
 
-    await Future.delayed(const Duration(milliseconds: 500));
-    if (!mounted) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      String? savedGuestId = prefs.getString('saved_guest_hero_id');
+      if (savedGuestId == null || savedGuestId.isEmpty) {
+        savedGuestId = 'hero_${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+        await prefs.setString('saved_guest_hero_id', savedGuestId);
+      }
 
-    final state = Provider.of<AppState>(context, listen: false);
-    final guestId = 'hero_${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+      if (!mounted) return;
+      final state = Provider.of<AppState>(context, listen: false);
+      final res = await state.loginSocial(
+        provider: 'guest',
+        username: savedGuestId,
+        displayName: 'Guest Adventurer',
+        email: '$savedGuestId@guest.levelup.com',
+      );
 
-    await state.loginUser(guestId);
-    AnalyticsService.instance.logLogin(loginMethod: 'quick_guest_mode');
+      if (!mounted) return;
 
-    // Award starter bonus
-    state.addNotification(
-      '🎉 Starter Bonus Claimed!',
-      'You received +100 Bonus XP & 50 Gold for starting your epic RPG journey!',
-      category: 'System',
-    );
+      if (res['status'] == 'success') {
+        // Award starter bonus
+        state.addNotification(
+          '🎉 Starter Bonus Claimed!',
+          'You received +100 Bonus XP & 50 Gold for starting your epic RPG journey!',
+          category: 'System',
+        );
 
-    if (!mounted) return;
-    setState(() => _isLoading = false);
-
-    Navigator.pushReplacementNamed(context, '/main');
+        Navigator.pushReplacementNamed(context, '/main');
+      } else {
+        _showErrorSnackBar(res['message'] ?? 'Failed to start guest session.');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _showErrorSnackBar('Failed to initialize hero profile. Check server connection.');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   void _showErrorSnackBar(String message) {
@@ -137,96 +176,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             Expanded(child: Text(message)),
           ],
         ),
-        action: SnackBarAction(
-          label: 'SETTINGS',
-          textColor: const Color(0xFFF5B942),
-          onPressed: _showServerConfigDialog,
-        ),
         backgroundColor: Colors.red.shade800,
         behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 7),
+        duration: const Duration(seconds: 4),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
-  }
-
-  void _showServerConfigDialog() {
-    final controller = TextEditingController(text: ApiConfig.baseUrl);
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF162033),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: const [
-            Icon(Icons.dns, color: Color(0xFFF5B942)),
-            SizedBox(width: 8),
-            Text('Server Configuration', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Set the backend server URL. For Android emulators use 10.0.2.2. For physical phones, enter your development PC\'s LAN IP.',
-              style: TextStyle(color: Colors.white70, fontSize: 13),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                ActionChip(
-                  label: const Text('Wi-Fi PC (192.168.31.173)', style: TextStyle(fontSize: 11)),
-                  onPressed: () => controller.text = 'http://192.168.31.173/real-life-rpg/backend/api',
-                ),
-                ActionChip(
-                  label: const Text('Emulator (10.0.2.2)', style: TextStyle(fontSize: 11)),
-                  onPressed: () => controller.text = 'http://10.0.2.2/real-life-rpg/backend/api',
-                ),
-                ActionChip(
-                  label: const Text('Localhost (127.0.0.1)', style: TextStyle(fontSize: 11)),
-                  onPressed: () => controller.text = 'http://127.0.0.1/real-life-rpg/backend/api',
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                labelText: 'API Base URL',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              await ApiConfig.resetToDefault();
-              if (ctx.mounted) Navigator.pop(ctx);
-              setState(() {});
-            },
-            child: const Text('Reset Default', style: TextStyle(color: Colors.white54)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFF5B942),
-              foregroundColor: Colors.black,
-            ),
-            onPressed: () async {
-              final newUrl = controller.text.trim();
-              if (newUrl.isNotEmpty) {
-                await ApiConfig.setBaseUrl(newUrl);
-                if (ctx.mounted) Navigator.pop(ctx);
-                setState(() {});
-              }
-            },
-            child: const Text('Save', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
       ),
     );
   }
@@ -290,59 +243,43 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Top Bar with App Badge & Server Settings Button
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(width: 36), // Balanced spacer
-                            // Stylized App Logo Badge
-                            Container(
-                              width: 58,
-                              height: 58,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFFD9F99D), Color(0xFF84CC16)],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFF84CC16).withValues(alpha: 0.35),
-                                    blurRadius: 14,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
+                        // Centered App Logo Badge
+                        Center(
+                          child: Container(
+                            width: 64,
+                            height: 64,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(18),
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFFD9F99D), Color(0xFF84CC16)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
-                              child: Center(
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Image.asset(
-                                    'assets/logo.png',
-                                    width: 38,
-                                    height: 38,
-                                    fit: BoxFit.contain,
-                                    errorBuilder: (context, error, stackTrace) => const Icon(
-                                      Icons.flash_on_rounded,
-                                      color: Color(0xFF0F172A),
-                                      size: 32,
-                                    ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF84CC16).withValues(alpha: 0.35),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(14),
+                                child: Image.asset(
+                                  'assets/logo.png',
+                                  width: 44,
+                                  height: 44,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) => const Icon(
+                                    Icons.flash_on_rounded,
+                                    color: Color(0xFF0F172A),
+                                    size: 34,
                                   ),
                                 ),
                               ),
                             ),
-                            // Server Settings / Close Icon
-                            IconButton(
-                              onPressed: _showServerConfigDialog,
-                              icon: const Icon(Icons.settings_ethernet, color: Color(0xFFAAB4C2), size: 20),
-                              tooltip: 'Server Settings',
-                              style: IconButton.styleFrom(
-                                backgroundColor: const Color(0xFF1E283D),
-                                padding: const EdgeInsets.all(8),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
 
                         const SizedBox(height: 20),

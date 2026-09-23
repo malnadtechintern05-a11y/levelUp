@@ -69,6 +69,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $passHash = password_hash($newPassword, PASSWORD_BCRYPT);
                 $pStmt = $db->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
                 $pStmt->execute([$passHash, $userId]);
+
+                // Invalidate all existing tokens for security
+                $tStmt = $db->prepare("DELETE FROM user_tokens WHERE user_id = ?");
+                $tStmt->execute([$userId]);
             }
         }
 

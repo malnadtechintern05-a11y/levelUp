@@ -223,7 +223,7 @@ require_once __DIR__ . '/includes/sidebar.php';
                                     <td>
                                         <div class="d-flex align-items-center gap-3">
                                             <div class="avatar-ring">
-                                                <?= strtoupper(substr($user['username'], 0, 1)) ?>
+                                                <?= e(strtoupper(substr($user['username'], 0, 1))) ?>
                                             </div>
                                             <div>
                                                 <a href="user-view.php?id=<?= $user['id'] ?>" class="text-white fw-bold text-decoration-none hover-gold">

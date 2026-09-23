@@ -13,7 +13,7 @@ class ApiConfig {
     if (!kIsWeb && Platform.isAndroid) {
       return lanHost;
     }
-    return 'http://127.0.0.1/real-life-rpg/backend/api';
+    return 'http://192.168.31.173/real-life-rpg/backend/api';
   }
 
   static String _currentBaseUrl = '';
@@ -23,8 +23,8 @@ class ApiConfig {
     final saved = prefs.getString(_customUrlKey);
     if (saved != null && saved.trim().isNotEmpty) {
       String clean = saved.trim();
-      if (clean.contains('10.0.2.2')) {
-        // Automatically migrate away from emulator loopback on real devices
+      if (clean.contains('10.0.2.2') || clean.contains('leve-lup.xo.je')) {
+        // Automatically migrate away from broken/emulator URLs
         clean = defaultHost;
         await prefs.remove(_customUrlKey);
       } else {
@@ -32,7 +32,7 @@ class ApiConfig {
           clean = clean.substring(0, clean.length - 1);
         }
         if (!clean.endsWith('/api') && !clean.endsWith('/backend/api')) {
-          clean = '$clean/api';
+          clean = '$clean/backend/api';
         }
       }
       _currentBaseUrl = clean;

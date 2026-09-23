@@ -666,31 +666,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.sync_rounded, color: Color(0xFFF5B942)),
-              title: Text('Sync with Server', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
-              onTap: () async {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('🔄 Syncing with LevelUp server...'),
-                    duration: Duration(milliseconds: 800),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-                await context.read<AppState>().refreshAllData();
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('✨ Everything is synced with the server!'),
-                      backgroundColor: Color(0xFF16A34A),
-                      duration: Duration(seconds: 2),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              },
-            ),
-            ListTile(
               leading: Icon(Icons.info_outline, color: theme.colorScheme.onSurface),
               title: Text('About', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
               onTap: () {

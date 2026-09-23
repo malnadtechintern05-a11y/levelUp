@@ -24,23 +24,26 @@ if (empty($taskId)) {
     sendJson(422, ['status' => 'error', 'message' => 'Task ID is required.']);
 }
 
-// 1. Fetch task and check ownership
+// 1. Fetch task and check ownership or global availability
 $stmt = $db->prepare("
-    SELECT *
-    FROM tasks
-    WHERE id = ? AND (user_id = ? OR assigned_user_id = ?) AND is_active = 1
+    SELECT t.*,
+           (SELECT COUNT(*) FROM task_completions tc WHERE tc.task_id = t.id AND tc.user_id = ?) as user_completed_count
+    FROM tasks t
+    WHERE t.id = ? 
+      AND (t.user_id = ? OR t.assigned_user_id = ? OR (t.user_id IS NULL AND t.assigned_user_id IS NULL)) 
+      AND t.is_active = 1
     LIMIT 1
 ");
-$stmt->execute([$taskId, $user['id'], $user['id']]);
+$stmt->execute([$user['id'], $taskId, $user['id'], $user['id']]);
 $task = $stmt->fetch();
 
 if (!$task) {
-    sendJson(404, ['status' => 'error', 'message' => 'Task not found or does not belong to you.']);
+    sendJson(404, ['status' => 'error', 'message' => 'Task not found or is no longer active.']);
 }
 
 // 2. ENFORCE FUTURE TASK DATE RULE
 $today = date('Y-m-d');
-if ($task['scheduled_date'] > $today) {
+if (!empty($task['scheduled_date']) && $task['scheduled_date'] > $today) {
     sendJson(403, [
         'status' => 'error',
         'code' => 'FUTURE_TASK_LOCKED',
@@ -49,7 +52,8 @@ if ($task['scheduled_date'] > $today) {
 }
 
 // 3. PREVENT DUPLICATE COMPLETION
-if ((int)$task['is_completed'] === 1) {
+$isAlreadyCompleted = ((int)($task['user_completed_count'] ?? 0) > 0) || ((int)$task['is_completed'] === 1 && !empty($task['user_id']));
+if ($isAlreadyCompleted) {
     sendJson(409, [
         'status' => 'error',
         'code' => 'ALREADY_COMPLETED',
@@ -63,13 +67,15 @@ try {
     $xpAwarded = (int)$task['xp_reward'];
     $duration = (int)$task['duration_minutes'];
 
-    // Mark task completed
-    $uTaskStmt = $db->prepare("
-        UPDATE tasks
-        SET is_completed = 1, timer_status = 'Completed', time_spent_seconds = ?
-        WHERE id = ?
-    ");
-    $uTaskStmt->execute([$duration * 60, $taskId]);
+    // If personal/assigned task, mark is_completed in tasks table
+    if (!empty($task['user_id']) || !empty($task['assigned_user_id'])) {
+        $uTaskStmt = $db->prepare("
+            UPDATE tasks
+            SET is_completed = 1, timer_status = 'Completed', time_spent_seconds = ?
+            WHERE id = ?
+        ");
+        $uTaskStmt->execute([$duration * 60, $taskId]);
+    }
 
     // Record in task_completions
     $tcStmt = $db->prepare("

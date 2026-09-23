@@ -15,11 +15,26 @@ $user = requireAuth($db);
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = getJsonBody();
 
-    $displayName = isset($input['display_name']) ? trim($input['display_name']) : (isset($input['username']) ? trim($input['username']) : $user['display_name']);
-    $username = isset($input['username']) ? trim($input['username']) : (isset($input['display_name']) ? trim($input['display_name']) : $user['username']);
+    $username = isset($input['username']) && !empty(trim($input['username'])) ? trim($input['username']) : $user['username'];
+    $displayName = isset($input['display_name']) && !empty(trim($input['display_name'])) ? trim($input['display_name']) : ($user['display_name'] ?: $username);
     $avatarId = isset($input['avatar_id']) ? trim($input['avatar_id']) : $user['avatar_id'];
     $showOnLeaderboard = isset($input['show_on_leaderboard']) ? (int)(bool)$input['show_on_leaderboard'] : (int)$user['show_on_leaderboard'];
-    $skillsJson = isset($input['skills']) && is_array($input['skills']) ? json_encode($input['skills']) : $user['skills_json'];
+
+    // Sanitize and whitelist skills attributes
+    $sanitizedSkills = ['Strength' => 50, 'Knowledge' => 50, 'Discipline' => 50];
+    $currentSkills = json_decode($user['skills_json'] ?? '{}', true) ?: $sanitizedSkills;
+    if (isset($input['skills']) && is_array($input['skills'])) {
+        foreach (['Strength', 'Knowledge', 'Discipline'] as $attr) {
+            if (isset($input['skills'][$attr])) {
+                $sanitizedSkills[$attr] = min(100, max(0, (int)$input['skills'][$attr]));
+            } else {
+                $sanitizedSkills[$attr] = (int)($currentSkills[$attr] ?? 50);
+            }
+        }
+    } else {
+        $sanitizedSkills = $currentSkills;
+    }
+    $skillsJson = json_encode($sanitizedSkills);
 
     // Update user record
     $uStmt = $db->prepare("

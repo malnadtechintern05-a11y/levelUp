@@ -87,7 +87,19 @@ $settings = $sStmt->fetch() ?: [
 ];
 
 $skills = json_decode($user['skills_json'] ?? '{}', true) ?: ['Strength' => 50, 'Knowledge' => 50, 'Discipline' => 50];
-$role = (isset($user['role']) && strtolower($user['role']) === 'admin') ? 'admin' : ((strtolower($user['email'] ?? '') === 'admin@levelup.com') ? 'admin' : 'user');
+
+// Safe role resolution: verify against database role and admins table
+$role = 'user';
+if (!empty($user['role']) && strtolower($user['role']) === 'admin') {
+    $role = 'admin';
+} else {
+    $adminCheck = $db->prepare("SELECT id, role FROM admins WHERE email = ? OR username = ? LIMIT 1");
+    $adminCheck->execute([$user['email'] ?? '', $user['username']]);
+    $adminRow = $adminCheck->fetch();
+    if ($adminRow) {
+        $role = $adminRow['role'] ?: 'admin';
+    }
+}
 
 sendJson(200, [
     'status' => 'success',

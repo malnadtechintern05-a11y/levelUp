@@ -199,6 +199,54 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  Future<Map<String, dynamic>> loginSocial({
+    required String provider,
+    required String username,
+    String? email,
+    String? displayName,
+    String avatarId = 'hero1',
+  }) async {
+    final res = await AuthService.instance.socialLogin(
+      provider: provider,
+      username: username,
+      email: email,
+      displayName: displayName,
+      avatarId: avatarId,
+    );
+
+    if (res['status'] == 'success') {
+      _isLoggedIn = true;
+      final cleanId = (res['user'] != null && res['user']['id'] != null)
+          ? res['user']['id'].toString()
+          : username.trim().toLowerCase();
+
+      final actualUsername = (res['user'] != null && res['user']['username'] != null)
+          ? res['user']['username'].toString()
+          : username.trim();
+
+      // Reset in-memory state completely before loading new user data to prevent cross-contamination
+      _tasks = [];
+      _achievements = _getDefaultAchievements(cleanId);
+      _notifications = [];
+      _userProfile = UserProfile(
+        username: actualUsername,
+        userId: cleanId,
+        email: email ?? '',
+        avatarId: avatarId,
+      );
+
+      if (res['user'] != null && res['user'] is Map) {
+        _applyUserData(res['user'] as Map<String, dynamic>);
+      }
+      await _loadUserDataFromDb(cleanId);
+      await refreshAllData();
+      AnalyticsService.instance.logLogin(loginMethod: provider.toLowerCase());
+      AnalyticsService.instance.setUserProperties(userId: cleanId, level: _userProfile.level);
+      notifyListeners();
+    }
+    return res;
+  }
+
   Future<Map<String, dynamic>> registerHero({
     required String username,
     required String email,
@@ -661,340 +709,38 @@ class AppState extends ChangeNotifier {
   void _ensureDailyTasks([String? userId]) {
     final effectiveUserId = (userId ?? currentUserId).trim().toLowerCase();
     final now = DateTime.now();
-    final yesterday = now.subtract(const Duration(days: 1));
-    final tomorrow = now.add(const Duration(days: 1));
-
-    bool hasYesterday = _tasks.any((t) => _isSameDay(t.dueDate, yesterday));
-    bool hasToday = _tasks.any((t) => _isSameDay(t.dueDate, now));
-    bool hasTomorrow = _tasks.any((t) => _isSameDay(t.dueDate, tomorrow));
-
     bool added = false;
 
-    if (!hasYesterday) {
-      _tasks.addAll([
+    // Only ensure a clean daily hydration quest exists for today if not already present
+    bool hasHydrationToday = _tasks.any((t) => t.taskType == 'hydration' && _isSameDay(t.dueDate, now));
+    if (!hasHydrationToday) {
+      _tasks.add(
         RPGTask(
-          id: 'task_yest_water',
+          id: 'task_hydro_${now.year}_${now.month}_${now.day}',
           title: 'Daily Drinking Water',
-          description: 'Daily hydration goal: 2.5 L',
+          description: 'Stay hydrated! Daily goal: 2.5 L',
           category: 'Health',
-          xpReward: 50,
-          dueDate: yesterday,
-          durationMinutes: 0,
-          remainingSeconds: 0,
-          timerStatus: 'Completed',
-          isCompleted: true,
-          taskType: 'hydration',
-          waterGoalMl: 2500,
-          currentWaterMl: 2500,
-          waterLogs: [
-            WaterLogEntry(id: 'w_y1', amountMl: 500, timestamp: yesterday.add(const Duration(hours: 9))),
-            WaterLogEntry(id: 'w_y2', amountMl: 750, timestamp: yesterday.add(const Duration(hours: 12))),
-            WaterLogEntry(id: 'w_y3', amountMl: 500, timestamp: yesterday.add(const Duration(hours: 15))),
-            WaterLogEntry(id: 'w_y4', amountMl: 750, timestamp: yesterday.add(const Duration(hours: 19))),
-          ],
-        ),
-        RPGTask(
-          id: 'task_yest_2',
-          title: 'Morning Cardio & Stretch',
-          description: '20 minutes of cardio to boost energy',
-          category: 'Fitness',
-          xpReward: 60,
-          dueDate: yesterday,
-          durationMinutes: 20,
-          remainingSeconds: 0,
-          timerStatus: 'Completed',
-          isCompleted: true,
-        ),
-        RPGTask(
-          id: 'task_yest_3',
-          title: 'Study Flutter Architecture',
-          description: 'Provider & SQLite architectural patterns',
-          category: 'Study',
-          xpReward: 100,
-          dueDate: yesterday,
-          durationMinutes: 45,
-          remainingSeconds: 0,
-          timerStatus: 'Completed',
-          isCompleted: true,
-        ),
-        RPGTask(
-          id: 'task_yest_4',
-          title: 'Read 15 Pages of Book',
-          description: 'Atomic Habits chapter reading',
-          category: 'Personal',
-          xpReward: 40,
-          dueDate: yesterday,
-          durationMinutes: 20,
-          remainingSeconds: 0,
-          timerStatus: 'Completed',
-          isCompleted: true,
-        ),
-        RPGTask(
-          id: 'task_yest_5',
-          title: 'Code Review & Sprint Tasks',
-          description: 'Refactor components and optimize code',
-          category: 'Work',
-          xpReward: 80,
-          dueDate: yesterday,
-          durationMinutes: 30,
-          remainingSeconds: 0,
-          timerStatus: 'Completed',
-          isCompleted: true,
-        ),
-      ]);
-      added = true;
-    }
-
-    if (!hasToday) {
-      _tasks.addAll([
-        RPGTask(
-          id: 'task_today_water',
-          title: 'Daily Drinking Water',
-          description: 'Daily hydration goal: 2.5 L',
-          category: 'Health',
-          xpReward: 50,
-          dueDate: now,
-          durationMinutes: 0,
-          remainingSeconds: 0,
-          timerStatus: 'Not Started',
-          isCompleted: false,
-          taskType: 'hydration',
-          waterGoalMl: 2500,
-          currentWaterMl: 1500,
-          waterLogs: [
-            WaterLogEntry(id: 'w_t1', amountMl: 500, timestamp: now.subtract(const Duration(hours: 4))),
-            WaterLogEntry(id: 'w_t2', amountMl: 500, timestamp: now.subtract(const Duration(hours: 2))),
-            WaterLogEntry(id: 'w_t3', amountMl: 500, timestamp: now.subtract(const Duration(minutes: 45))),
-          ],
-        ),
-        RPGTask(
-          id: 'task_today_workout',
-          title: '30 Minute Workout',
-          description: 'Full-body strength training and conditioning routine.',
-          category: 'Fitness',
-          xpReward: 70,
-          coinReward: 35,
-          difficulty: 'Medium',
-          dueDate: now,
-          durationMinutes: 30,
-          remainingSeconds: 30 * 60,
-          timerStatus: 'Not Started',
-          isCompleted: false,
-        ),
-        RPGTask(
-          id: 'task_today_study',
-          title: 'Study Mathematics',
-          description: 'Practice calculus problems and review key formulas.',
-          category: 'Study',
-          xpReward: 60,
-          coinReward: 30,
-          difficulty: 'Medium',
-          dueDate: now,
-          durationMinutes: 45,
-          remainingSeconds: 45 * 60,
-          timerStatus: 'Not Started',
-          isCompleted: false,
-        ),
-        RPGTask(
-          id: 'task_today_reading',
-          title: 'Read 20 Pages',
-          description: 'Read at least 20 pages from an educational or personal development book.',
-          category: 'Reading',
-          xpReward: 40,
-          coinReward: 20,
-          difficulty: 'Easy',
-          dueDate: now,
-          durationMinutes: 0,
-          remainingSeconds: 0,
-          timerStatus: 'Not Started',
-          isCompleted: false,
-        ),
-        RPGTask(
-          id: 'task_today_coding',
-          title: 'Complete Flutter Login Screen',
-          description: 'Implement responsive UI, validation, and error states in Flutter.',
-          category: 'Coding',
-          xpReward: 100,
-          coinReward: 50,
-          difficulty: 'Hard',
-          dueDate: now,
-          durationMinutes: 45,
-          remainingSeconds: 45 * 60,
-          timerStatus: 'Not Started',
-          isCompleted: false,
-        ),
-        RPGTask(
-          id: 'task_today_cleaning',
-          title: 'Clean Your Study Desk',
-          description: 'Clear clutter, dust desk surfaces, and organize work accessories.',
-          category: 'Cleaning',
-          xpReward: 30,
-          coinReward: 15,
-          difficulty: 'Easy',
-          dueDate: now,
-          durationMinutes: 0,
-          remainingSeconds: 0,
-          timerStatus: 'Not Started',
-          isCompleted: false,
-        ),
-        RPGTask(
-          id: 'task_today_meditation',
-          title: '15 Minute Meditation',
-          description: 'Mindful breathing practice to reset focus and reduce mental stress.',
-          category: 'Meditation',
-          xpReward: 35,
-          coinReward: 18,
-          difficulty: 'Easy',
-          dueDate: now,
-          durationMinutes: 15,
-          remainingSeconds: 15 * 60,
-          timerStatus: 'Not Started',
-          isCompleted: false,
-        ),
-        RPGTask(
-          id: 'task_today_habit',
-          title: 'Wake Up Before 7 AM',
-          description: 'Kickstart the morning with discipline and intentional morning routine.',
-          category: 'Habit',
-          xpReward: 40,
-          coinReward: 20,
-          difficulty: 'Easy',
-          streak: 7,
-          isHabit: true,
-          dueDate: now,
-          durationMinutes: 0,
-          remainingSeconds: 0,
-          timerStatus: 'Not Started',
-          isCompleted: false,
-        ),
-        RPGTask(
-          id: 'task_today_creative',
-          title: 'Draw for 30 Minutes',
-          description: 'Sketch characters, environment concepts, or daily creative studies.',
-          category: 'Creative',
-          xpReward: 45,
-          coinReward: 22,
-          difficulty: 'Medium',
-          dueDate: now,
-          durationMinutes: 30,
-          remainingSeconds: 30 * 60,
-          timerStatus: 'Not Started',
-          isCompleted: false,
-        ),
-        RPGTask(
-          id: 'task_today_social',
-          title: 'Call a Friend',
-          description: 'Check in with a close friend or family member for a meaningful chat.',
-          category: 'Social',
-          xpReward: 25,
-          coinReward: 12,
-          difficulty: 'Easy',
-          dueDate: now,
-          durationMinutes: 0,
-          remainingSeconds: 0,
-          timerStatus: 'Not Started',
-          isCompleted: false,
-        ),
-        RPGTask(
-          id: 'task_today_walking',
-          title: 'Evening 4000 Steps Walk',
-          description: 'Brisk outdoor walk for daily movement and fresh air.',
-          category: 'Walking',
           xpReward: 50,
           coinReward: 25,
-          difficulty: 'Easy',
           dueDate: now,
-          durationMinutes: 25,
-          remainingSeconds: 25 * 60,
-          timerStatus: 'Not Started',
-          isCompleted: false,
-        ),
-      ]);
-      added = true;
-    }
-
-    if (!hasTomorrow) {
-      _tasks.addAll([
-        RPGTask(
-          id: 'task_tom_water',
-          title: 'Daily Drinking Water',
-          description: 'Daily hydration goal: 2.5 L',
-          category: 'Health',
-          xpReward: 50,
-          dueDate: tomorrow,
           durationMinutes: 0,
           remainingSeconds: 0,
           timerStatus: 'Not Started',
           isCompleted: false,
           taskType: 'hydration',
-          waterGoalMl: 2500,
+          waterGoalMl: _dailyWaterGoalMl,
           currentWaterMl: 0,
           waterLogs: [],
+          userId: effectiveUserId,
         ),
-        RPGTask(
-          id: 'task_tom_2',
-          title: 'Gym Strength Training Session',
-          description: 'Chest, shoulders, and triceps focus',
-          category: 'Fitness',
-          xpReward: 90,
-          dueDate: tomorrow,
-          durationMinutes: 45,
-          remainingSeconds: 45 * 60,
-          timerStatus: 'Not Started',
-          isCompleted: false,
-        ),
-        RPGTask(
-          id: 'task_tom_3',
-          title: 'Learn Advanced SQL Queries',
-          description: 'Joins, indexing, and query optimization',
-          category: 'Study',
-          xpReward: 110,
-          dueDate: tomorrow,
-          durationMinutes: 60,
-          remainingSeconds: 60 * 60,
-          timerStatus: 'Not Started',
-          isCompleted: false,
-        ),
-        RPGTask(
-          id: 'task_tom_4',
-          title: 'Team Sprint Review & Planning',
-          description: 'Review milestones and track deliverables',
-          category: 'Work',
-          xpReward: 85,
-          dueDate: tomorrow,
-          durationMinutes: 40,
-          remainingSeconds: 40 * 60,
-          timerStatus: 'Not Started',
-          isCompleted: false,
-        ),
-        RPGTask(
-          id: 'task_tom_5',
-          title: 'Mindfulness & Gratitude Journal',
-          description: 'Write 3 accomplishments and 3 reflections',
-          category: 'Personal',
-          xpReward: 40,
-          dueDate: tomorrow,
-          durationMinutes: 15,
-          remainingSeconds: 15 * 60,
-          timerStatus: 'Not Started',
-          isCompleted: false,
-        ),
-      ]);
+      );
       added = true;
     }
 
     // Ensure all hydration tasks have a populated drinking schedule
     for (var t in _tasks) {
       if (t.taskType == 'hydration' && t.reminders.isEmpty) {
-        final defReminders = createDefaultDrinkingSchedule(drinkAmountMl: t.drinkAmountMl);
-        if (_isSameDay(t.dueDate, now) && t.waterLogs.isNotEmpty) {
-          int countToMark = t.waterLogs.length.clamp(0, defReminders.length);
-          for (int k = 0; k < countToMark; k++) {
-            defReminders[k].isCompleted = true;
-            defReminders[k].completedAt = t.waterLogs[k].timestamp;
-          }
-        }
-        t.reminders = defReminders;
+        t.reminders = createDefaultDrinkingSchedule(drinkAmountMl: t.drinkAmountMl);
         added = true;
       }
     }

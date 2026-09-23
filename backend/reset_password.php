@@ -4,6 +4,13 @@
  * Usage: php backend/reset_password.php <username_or_email> <new_password>
  */
 
+if (php_sapi_name() !== 'cli') {
+    http_response_code(403);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['status' => 'error', 'message' => 'Access Denied: This script can only be executed via the command line interface.']);
+    exit;
+}
+
 require_once __DIR__ . '/config/database.php';
 
 $identifier = $argv[1] ?? 'harsha';
