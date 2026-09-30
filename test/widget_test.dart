@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:real_life_rpg/helpers/database_helper.dart';
 import 'package:real_life_rpg/providers/app_state.dart';
 import 'package:real_life_rpg/providers/admin_state.dart';
 import 'package:real_life_rpg/providers/rankings_provider.dart';
@@ -15,6 +16,7 @@ void main() {
   setUpAll(() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
+    DatabaseHelper.setCustomDatabasePath(inMemoryDatabasePath);
   });
 
   setUp(() {
@@ -35,10 +37,18 @@ void main() {
       ),
     );
 
-    expect(find.text('Welcome Back Hero'), findsOneWidget);
-    expect(find.text('LOG IN'), findsOneWidget);
+    expect(find.text('Welcome to LevelUp'), findsOneWidget);
+    expect(find.text('Continue with Google'), findsOneWidget);
+    expect(find.text('Continue with Email'), findsOneWidget);
+
+    // Tap Continue with Email to reveal input fields
+    await tester.ensureVisible(find.text('Continue with Email'));
+    await tester.tap(find.text('Continue with Email'));
+    await tester.pumpAndSettle();
+
     expect(find.text('Username or Email'), findsOneWidget);
     expect(find.text('Password'), findsOneWidget);
+    expect(find.text('Log In with Email'), findsOneWidget);
   });
 
   testWidgets('RegisterScreen renders fields and avatar selector', (WidgetTester tester) async {

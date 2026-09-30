@@ -21,7 +21,17 @@ class NotificationService {
 
   NotificationService._internal();
 
-  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  FirebaseMessaging? get _messaging {
+    try {
+      if (Firebase.apps.isNotEmpty) {
+        return FirebaseMessaging.instance;
+      }
+    } catch (e) {
+      debugPrint('[NotificationService] FirebaseMessaging access error: $e');
+    }
+    return null;
+  }
+
   final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
 
   bool _isInitialized = false;
@@ -44,8 +54,13 @@ class NotificationService {
     if (_isInitialized) return;
 
     try {
-      // 1. Setup Background Handler
-      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+      // 1. Setup Background Handler if Firebase is available
+      final messaging = _messaging;
+      if (messaging != null) {
+        try {
+          FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+        } catch (_) {}
+      }
 
       // 2. Initialize Flutter Local Notifications for Foreground Presentation
       const initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -90,34 +105,37 @@ class NotificationService {
 
   void _runAsyncBackgroundSetup(AndroidFlutterLocalNotificationsPlugin? androidImplementation) async {
     try {
-      // Request permissions
-      await _messaging.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
+      final messaging = _messaging;
+      if (messaging != null) {
+        // Request permissions
+        await messaging.requestPermission(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+
+        await messaging.setForegroundNotificationPresentationOptions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+
+        // Fetch FCM Device Token with timeout
+        await _fetchFcmToken();
+
+        messaging.onTokenRefresh.listen((newToken) {
+          _fcmToken = newToken;
+          debugPrint('[Firebase Notifications] FCM Token refreshed: $newToken');
+        });
+
+        // Subscribe to default broadcast topics
+        subscribeToTopic('all_users');
+        subscribeToTopic('announcements');
+      }
 
       if (androidImplementation != null) {
         await androidImplementation.requestNotificationsPermission();
       }
-
-      await _messaging.setForegroundNotificationPresentationOptions(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
-
-      // Fetch FCM Device Token with timeout
-      await _fetchFcmToken();
-
-      _messaging.onTokenRefresh.listen((newToken) {
-        _fcmToken = newToken;
-        debugPrint('[Firebase Notifications] FCM Token refreshed: $newToken');
-      });
-
-      // Subscribe to default broadcast topics
-      subscribeToTopic('all_users');
-      subscribeToTopic('announcements');
     } catch (e) {
       debugPrint('[Firebase Notifications] Async setup error: $e');
     }
@@ -125,12 +143,15 @@ class NotificationService {
 
   Future<void> _fetchFcmToken() async {
     try {
-      _fcmToken = await _messaging.getToken().timeout(
-        const Duration(seconds: 4),
-        onTimeout: () => null,
-      );
-      if (_fcmToken != null) {
-        debugPrint('[Firebase Notifications] FCM Device Token: $_fcmToken');
+      final messaging = _messaging;
+      if (messaging != null) {
+        _fcmToken = await messaging.getToken().timeout(
+          const Duration(seconds: 4),
+          onTimeout: () => null,
+        );
+        if (_fcmToken != null) {
+          debugPrint('[Firebase Notifications] FCM Device Token: $_fcmToken');
+        }
       }
     } catch (e) {
       debugPrint('[Firebase Notifications] Failed to get FCM Token: $e');
@@ -138,6 +159,9 @@ class NotificationService {
   }
 
   void _setupMessageListeners() {
+    final messaging = _messaging;
+    if (messaging == null) return;
+
     // 1. Foreground messages
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       debugPrint('[FCM Foreground] Message title: ${message.notification?.title}, body: ${message.notification?.body}');
@@ -151,7 +175,7 @@ class NotificationService {
     });
 
     // 3. Message clicked when app opened from terminated state
-    _messaging.getInitialMessage().then((RemoteMessage? message) {
+    messaging.getInitialMessage().then((RemoteMessage? message) {
       if (message != null) {
         debugPrint('[FCM InitialMessage] Opened from terminated state: ${message.data}');
         _handleRemoteMessageClick(message);
@@ -202,6 +226,12 @@ class NotificationService {
     int? id,
   }) async {
     try {
+      if (!_isInitialized) {
+        try {
+          await initialize();
+        } catch (_) {}
+      }
+
       final notificationDetails = NotificationDetails(
         android: AndroidNotificationDetails(
           _channel.id,
@@ -227,7 +257,7 @@ class NotificationService {
         payload: payload,
       );
     } catch (e) {
-      debugPrint('[Firebase Notifications] showLocalNotification error: $e');
+      debugPrint('[Firebase Notifications] showLocalNotification notice: $e');
     }
   }
 
@@ -263,8 +293,11 @@ class NotificationService {
   /// Subscribe to a notification topic (e.g. 'all_users', 'rankings_update', 'daily_quests')
   Future<void> subscribeToTopic(String topic) async {
     try {
-      await _messaging.subscribeToTopic(topic);
-      debugPrint('[Firebase Notifications] Subscribed to topic: $topic');
+      final messaging = _messaging;
+      if (messaging != null) {
+        await messaging.subscribeToTopic(topic);
+        debugPrint('[Firebase Notifications] Subscribed to topic: $topic');
+      }
     } catch (e) {
       debugPrint('[Firebase Notifications] Subscribe to topic failed: $e');
     }
@@ -273,8 +306,11 @@ class NotificationService {
   /// Unsubscribe from a notification topic
   Future<void> unsubscribeFromTopic(String topic) async {
     try {
-      await _messaging.unsubscribeFromTopic(topic);
-      debugPrint('[Firebase Notifications] Unsubscribed from topic: $topic');
+      final messaging = _messaging;
+      if (messaging != null) {
+        await messaging.unsubscribeFromTopic(topic);
+        debugPrint('[Firebase Notifications] Unsubscribed from topic: $topic');
+      }
     } catch (e) {
       debugPrint('[Firebase Notifications] Unsubscribe from topic failed: $e');
     }

@@ -5,7 +5,7 @@ import '../../models/models.dart';
 import '../../providers/admin_state.dart';
 
 class AdminAchievementsScreen extends StatefulWidget {
-  const AdminAchievementsScreen({Key? key}) : super(key: key);
+  const AdminAchievementsScreen({super.key});
 
   @override
   State<AdminAchievementsScreen> createState() => _AdminAchievementsScreenState();
@@ -29,7 +29,7 @@ class _AdminAchievementsScreenState extends State<AdminAchievementsScreen> {
             backgroundColor: const Color(0xFF1E293B),
             title: Text(achievement == null ? 'Add Achievement' : 'Edit Achievement', style: const TextStyle(color: Colors.white)),
             content: SingleChildScrollView(
-              child: Container(
+              child: SizedBox(
                 width: 400,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -64,7 +64,7 @@ class _AdminAchievementsScreenState extends State<AdminAchievementsScreen> {
                         const Text('Status:', style: TextStyle(color: Colors.white)),
                         Switch(
                           value: isActive,
-                          activeColor: Colors.amber,
+                          activeThumbColor: Colors.amber,
                           onChanged: (val) => setState(() => isActive = val),
                         ),
                         Text(isActive ? 'Active' : 'Inactive', style: TextStyle(color: isActive ? Colors.green : Colors.red)),

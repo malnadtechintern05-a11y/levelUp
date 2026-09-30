@@ -7,7 +7,7 @@ import '../models/models.dart';
 import 'dart:math';
 
 class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({Key? key}) : super(key: key);
+  const DashboardScreen({super.key});
 
   void _showAddTaskModal(BuildContext context) {
     String title = '';
@@ -68,7 +68,7 @@ class DashboardScreen extends StatelessWidget {
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          value: category,
+                          initialValue: category,
                           decoration: const InputDecoration(labelText: 'Category'),
                           items: ['Fitness', 'Learning', 'Chores', 'Work', 'Health']
                               .map((c) => DropdownMenuItem(value: c, child: Text(c)))
@@ -79,7 +79,7 @@ class DashboardScreen extends StatelessWidget {
                       const SizedBox(width: 16),
                       Expanded(
                         child: DropdownButtonFormField<int>(
-                          value: xpReward,
+                          initialValue: xpReward,
                           decoration: const InputDecoration(labelText: 'XP Reward'),
                           items: const [
                             DropdownMenuItem(value: 10, child: Text('10 XP (Easy)')),
@@ -149,14 +149,14 @@ class DashboardScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              ProfileWidget(),
+              const ProfileWidget(),
               const SizedBox(height: 16),
               // Quick Stats
               Row(
                 children: [
                   Expanded(
                     child: Card(
-                      color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+                      color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
                       child: Padding(
                         padding: const EdgeInsets.all(12.0),
                         child: Column(
@@ -177,7 +177,7 @@ class DashboardScreen extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Card(
-                      color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+                      color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
                       child: Padding(
                         padding: const EdgeInsets.all(12.0),
                         child: Column(
@@ -224,7 +224,7 @@ class DashboardScreen extends StatelessWidget {
                   ),
                 )
               else
-                ...activeTasks.map((task) => TaskListItem(task: task)).toList(),
+                ...activeTasks.map((task) => TaskListItem(task: task)),
             ],
           );
         },

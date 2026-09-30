@@ -10,13 +10,13 @@ class TaskCompletionCelebrationDialog extends StatelessWidget {
   final VoidCallback onDismiss;
 
   const TaskCompletionCelebrationDialog({
-    Key? key,
+    super.key,
     required this.task,
     required this.xpEarned,
     required this.currentStreak,
     required this.motivationalQuote,
     required this.onDismiss,
-  }) : super(key: key);
+  });
 
   String _getCategoryHeadline() {
     final cat = task.category.toLowerCase();
@@ -334,10 +334,10 @@ class LevelUpCelebrationDialog extends StatelessWidget {
   final VoidCallback onDismiss;
 
   const LevelUpCelebrationDialog({
-    Key? key,
+    super.key,
     required this.newLevel,
     required this.onDismiss,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -466,10 +466,10 @@ class AchievementUnlockedCelebrationDialog extends StatelessWidget {
   final VoidCallback onDismiss;
 
   const AchievementUnlockedCelebrationDialog({
-    Key? key,
+    super.key,
     required this.achievement,
     required this.onDismiss,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

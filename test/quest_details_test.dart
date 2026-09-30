@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:real_life_rpg/helpers/database_helper.dart';
 import 'package:real_life_rpg/models/models.dart';
 import 'package:real_life_rpg/providers/admin_state.dart';
 import 'package:real_life_rpg/providers/app_state.dart';
@@ -15,6 +16,7 @@ void main() {
   setUpAll(() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
+    DatabaseHelper.setCustomDatabasePath(inMemoryDatabasePath);
   });
 
   setUp(() {

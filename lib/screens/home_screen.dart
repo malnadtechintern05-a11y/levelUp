@@ -15,7 +15,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../widgets/smooth_transitions.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -950,7 +950,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
           final filteredTasks = _selectedCategory == 'All'
               ? activeTasks
-              : activeTasks.where((t) => t.category == _selectedCategory).toList();
+              : activeTasks.where((t) => t.category.trim().toLowerCase() == _selectedCategory.trim().toLowerCase()).toList();
 
           return RefreshIndicator(
             onRefresh: () async {
@@ -1156,24 +1156,38 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 padding: const EdgeInsets.symmetric(horizontal: 10.0),
                 child: Row(
                   children: [
-                    _buildCategoryChip(context, 'All', Icons.dashboard_customize, const Color(0xFFF5B942)),
-                    _buildCategoryChip(context, 'Study', Icons.menu_book, Colors.blueAccent),
-                    _buildCategoryChip(context, 'Fitness', Icons.fitness_center, Colors.redAccent),
-                    _buildCategoryChip(context, 'Health', Icons.favorite, Colors.green),
-                    _buildCategoryChip(context, 'Work', Icons.work, Colors.purpleAccent),
-                    _buildCategoryChip(context, 'Personal', Icons.person, Colors.orangeAccent),
+                    _buildCategoryChip(context, 'All', Icons.dashboard_customize_rounded, const Color(0xFFF5B942)),
+                    _buildCategoryChip(context, 'Study', Icons.school_rounded, Colors.blueAccent),
+                    _buildCategoryChip(context, 'Fitness', Icons.fitness_center_rounded, Colors.redAccent),
+                    _buildCategoryChip(context, 'Health', Icons.favorite_rounded, Colors.green),
+                    _buildCategoryChip(context, 'Learning', Icons.lightbulb_rounded, Colors.indigoAccent),
+                    _buildCategoryChip(context, 'Work', Icons.bolt_rounded, Colors.purpleAccent),
+                    _buildCategoryChip(context, 'Coding', Icons.terminal_rounded, Colors.tealAccent),
+                    _buildCategoryChip(context, 'Reading', Icons.menu_book_rounded, Colors.amber),
+                    _buildCategoryChip(context, 'Meditation', Icons.self_improvement_rounded, Colors.cyanAccent),
+                    _buildCategoryChip(context, 'Walking', Icons.directions_walk_rounded, Colors.lightGreenAccent),
+                    _buildCategoryChip(context, 'Social', Icons.people_rounded, Colors.pinkAccent),
+                    _buildCategoryChip(context, 'Creative', Icons.palette_rounded, Colors.deepOrangeAccent),
+                    _buildCategoryChip(context, 'Cleaning', Icons.cleaning_services_rounded, Colors.lightBlueAccent),
+                    _buildCategoryChip(context, 'Habit', Icons.repeat_rounded, Colors.deepPurpleAccent),
+                    _buildCategoryChip(context, 'Daily', Icons.today_rounded, Colors.orangeAccent),
+                    _buildCategoryChip(context, 'Hobbies', Icons.sports_esports_rounded, Colors.amberAccent),
+                    _buildCategoryChip(context, 'Personal', Icons.person_rounded, Colors.greenAccent),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
 
-              // Today's Tasks Header
+              // Active Tasks Header
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("Active Tasks", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+                    Text(
+                      _selectedCategory == 'All' ? "Active Tasks" : "$_selectedCategory Tasks",
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+                    ),
                     Text(
                       '${filteredTasks.length} pending',
                       style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w500),
@@ -1190,13 +1204,36 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   children: filteredTasks.isEmpty
                       ? [
                           Padding(
-                            padding: const EdgeInsets.all(32.0),
+                            padding: const EdgeInsets.symmetric(vertical: 32.0, horizontal: 16.0),
                             child: Center(
                               child: Column(
                                 children: [
-                                  Icon(Icons.check_circle_outline, size: 48, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+                                  Icon(
+                                    _selectedCategory == 'All' ? Icons.check_circle_outline : Icons.inbox_outlined,
+                                    size: 48,
+                                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                                  ),
                                   const SizedBox(height: 12),
-                                  Text("No active tasks in this category.", style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 14)),
+                                  Text(
+                                    _selectedCategory == 'All'
+                                        ? "No active quests. Tap '+ Add Task' below to create one!"
+                                        : "No active tasks in '$_selectedCategory' category.",
+                                    style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 14),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  if (_selectedCategory != 'All') ...[
+                                    const SizedBox(height: 14),
+                                    TextButton.icon(
+                                      onPressed: () {
+                                        setState(() => _selectedCategory = 'All');
+                                      },
+                                      icon: const Icon(Icons.clear_all_rounded, size: 18),
+                                      label: const Text('Show All Tasks', style: TextStyle(fontWeight: FontWeight.bold)),
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: const Color(0xFFF5B942),
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),

@@ -11,14 +11,15 @@ import '../widgets/avatar_helper.dart';
 import '../widgets/smooth_transitions.dart';
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({Key? key}) : super(key: key);
+  const ProfileScreen({super.key});
 
   Future<void> _pickImage(BuildContext context) async {
     final ImagePicker picker = ImagePicker();
     try {
+      final appState = Provider.of<AppState>(context, listen: false);
       final XFile? image = await picker.pickImage(source: ImageSource.gallery);
       if (image != null) {
-        Provider.of<AppState>(context, listen: false).updateProfileImage(image.path);
+        appState.updateProfileImage(image.path);
       }
     } catch (e) {
       debugPrint("Error picking image: $e");

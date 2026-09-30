@@ -13,6 +13,7 @@ void main() {
   setUpAll(() async {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
+    DatabaseHelper.setCustomDatabasePath(inMemoryDatabasePath);
     final db = await DatabaseHelper.instance.database;
     await db.execute('DROP TABLE IF EXISTS achievements;');
     await db.execute('''

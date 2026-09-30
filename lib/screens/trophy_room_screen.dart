@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 
 class TrophyRoomScreen extends StatelessWidget {
-  const TrophyRoomScreen({Key? key}) : super(key: key);
+  const TrophyRoomScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

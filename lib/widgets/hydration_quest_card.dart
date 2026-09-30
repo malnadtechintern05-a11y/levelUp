@@ -9,9 +9,9 @@ class HydrationQuestCard extends StatelessWidget {
   final RPGTask task;
 
   const HydrationQuestCard({
-    Key? key,
+    super.key,
     required this.task,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

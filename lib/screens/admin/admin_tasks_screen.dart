@@ -4,7 +4,7 @@ import '../../providers/admin_state.dart';
 import 'admin_task_form_screen.dart';
 
 class AdminTasksScreen extends StatefulWidget {
-  const AdminTasksScreen({Key? key}) : super(key: key);
+  const AdminTasksScreen({super.key});
 
   @override
   State<AdminTasksScreen> createState() => _AdminTasksScreenState();

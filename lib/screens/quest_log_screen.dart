@@ -4,7 +4,7 @@ import '../providers/app_state.dart';
 import '../widgets/task_list_item.dart';
 
 class QuestLogScreen extends StatelessWidget {
-  const QuestLogScreen({Key? key}) : super(key: key);
+  const QuestLogScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

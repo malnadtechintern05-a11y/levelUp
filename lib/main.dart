@@ -23,6 +23,8 @@ import 'services/api_client.dart';
 import 'services/firebase_service.dart';
 import 'services/analytics_service.dart';
 import 'services/notification_service.dart';
+import 'services/pusher_hub_service.dart';
+import 'pusher_hub.dart';
 import 'config/api_config.dart';
 import 'widgets/smooth_transitions.dart';
 
@@ -33,8 +35,14 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ApiConfig.init();
 
-  // Initialize Firebase asynchronously in background so app starts immediately
+  // Initialize Local Notifications & High-Importance Channel immediately
+  await NotificationService.instance.initialize();
+
+  // Initialize Firebase asynchronously in background
   FirebaseService.instance.initialize();
+
+  // Initialize PusherHub for push notifications & in-app messaging
+  PusherHubService.instance.initialize();
 
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     sqfliteFfiInit();
@@ -65,7 +73,7 @@ void main() async {
 }
 
 class RealLifeRPGApp extends StatelessWidget {
-  const RealLifeRPGApp({Key? key}) : super(key: key);
+  const RealLifeRPGApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -357,10 +365,16 @@ class RealLifeRPGApp extends StatelessWidget {
           themeMode: state.isDarkMode ? ThemeMode.dark : ThemeMode.light,
           initialRoute: '/',
           routes: {
-            '/': (context) => const SplashScreen(),
+            '/': (context) => PusherHubMessageHost(
+                  pusherHub: PusherHubService.instance.client,
+                  child: const SplashScreen(),
+                ),
             '/login': (context) => const LoginScreen(),
             '/welcome': (context) => const WelcomeScreen(),
-            '/main': (context) => const MainLayout(),
+            '/main': (context) => PusherHubMessageHost(
+                  pusherHub: PusherHubService.instance.client,
+                  child: const MainLayout(),
+                ),
             '/admin': (context) => const AdminLoginScreen(),
             '/notifications': (context) => const NotificationsScreen(),
             '/privacy-policy': (context) => const PrivacyPolicyScreen(),
@@ -375,7 +389,7 @@ class RealLifeRPGApp extends StatelessWidget {
 }
 
 class MainLayout extends StatefulWidget {
-  const MainLayout({Key? key}) : super(key: key);
+  const MainLayout({super.key});
 
   @override
   State<MainLayout> createState() => _MainLayoutState();

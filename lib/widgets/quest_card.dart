@@ -11,10 +11,10 @@ class QuestCard extends StatelessWidget {
   final VoidCallback onComplete;
 
   const QuestCard({
-    Key? key,
+    super.key,
     required this.task,
     required this.onComplete,
-  }) : super(key: key);
+  });
 
   String _capitalize(String input) {
     if (input.isEmpty) return input;
@@ -25,12 +25,40 @@ class QuestCard extends StatelessWidget {
   }
 
   Color _getCategoryColor() {
-    switch (task.category) {
-      case 'Study': return Colors.blueAccent;
-      case 'Fitness': return Colors.redAccent;
-      case 'Health': return Colors.green;
-      case 'Work': return Colors.purpleAccent;
-      case 'Personal': default: return Colors.greenAccent;
+    switch (task.category.toLowerCase().trim()) {
+      case 'study':
+        return Colors.blueAccent;
+      case 'fitness':
+        return Colors.redAccent;
+      case 'health':
+        return Colors.green;
+      case 'learning':
+        return Colors.indigoAccent;
+      case 'work':
+        return Colors.purpleAccent;
+      case 'coding':
+        return Colors.tealAccent;
+      case 'reading':
+        return Colors.amber;
+      case 'meditation':
+        return Colors.cyanAccent;
+      case 'walking':
+        return Colors.lightGreenAccent;
+      case 'social':
+        return Colors.pinkAccent;
+      case 'creative':
+        return Colors.deepOrangeAccent;
+      case 'cleaning':
+        return Colors.lightBlueAccent;
+      case 'habit':
+        return Colors.deepPurpleAccent;
+      case 'daily':
+        return Colors.orangeAccent;
+      case 'hobbies':
+        return Colors.amberAccent;
+      case 'personal':
+      default:
+        return Colors.greenAccent;
     }
   }
 
@@ -55,16 +83,38 @@ class QuestCard extends StatelessWidget {
       return Icons.bedtime_rounded;
     }
 
-    switch (task.category) {
-      case 'Study':
+    switch (task.category.toLowerCase().trim()) {
+      case 'study':
         return Icons.school_rounded;
-      case 'Fitness':
+      case 'fitness':
         return Icons.fitness_center_rounded;
-      case 'Health':
+      case 'health':
         return Icons.favorite_rounded;
-      case 'Work':
+      case 'learning':
+        return Icons.lightbulb_rounded;
+      case 'work':
         return Icons.bolt_rounded;
-      case 'Personal':
+      case 'coding':
+        return Icons.terminal_rounded;
+      case 'reading':
+        return Icons.menu_book_rounded;
+      case 'meditation':
+        return Icons.self_improvement_rounded;
+      case 'walking':
+        return Icons.directions_walk_rounded;
+      case 'social':
+        return Icons.people_rounded;
+      case 'creative':
+        return Icons.palette_rounded;
+      case 'cleaning':
+        return Icons.cleaning_services_rounded;
+      case 'habit':
+        return Icons.repeat_rounded;
+      case 'daily':
+        return Icons.today_rounded;
+      case 'hobbies':
+        return Icons.sports_esports_rounded;
+      case 'personal':
       default:
         return Icons.stars_rounded;
     }

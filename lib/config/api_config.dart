@@ -16,7 +16,12 @@ class ApiConfig {
     return 'http://192.168.31.173/real-life-rpg/backend/api';
   }
 
+  static const String pusherHubAppKey = 'LEVELUP';
+  static const String pusherHubPublicKey = 'pk_live_VuXnrl0Im8pJfzHgVgVe3l1dMBsaRnNl';
+  static const String _customPusherHubUrlKey = 'custom_pusher_hub_url';
+
   static String _currentBaseUrl = '';
+  static String _currentPusherHubBaseUrl = '';
 
   static Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
@@ -39,6 +44,32 @@ class ApiConfig {
     } else {
       _currentBaseUrl = defaultHost;
     }
+
+    final savedHubUrl = prefs.getString(_customPusherHubUrlKey);
+    if (savedHubUrl != null && savedHubUrl.trim().isNotEmpty) {
+      _currentPusherHubBaseUrl = savedHubUrl.trim();
+    }
+  }
+
+  static String get pusherHubBaseUrl {
+    if (_currentPusherHubBaseUrl.isNotEmpty) {
+      return _currentPusherHubBaseUrl;
+    }
+    return baseUrl;
+  }
+
+  static Future<void> setPusherHubBaseUrl(String url) async {
+    String cleanUrl = url.trim();
+    while (cleanUrl.endsWith('/')) {
+      cleanUrl = cleanUrl.substring(0, cleanUrl.length - 1);
+    }
+    if (!cleanUrl.endsWith('/api')) {
+      cleanUrl = '$cleanUrl/api';
+    }
+    _currentPusherHubBaseUrl = cleanUrl;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_customPusherHubUrlKey, cleanUrl);
+    _notifyListeners();
   }
 
   static String get baseUrl {

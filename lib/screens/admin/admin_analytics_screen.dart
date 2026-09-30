@@ -4,7 +4,7 @@ import '../../providers/admin_state.dart';
 import '../../models/models.dart';
 
 class AdminAnalyticsScreen extends StatelessWidget {
-  const AdminAnalyticsScreen({Key? key}) : super(key: key);
+  const AdminAnalyticsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

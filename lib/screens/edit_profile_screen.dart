@@ -5,7 +5,7 @@ import '../providers/app_state.dart';
 import '../widgets/avatar_helper.dart';
 
 class EditProfileScreen extends StatefulWidget {
-  const EditProfileScreen({Key? key}) : super(key: key);
+  const EditProfileScreen({super.key});
 
   @override
   State<EditProfileScreen> createState() => _EditProfileScreenState();

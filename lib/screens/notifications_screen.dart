@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import '../providers/app_state.dart';
 
 class NotificationsScreen extends StatelessWidget {
-  const NotificationsScreen({Key? key}) : super(key: key);
+  const NotificationsScreen({super.key});
 
   String _formatTimestamp(DateTime dt) {
     final now = DateTime.now();

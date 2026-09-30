@@ -52,12 +52,11 @@ class SmoothPageRoute<T> extends PageRouteBuilder<T> {
   SmoothPageRoute({
     required this.child,
     this.transitionDurationCustom = const Duration(milliseconds: 300),
-    RouteSettings? settings,
+    super.settings,
   }) : super(
           pageBuilder: (context, animation, secondaryAnimation) => child,
           transitionDuration: transitionDurationCustom,
           reverseTransitionDuration: transitionDurationCustom,
-          settings: settings,
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             final curvedAnimation = CurvedAnimation(
               parent: animation,
@@ -91,7 +90,7 @@ class BounceTap extends StatefulWidget {
   final HitTestBehavior behavior;
 
   const BounceTap({
-    Key? key,
+    super.key,
     required this.child,
     this.onTap,
     this.onLongPress,
@@ -99,7 +98,7 @@ class BounceTap extends StatefulWidget {
     this.duration = const Duration(milliseconds: 120),
     this.enableHaptic = true,
     this.behavior = HitTestBehavior.opaque,
-  }) : super(key: key);
+  });
 
   @override
   State<BounceTap> createState() => _BounceTapState();

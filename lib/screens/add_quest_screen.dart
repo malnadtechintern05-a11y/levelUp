@@ -6,7 +6,7 @@ import '../models/models.dart';
 import '../widgets/smooth_transitions.dart';
 
 class AddQuestScreen extends StatefulWidget {
-  const AddQuestScreen({Key? key}) : super(key: key);
+  const AddQuestScreen({super.key});
 
   @override
   State<AddQuestScreen> createState() => _AddQuestScreenState();
@@ -263,7 +263,7 @@ class _AddQuestScreenState extends State<AddQuestScreen> {
               ),
               const SizedBox(height: 20),
               DropdownButtonFormField<String>(
-                value: _taskType == 'hydration' ? 'Health' : _category,
+                initialValue: _taskType == 'hydration' ? 'Health' : _category,
                 dropdownColor: theme.colorScheme.surface,
                 style: TextStyle(color: theme.colorScheme.onSurface),
                 decoration: const InputDecoration(

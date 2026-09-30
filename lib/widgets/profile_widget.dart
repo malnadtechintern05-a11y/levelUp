@@ -4,6 +4,8 @@ import '../providers/app_state.dart';
 import '../widgets/avatar_helper.dart';
 
 class ProfileWidget extends StatelessWidget {
+  const ProfileWidget({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Consumer<AppState>(
@@ -27,7 +29,7 @@ class ProfileWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.3),
+                color: Colors.black.withValues(alpha: 0.3),
                 blurRadius: 10,
                 offset: const Offset(0, 5),
               ),

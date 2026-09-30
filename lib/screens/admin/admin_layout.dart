@@ -8,7 +8,7 @@ import 'admin_achievements_screen.dart';
 import 'admin_analytics_screen.dart';
 
 class AdminLayout extends StatefulWidget {
-  const AdminLayout({Key? key}) : super(key: key);
+  const AdminLayout({super.key});
 
   @override
   State<AdminLayout> createState() => _AdminLayoutState();

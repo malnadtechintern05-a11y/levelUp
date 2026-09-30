@@ -5,18 +5,33 @@ import '../models/models.dart';
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
   static Database? _database;
+  static String? _customDbPath;
 
   DatabaseHelper._init();
 
+  static void setCustomDatabasePath(String? path) {
+    _customDbPath = path;
+    _database = null;
+  }
+
+  static void setDatabaseForTesting(Database? db) {
+    _database = db;
+  }
+
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDB('realliferpg.db');
+    _database = await _initDB(_customDbPath ?? 'realliferpg.db');
     return _database!;
   }
 
   Future<Database> _initDB(String filePath) async {
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, filePath);
+    final String path;
+    if (filePath == inMemoryDatabasePath || filePath == ':memory:' || filePath.startsWith('in_memory')) {
+      path = inMemoryDatabasePath;
+    } else {
+      final dbPath = await getDatabasesPath();
+      path = join(dbPath, filePath);
+    }
 
     return await openDatabase(
       path,
@@ -348,6 +363,14 @@ class DatabaseHelper {
   Future<List<RPGTask>> getTasksForUser(dynamic userId) async {
     final db = await instance.database;
     final cleanId = userId.toString().trim().toLowerCase();
+    if (cleanId == 'hero' || cleanId == '' || cleanId == '0' || cleanId == 'default') {
+      final result = await db.query(
+        'tasks',
+        where: 'user_id = ? OR user_id IS NULL OR user_id = \'\' OR user_id = \'hero\'',
+        whereArgs: [cleanId],
+      );
+      return result.map((json) => RPGTask.fromMapSql(json)).toList();
+    }
     final result = await db.query(
       'tasks',
       where: 'user_id = ?',

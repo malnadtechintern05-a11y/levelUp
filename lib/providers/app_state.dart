@@ -1,5 +1,3 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
@@ -17,6 +15,7 @@ import '../services/online_achievement_service.dart';
 import '../services/api_client.dart';
 import '../services/analytics_service.dart';
 import '../services/notification_service.dart';
+import '../services/pusher_hub_service.dart';
 import '../config/api_config.dart';
 import 'package:flutter/material.dart';
 
@@ -49,7 +48,7 @@ class AppState extends ChangeNotifier {
     Achievement(id: 'a4', name: 'Legend', description: 'Reach Level 50'),
   ];
   
-  List<Reward> _rewards = [
+  final List<Reward> _rewards = [
     Reward(id: 'r1', title: 'Watch 1 Episode of TV', cost: 50),
     Reward(id: 'r2', title: 'Eat a Sweet Treat', cost: 100),
     Reward(id: 'r3', title: 'Buy a New Video Game', cost: 1000),
@@ -175,6 +174,7 @@ class AppState extends ChangeNotifier {
         await refreshAllData();
         AnalyticsService.instance.logLogin(loginMethod: 'online_auth');
         AnalyticsService.instance.setUserProperties(userId: cleanId, level: _userProfile.level);
+        PusherHubService.instance.login(cleanId);
         notifyListeners();
       }
       return res;
@@ -194,6 +194,7 @@ class AppState extends ChangeNotifier {
       await _loadUserDataFromDb(cleanId);
       AnalyticsService.instance.logLogin(loginMethod: 'local_storage');
       AnalyticsService.instance.setUserProperties(userId: cleanId, level: _userProfile.level);
+      PusherHubService.instance.login(cleanId);
       notifyListeners();
       return {'status': 'success'};
     }
@@ -242,6 +243,7 @@ class AppState extends ChangeNotifier {
       await refreshAllData();
       AnalyticsService.instance.logLogin(loginMethod: provider.toLowerCase());
       AnalyticsService.instance.setUserProperties(userId: cleanId, level: _userProfile.level);
+      PusherHubService.instance.login(cleanId);
       notifyListeners();
     }
     return res;
@@ -356,6 +358,7 @@ class AppState extends ChangeNotifier {
             taskMap[ot.id] = ot;
           }
           _tasks = taskMap.values.toList();
+          _ensureDailyTasks(currentUserId);
           await _saveTasks();
         }
       } catch (e) {
@@ -461,6 +464,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> logout() async {
     await AuthService.instance.logout();
+    PusherHubService.instance.logout();
     _isLoggedIn = false;
     _userRole = null;
     _userProfile = UserProfile(username: 'Hero', userId: 'hero');
@@ -493,8 +497,9 @@ class AppState extends ChangeNotifier {
     await SoundService.instance.previewAlarmSong(songId);
   }
 
-  List<RPGTask> get activeTasks => _tasks.where((t) => !t.isCompleted && !isTaskFuture(t)).toList();
+  List<RPGTask> get activeTasks => _tasks.where((t) => !t.isCompleted).toList();
   List<RPGTask> get allActiveTasks => _tasks.where((t) => !t.isCompleted).toList();
+  List<RPGTask> get todayActiveTasks => _tasks.where((t) => !t.isCompleted && !isTaskFuture(t)).toList();
   List<RPGTask> get completedTasks => _tasks.where((t) => t.isCompleted).toList();
   
   bool _isSameDay(DateTime d1, DateTime d2) {
@@ -651,6 +656,9 @@ class AppState extends ChangeNotifier {
       }
 
       await _loadUserDataFromDb(savedId);
+      if (_isLoggedIn) {
+        PusherHubService.instance.login(savedId);
+      }
 
       _notificationSettings = NotificationSettings(
         taskCompletionNotifications: prefs.getBool('notif_task_completion') ?? true,
@@ -1592,45 +1600,11 @@ class AppState extends ChangeNotifier {
             onDismiss: () {
               if (didLevelUp) {
                 Future.delayed(const Duration(milliseconds: 250), () {
-                  final ctx = rootNavigatorKey.currentContext;
-                  if (ctx != null) {
-                    showDialog(
-                      context: ctx,
-                      barrierDismissible: false,
-                      builder: (_) => LevelUpCelebrationDialog(
-                        newLevel: _userProfile.level,
-                        onDismiss: () {
-                          if (newlyUnlocked.isNotEmpty && _notificationSettings.achievementNotifications) {
-                            Future.delayed(const Duration(milliseconds: 250), () {
-                              final c = rootNavigatorKey.currentContext;
-                              if (c != null) {
-                                showDialog(
-                                  context: c,
-                                  builder: (_) => AchievementUnlockedCelebrationDialog(
-                                    achievement: newlyUnlocked.first,
-                                    onDismiss: () {},
-                                  ),
-                                );
-                              }
-                            });
-                          }
-                        },
-                      ),
-                    );
-                  }
+                  _showDelayedLevelUpDialog(_userProfile.level, newlyUnlocked);
                 });
               } else if (newlyUnlocked.isNotEmpty && _notificationSettings.achievementNotifications) {
                 Future.delayed(const Duration(milliseconds: 250), () {
-                  final ctx = rootNavigatorKey.currentContext;
-                  if (ctx != null) {
-                    showDialog(
-                      context: ctx,
-                      builder: (_) => AchievementUnlockedCelebrationDialog(
-                        achievement: newlyUnlocked.first,
-                        onDismiss: () {},
-                      ),
-                    );
-                  }
+                  _showDelayedAchievementDialog(newlyUnlocked.first);
                 });
               }
             },
@@ -1654,6 +1628,39 @@ class AppState extends ChangeNotifier {
         ),
       );
     }
+  }
+
+  void _showDelayedLevelUpDialog(int newLevel, List<Achievement> newlyUnlocked) {
+    final navState = rootNavigatorKey.currentState;
+    if (navState == null || !navState.mounted) return;
+    final ctx = navState.context;
+    showDialog(
+      context: ctx,
+      barrierDismissible: false,
+      builder: (_) => LevelUpCelebrationDialog(
+        newLevel: newLevel,
+        onDismiss: () {
+          if (newlyUnlocked.isNotEmpty && _notificationSettings.achievementNotifications) {
+            Future.delayed(const Duration(milliseconds: 250), () {
+              _showDelayedAchievementDialog(newlyUnlocked.first);
+            });
+          }
+        },
+      ),
+    );
+  }
+
+  void _showDelayedAchievementDialog(Achievement achievement) {
+    final navState = rootNavigatorKey.currentState;
+    if (navState == null || !navState.mounted) return;
+    final ctx = navState.context;
+    showDialog(
+      context: ctx,
+      builder: (_) => AchievementUnlockedCelebrationDialog(
+        achievement: achievement,
+        onDismiss: () {},
+      ),
+    );
   }
 
   void _addXP(int amount) {

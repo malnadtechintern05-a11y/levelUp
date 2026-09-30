@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 
 class StatisticsScreen extends StatelessWidget {
-  const StatisticsScreen({Key? key}) : super(key: key);
+  const StatisticsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -13,7 +13,7 @@ class StatisticsScreen extends StatelessWidget {
         builder: (context, state, child) {
           final profile = state.userProfile;
           final weeklyXp = state.weeklyXp;
-          final maxXP = weeklyXp.values.reduce((a, b) => a > b ? a : b);
+          final maxXP = weeklyXp.values.isEmpty ? 100 : weeklyXp.values.reduce((a, b) => a > b ? a : b);
           
           return ListView(
             padding: const EdgeInsets.all(16.0),

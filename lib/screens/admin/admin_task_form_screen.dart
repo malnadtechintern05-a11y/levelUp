@@ -7,7 +7,7 @@ import '../../providers/admin_state.dart';
 class AdminTaskFormScreen extends StatefulWidget {
   final RPGTask? task; // If null, we are adding a new task
 
-  const AdminTaskFormScreen({Key? key, this.task}) : super(key: key);
+  const AdminTaskFormScreen({super.key, this.task});
 
   @override
   State<AdminTaskFormScreen> createState() => _AdminTaskFormScreenState();
@@ -124,7 +124,7 @@ class _AdminTaskFormScreenState extends State<AdminTaskFormScreen> {
                       // Category
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          value: _selectedCategory,
+                          initialValue: _selectedCategory,
                           dropdownColor: const Color(0xFF0F172A),
                           style: const TextStyle(color: Colors.white),
                           decoration: _inputDecoration('Category'),
@@ -175,7 +175,7 @@ class _AdminTaskFormScreenState extends State<AdminTaskFormScreen> {
                       const SizedBox(width: 16),
                       Switch(
                         value: _isActive,
-                        activeColor: Colors.amber,
+                        activeThumbColor: Colors.amber,
                         onChanged: (val) => setState(() => _isActive = val),
                       ),
                       Text(_isActive ? 'Active' : 'Inactive', style: TextStyle(color: _isActive ? Colors.green : Colors.red)),

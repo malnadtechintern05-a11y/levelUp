@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:real_life_rpg/helpers/database_helper.dart';
 import 'package:real_life_rpg/models/models.dart';
 import 'package:real_life_rpg/providers/admin_state.dart';
 import 'package:real_life_rpg/providers/app_state.dart';
@@ -16,6 +17,7 @@ void main() {
   setUpAll(() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
+    DatabaseHelper.setCustomDatabasePath(inMemoryDatabasePath);
   });
 
   setUp(() {
@@ -208,23 +210,6 @@ void main() {
   });
 
   group('Quest Routing Widget Tests', () {
-    Widget createTestApp(RPGTask task) {
-      final appState = AppState();
-      final adminState = AdminState();
-      final rankings = RankingsProvider();
-
-      return MultiProvider(
-        providers: [
-          ChangeNotifierProvider.value(value: appState),
-          ChangeNotifierProvider.value(value: adminState),
-          ChangeNotifierProvider.value(value: rankings),
-        ],
-        child: MaterialApp(
-          home: QuestDetailsScreen(task: task),
-        ),
-      );
-    }
-
     testWidgets('Hydration quest redirects to HydrationDetailsScreen', (tester) async {
       final appState = AppState();
       final adminState = AdminState();
@@ -260,6 +245,7 @@ void main() {
           ),
         ),
       );
+      await tester.pump(const Duration(milliseconds: 100));
       await tester.pumpAndSettle();
 
       // Hydration details screen should be rendered

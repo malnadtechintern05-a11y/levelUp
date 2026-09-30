@@ -8,7 +8,7 @@ import 'hydration_quest_card.dart';
 class TaskListItem extends StatelessWidget {
   final RPGTask task;
 
-  const TaskListItem({Key? key, required this.task}) : super(key: key);
+  const TaskListItem({super.key, required this.task});
 
   String _formatTime(int seconds) {
     final m = (seconds ~/ 60).toString().padLeft(2, '0');
@@ -139,7 +139,34 @@ class TaskListItem extends StatelessWidget {
             ),
             if (!task.isCompleted) ...[
               const SizedBox(height: 16),
-              if (task.timerStatus == 'Not Started')
+              if (state.isTaskFuture(task))
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.lock_outline, size: 16, color: Color(0xFF94A3B8)),
+                    label: Text(
+                      state.getTaskAvailabilityButtonText(task),
+                      style: TextStyle(
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: actionBtnBg.withValues(alpha: 0.5),
+                      foregroundColor: const Color(0xFF94A3B8),
+                      side: BorderSide(color: actionBtnBorder),
+                    ),
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('🔒 "${task.title}" is scheduled for ${state.getTaskAvailabilityDateText(task)} and is locked until then.'),
+                          backgroundColor: Colors.orange.shade800,
+                        ),
+                      );
+                    },
+                  ),
+                )
+              else if (task.timerStatus == 'Not Started')
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
@@ -204,19 +231,41 @@ class TaskListItem extends StatelessWidget {
   }
 
   IconData _getCategoryIcon(String category) {
-    switch (category.toLowerCase()) {
+    switch (category.toLowerCase().trim()) {
       case 'fitness':
-        return Icons.fitness_center;
+        return Icons.fitness_center_rounded;
       case 'learning':
-        return Icons.menu_book;
+        return Icons.lightbulb_rounded;
+      case 'study':
+        return Icons.school_rounded;
+      case 'coding':
+        return Icons.terminal_rounded;
+      case 'reading':
+        return Icons.menu_book_rounded;
+      case 'meditation':
+        return Icons.self_improvement_rounded;
+      case 'walking':
+        return Icons.directions_walk_rounded;
+      case 'social':
+        return Icons.people_rounded;
+      case 'creative':
+        return Icons.palette_rounded;
+      case 'cleaning':
       case 'chores':
-        return Icons.cleaning_services;
+        return Icons.cleaning_services_rounded;
+      case 'habit':
+        return Icons.repeat_rounded;
+      case 'daily':
+        return Icons.today_rounded;
+      case 'hobbies':
+        return Icons.sports_esports_rounded;
       case 'work':
-        return Icons.work;
+        return Icons.bolt_rounded;
       case 'health':
-        return Icons.favorite;
+        return Icons.favorite_rounded;
+      case 'personal':
       default:
-        return Icons.task_alt;
+        return Icons.task_alt_rounded;
     }
   }
 }
