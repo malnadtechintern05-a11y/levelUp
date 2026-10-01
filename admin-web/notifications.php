@@ -86,6 +86,42 @@ require_once __DIR__ . '/includes/sidebar.php';
             </div>
         </div>
 
+        <!-- PusherHub Live Gateway Card -->
+        <?php
+        $devCount = 0;
+        try {
+            $dCountStmt = $db->query("SELECT COUNT(*) FROM pusher_devices");
+            if ($dCountStmt) {
+                $devCount = (int)$dCountStmt->fetchColumn();
+            }
+        } catch (Exception $e) {}
+        ?>
+        <div class="card-rpg mb-4 p-3 border-start border-4 border-warning">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle p-2 bg-warning bg-opacity-10 text-warning fs-4 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                        <i class="bi bi-bell-fill"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold text-white d-flex align-items-center gap-2">
+                            PusherHub Live Realtime Gateway
+                            <span class="badge bg-success bg-opacity-25 text-success border border-success px-2 py-1"><i class="bi bi-circle-fill fs-6 me-1" style="font-size: 8px !important;"></i> Connected</span>
+                        </div>
+                        <div class="text-secondary small mt-1">
+                            <span class="text-warning fw-semibold">Workspace:</span> <code class="text-white px-1 bg-dark rounded">LEVELUP</code> &bull; 
+                            <span class="text-warning fw-semibold">API Key:</span> <code class="text-white px-1 bg-dark rounded">pk_live_VuXnrl0Im8pJfzHgVgVe3l1dMBsaRnNl</code>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="text-end d-none d-md-block">
+                        <div class="text-white fw-bold fs-5"><?= $devCount ?></div>
+                        <div class="text-muted small">Registered Devices</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Notifications Table Card -->
         <div class="card-rpg p-0 overflow-hidden">
             <div class="table-responsive">

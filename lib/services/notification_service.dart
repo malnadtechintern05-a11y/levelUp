@@ -5,6 +5,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../main.dart';
+import '../models/models.dart';
+import '../helpers/database_helper.dart';
 
 /// Top-level background message handler for FCM
 @pragma('vm:entry-point')
@@ -12,7 +14,75 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   try {
     await Firebase.initializeApp();
   } catch (_) {}
+
   debugPrint('[FCM Background] Message received: ${message.messageId}, data: ${message.data}');
+
+  final title = message.notification?.title ??
+      message.data['title']?.toString() ??
+      message.data['heading']?.toString() ??
+      message.data['header']?.toString() ??
+      'LevelUp Alert';
+
+  final body = message.notification?.body ??
+      message.data['body']?.toString() ??
+      message.data['message']?.toString() ??
+      message.data['text']?.toString() ??
+      message.data['description']?.toString() ??
+      message.data['content']?.toString();
+
+  // If this message has a notification body, display it in the Android notification bar
+  if (body != null && body.trim().isNotEmpty) {
+    try {
+      final flutterLocalNotifications = FlutterLocalNotificationsPlugin();
+      const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const darwinInit = DarwinInitializationSettings();
+      await flutterLocalNotifications.initialize(
+        settings: const InitializationSettings(android: androidInit, iOS: darwinInit),
+      );
+
+      const channel = AndroidNotificationChannel(
+        'high_importance_channel',
+        'High Importance Notifications',
+        description: 'This channel is used for important game quests, streak alerts, and announcements.',
+        importance: Importance.max,
+        playSound: true,
+        enableVibration: true,
+      );
+
+      final androidImpl = flutterLocalNotifications
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      if (androidImpl != null) {
+        await androidImpl.createNotificationChannel(channel);
+      }
+
+      await flutterLocalNotifications.show(
+        id: message.hashCode,
+        title: title,
+        body: body,
+        notificationDetails: NotificationDetails(
+          android: AndroidNotificationDetails(
+            channel.id,
+            channel.name,
+            channelDescription: channel.description,
+            icon: '@mipmap/ic_launcher',
+            importance: Importance.max,
+            priority: Priority.high,
+            playSound: true,
+            enableVibration: true,
+            styleInformation: BigTextStyleInformation(body),
+          ),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+        ),
+        payload: jsonEncode(message.data),
+      );
+    } catch (e) {
+      debugPrint('[FCM Background] Failed to show background notification: $e');
+    }
+  }
 }
 
 class NotificationService {
@@ -165,7 +235,7 @@ class NotificationService {
     // 1. Foreground messages
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       debugPrint('[FCM Foreground] Message title: ${message.notification?.title}, body: ${message.notification?.body}');
-      _showForegroundNotification(message);
+      showForegroundNotification(message);
     });
 
     // 2. Message clicked when app in background
@@ -184,12 +254,42 @@ class NotificationService {
   }
 
   /// Display a local notification banner when a message is received in foreground
-  Future<void> _showForegroundNotification(RemoteMessage message) async {
+  Future<void> showForegroundNotification(RemoteMessage message) async {
     final notification = message.notification;
     final android = message.notification?.android;
 
-    final title = notification?.title ?? message.data['title'] ?? 'LevelUp Alert';
-    final body = notification?.body ?? message.data['body'] ?? 'New notification received';
+    final title = notification?.title ??
+        message.data['title']?.toString() ??
+        message.data['heading']?.toString() ??
+        message.data['header']?.toString() ??
+        'LevelUp Alert';
+
+    final body = notification?.body ??
+        message.data['body']?.toString() ??
+        message.data['message']?.toString() ??
+        message.data['text']?.toString() ??
+        message.data['description']?.toString() ??
+        message.data['content']?.toString() ??
+        'New notification received';
+    final category = message.data['category'] ?? 'System';
+    final type = message.data['type'] ?? 'announcement';
+    final notifId = message.data['id'] ?? 'notif_${DateTime.now().millisecondsSinceEpoch}';
+
+    // Persist to local database immediately so it's visible in the in-app Notifications Screen
+    try {
+      final appNotif = AppNotification(
+        id: notifId.toString(),
+        title: title,
+        body: body,
+        category: category,
+        type: type,
+        timestamp: DateTime.now(),
+        isRead: false,
+      );
+      await DatabaseHelper.instance.saveNotification(appNotif);
+    } catch (e) {
+      debugPrint('[NotificationService] Failed to cache notification in DB: $e');
+    }
 
     final notificationDetails = NotificationDetails(
       android: AndroidNotificationDetails(

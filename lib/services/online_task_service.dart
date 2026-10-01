@@ -10,19 +10,25 @@ class OnlineTaskService {
     if (response['status'] == 'success' && response['data'] is List) {
       final list = (response['data'] as List).map((item) {
         DateTime parsedDue = DateTime.tryParse(item['scheduled_date']?.toString() ?? '') ?? DateTime.now();
+        final rawCat = item['category']?.toString().trim() ?? '';
+        final category = rawCat.isNotEmpty ? rawCat : 'Personal';
+        final isCompleted = item['is_completed'] == true || item['is_completed'] == 1 || item['is_completed'] == '1';
+        final duration = int.tryParse(item['duration_minutes']?.toString() ?? '30') ?? 30;
+
         return RPGTask(
           id: item['id']?.toString() ?? '',
-          title: item['title']?.toString() ?? '',
+          userId: item['user_id']?.toString(),
+          title: (item['title']?.toString().isNotEmpty ?? false) ? item['title'].toString() : 'Untitled Quest',
           description: item['description']?.toString() ?? '',
-          category: item['category']?.toString() ?? 'Personal',
+          category: category,
           xpReward: int.tryParse(item['xp_reward']?.toString() ?? '50') ?? 50,
-          isCompleted: item['is_completed'] == true || item['is_completed'] == 1,
+          isCompleted: isCompleted,
           dueDate: parsedDue,
           time: item['scheduled_time']?.toString(),
-          durationMinutes: int.tryParse(item['duration_minutes']?.toString() ?? '30') ?? 30,
-          remainingSeconds: (item['is_completed'] == true) ? 0 : (int.tryParse(item['duration_minutes']?.toString() ?? '30') ?? 30) * 60,
+          durationMinutes: duration,
+          remainingSeconds: isCompleted ? 0 : (duration * 60),
           timeSpentSeconds: int.tryParse(item['time_spent_seconds']?.toString() ?? '0') ?? 0,
-          timerStatus: item['timer_status']?.toString() ?? 'Not Started',
+          timerStatus: item['timer_status']?.toString() ?? (isCompleted ? 'Completed' : 'Not Started'),
           taskType: item['task_type']?.toString() ?? 'normal',
           waterGoalMl: int.tryParse(item['water_goal_ml']?.toString() ?? '2500') ?? 2500,
           currentWaterMl: int.tryParse(item['current_water_ml']?.toString() ?? '0') ?? 0,

@@ -66,10 +66,39 @@ if ($uri === '/login.php' && ($isJsonRequest || $method === 'POST')) {
     }
 }
 
-// 2. Generic /api/ routing
+// 2. PusherHub Direct Root & API Routing
+$pusherEndpoints = [
+    '/register-device'          => __DIR__ . '/backend/api/register-device.php',
+    '/heartbeat'                => __DIR__ . '/backend/api/heartbeat.php',
+    '/fetch-in-app-messages'    => __DIR__ . '/backend/api/fetch-in-app-messages.php',
+    '/track-open'               => __DIR__ . '/backend/api/track-open.php',
+    '/track-click'              => __DIR__ . '/backend/api/track-click.php',
+    '/track-in-app-shown'       => __DIR__ . '/backend/api/track-in-app-shown.php',
+    '/track-in-app-click'       => __DIR__ . '/backend/api/track-in-app-click.php',
+    '/track-in-app-dismiss'     => __DIR__ . '/backend/api/track-in-app-dismiss.php',
+    '/api/register-device'      => __DIR__ . '/backend/api/register-device.php',
+    '/api/heartbeat'            => __DIR__ . '/backend/api/heartbeat.php',
+    '/api/fetch-in-app-messages'=> __DIR__ . '/backend/api/fetch-in-app-messages.php',
+    '/api/track-open'           => __DIR__ . '/backend/api/track-open.php',
+    '/api/track-click'          => __DIR__ . '/backend/api/track-click.php',
+    '/api/track-in-app-shown'   => __DIR__ . '/backend/api/track-in-app-shown.php',
+    '/api/track-in-app-click'   => __DIR__ . '/backend/api/track-in-app-click.php',
+    '/api/track-in-app-dismiss' => __DIR__ . '/backend/api/track-in-app-dismiss.php',
+];
+
+if (isset($pusherEndpoints[$uri]) && file_exists($pusherEndpoints[$uri])) {
+    require $pusherEndpoints[$uri];
+    exit;
+}
+
+// 3. Generic /api/ routing
 if (str_starts_with($uri, '/api/')) {
     $subPath = substr($uri, 5); // strip '/api/'
     $target = __DIR__ . '/backend/api/' . $subPath;
+    if (file_exists($target . '.php')) {
+        require $target . '.php';
+        exit;
+    }
     if (file_exists($target) && !is_dir($target)) {
         if (str_ends_with($target, '.php')) {
             require $target;
@@ -80,9 +109,13 @@ if (str_starts_with($uri, '/api/')) {
     }
 }
 
-// 3. /backend/api/ routing
+// 4. /backend/api/ routing
 if (str_starts_with($uri, '/backend/api/')) {
     $target = __DIR__ . $uri;
+    if (file_exists($target . '.php')) {
+        require $target . '.php';
+        exit;
+    }
     if (file_exists($target) && !is_dir($target)) {
         if (str_ends_with($target, '.php')) {
             require $target;
@@ -93,9 +126,13 @@ if (str_starts_with($uri, '/backend/api/')) {
     }
 }
 
-// 4. Web Admin Panel routing
+// 5. Web Admin Panel routing
 if (str_starts_with($uri, '/admin-web/')) {
     $target = __DIR__ . $uri;
+    if (file_exists($target . '.php')) {
+        require $target . '.php';
+        exit;
+    }
     if (file_exists($target) && !is_dir($target)) {
         if (str_ends_with($target, '.php')) {
             require $target;

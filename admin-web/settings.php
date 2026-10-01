@@ -185,6 +185,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         set_flash('success', 'Background image removed! The mobile app is now displaying the clean default RPG gradient.');
         header('Location: settings.php');
         exit;
+    } elseif ($formType === 'pusher_hub_config') {
+        $hubUrl = trim($_POST['pusher_hub_server_url'] ?? '');
+        $stmt = $db->prepare("INSERT INTO app_settings (setting_key, setting_value) VALUES ('pusher_hub_server_url', ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()");
+        $stmt->execute([$hubUrl]);
+
+        log_activity(null, $_SESSION['admin_id'] ?? null, 'admin_action', "Updated PusherHub configuration");
+        set_flash('success', 'PusherHub gateway settings updated successfully.');
+        header('Location: settings.php');
+        exit;
+    } elseif ($formType === 'pusher_hub_test') {
+        $testTitle = trim($_POST['test_title'] ?? 'LevelUp Realm Notification Test');
+        $testMessage = trim($_POST['test_message'] ?? 'Greetings Hero! PusherHub realtime notification is fully operational.');
+        $result = send_pusher_hub_broadcast($testTitle, $testMessage, 'System', 'announcement', null);
+        if ($result['success']) {
+            set_flash('success', "PusherHub Test Dispatched! Target: {$result['target']}, Recipient devices: {$result['devices_count']}.");
+        } else {
+            set_flash('danger', "PusherHub Test Dispatch Failed: " . ($result['message'] ?? 'Unknown error'));
+        }
+        header('Location: settings.php');
+        exit;
     }
 }
 
@@ -469,6 +489,69 @@ require_once __DIR__ . '/includes/sidebar.php';
                             <i class="bi bi-key-fill me-1"></i> Update Admin Password
                         </button>
                     </form>
+                </div>
+
+                <!-- PusherHub Push & Realtime Integration Card -->
+                <div class="card-rpg mb-4 border-start border-4 border-warning">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold text-white mb-0">
+                            <i class="bi bi-broadcast text-warning me-2"></i>PusherHub Push Gateway
+                        </h5>
+                        <span class="badge bg-success bg-opacity-25 text-success border border-success px-2 py-1">
+                            <i class="bi bi-check-circle-fill me-1"></i> Active
+                        </span>
+                    </div>
+                    
+                    <p class="text-secondary small mb-3">
+                        Realtime push notification and in-app modal messaging bridge connected to LevelUp mobile clients.
+                    </p>
+
+                    <div class="mb-3 p-3 rounded-3" style="background: rgba(10, 15, 28, 0.7); border: 1px solid rgba(255, 255, 255, 0.1);">
+                        <div class="mb-2">
+                            <span class="text-secondary small d-block">Workspace Key (App Identifier):</span>
+                            <code class="text-warning fw-bold fs-6">LEVELUP</code>
+                        </div>
+                        <div class="mb-2">
+                            <span class="text-secondary small d-block">Public API Key:</span>
+                            <code class="text-white small text-break">pk_live_VuXnrl0Im8pJfzHgVgVe3l1dMBsaRnNl</code>
+                        </div>
+                        <div>
+                            <span class="text-secondary small d-block">Target Dispatch:</span>
+                            <span class="text-light small"><i class="bi bi-phone me-1 text-info"></i>Broadcast &amp; Direct-to-Hero via FCM</span>
+                        </div>
+                    </div>
+
+                    <!-- PusherHub Server URL Config -->
+                    <form method="POST" action="settings.php" class="mb-3">
+                        <?php csrf_field(); ?>
+                        <input type="hidden" name="form_type" value="pusher_hub_config">
+
+                        <div class="mb-2">
+                            <label class="form-label-rpg small">Relay Server URL (Optional)</label>
+                            <input type="url" name="pusher_hub_server_url" class="form-control form-control-rpg form-control-sm" placeholder="https://pusherhub.com/api/send-notification" value="<?= e($settings['pusher_hub_server_url'] ?? '') ?>">
+                            <div class="form-text text-secondary" style="font-size: 0.75rem;">Leave empty to use standard local &amp; realtime FCM dispatch.</div>
+                        </div>
+
+                        <button type="submit" class="btn btn-dark-rpg btn-sm w-100">
+                            <i class="bi bi-save me-1"></i> Save Gateway URL
+                        </button>
+                    </form>
+
+                    <!-- Test Broadcast Trigger -->
+                    <div class="pt-2 border-top border-secondary border-opacity-25">
+                        <label class="form-label-rpg small fw-bold text-white mb-2"><i class="bi bi-send-check text-warning me-1"></i> Quick Test Dispatch</label>
+                        <form method="POST" action="settings.php">
+                            <?php csrf_field(); ?>
+                            <input type="hidden" name="form_type" value="pusher_hub_test">
+                            <div class="input-group input-group-sm mb-2">
+                                <input type="text" name="test_title" class="form-control form-control-rpg" value="LevelUp Test Alert" placeholder="Title">
+                                <button type="submit" class="btn btn-gold btn-sm px-3">
+                                    <i class="bi bi-send-fill me-1"></i> Test Send
+                                </button>
+                            </div>
+                            <input type="hidden" name="test_message" value="Testing PusherHub realtime notification delivery to all registered devices.">
+                        </form>
+                    </div>
                 </div>
 
                 <!-- Flutter Backend Compatibility Card -->

@@ -131,17 +131,27 @@ function get_app_setting(string $key, $default = null) {
     return $settings[$key] ?? $default;
 }
 
+require_once __DIR__ . '/pusher_hub.php';
+
 /**
- * Create a new notification.
+ * Create and dispatch a new notification.
  */
-function create_notification(string $title, string $message, string $category = 'System', string $type = 'announcement', ?int $targetUserId = null): bool {
+function create_notification(string $title, string $message, string $category = 'System', string $type = 'announcement', ?int $targetUserId = null, ?string $deepLink = null): bool {
     try {
         $db = getDB();
         $id = 'notif_' . bin2hex(random_bytes(8));
         $stmt = $db->prepare("INSERT INTO notifications (id, title, message, category, type, target_user_id, is_read, created_at) VALUES (?, ?, ?, ?, ?, ?, 0, NOW())");
-        return $stmt->execute([$id, $title, $message, $category, $type, $targetUserId]);
+        $saved = $stmt->execute([$id, $title, $message, $category, $type, $targetUserId]);
+
+        if ($saved) {
+            // Dispatch push notification & in-app modal via PusherHub
+            send_pusher_hub_broadcast($title, $message, $category, $type, $targetUserId, $deepLink);
+        }
+
+        return $saved;
     } catch (Exception $e) {
         error_log("Failed to create notification: " . $e->getMessage());
         return false;
     }
 }
+

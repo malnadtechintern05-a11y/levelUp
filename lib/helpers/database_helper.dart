@@ -360,21 +360,26 @@ class DatabaseHelper {
     await batch.commit(noResult: true);
   }
 
-  Future<List<RPGTask>> getTasksForUser(dynamic userId) async {
+  Future<List<RPGTask>> getTasksForUser(dynamic userId, [String? username]) async {
     final db = await instance.database;
-    final cleanId = userId.toString().trim().toLowerCase();
-    if (cleanId == 'hero' || cleanId == '' || cleanId == '0' || cleanId == 'default') {
-      final result = await db.query(
-        'tasks',
-        where: 'user_id = ? OR user_id IS NULL OR user_id = \'\' OR user_id = \'hero\'',
-        whereArgs: [cleanId],
-      );
-      return result.map((json) => RPGTask.fromMapSql(json)).toList();
-    }
+    final cleanId = userId?.toString().trim().toLowerCase() ?? 'hero';
+    final cleanUsername = username?.trim().toLowerCase();
+
+    final List<String> matchIds = {
+      cleanId,
+      if (cleanUsername != null && cleanUsername.isNotEmpty) cleanUsername,
+      'hero',
+      'default',
+      'global',
+      '0',
+      '',
+    }.toList();
+
+    final placeholders = List.filled(matchIds.length, '?').join(', ');
     final result = await db.query(
       'tasks',
-      where: 'user_id = ?',
-      whereArgs: [cleanId],
+      where: 'user_id IN ($placeholders) OR user_id IS NULL',
+      whereArgs: matchIds,
     );
     return result.map((json) => RPGTask.fromMapSql(json)).toList();
   }
@@ -479,8 +484,8 @@ class DatabaseHelper {
     final cleanId = userId.toString().trim().toLowerCase();
     final result = await db.query(
       'notifications',
-      where: 'user_id = ?',
-      whereArgs: [cleanId],
+      where: 'user_id = ? OR user_id = ? OR user_id = ? OR user_id = ? OR user_id = ? OR user_id = ? OR user_id IS NULL OR user_id = ""',
+      whereArgs: [cleanId, 'global', 'hero', 'default', 'all', 'all_users'],
       orderBy: 'timestamp DESC',
     );
     return result.map((json) => AppNotification.fromMapSql(json)).toList();

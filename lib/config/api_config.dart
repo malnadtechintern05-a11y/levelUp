@@ -18,6 +18,7 @@ class ApiConfig {
 
   static const String pusherHubAppKey = 'LEVELUP';
   static const String pusherHubPublicKey = 'pk_live_VuXnrl0Im8pJfzHgVgVe3l1dMBsaRnNl';
+  static const String pusherHubDefaultHost = 'https://pusherhub.com/api';
   static const String _customPusherHubUrlKey = 'custom_pusher_hub_url';
 
   static String _currentBaseUrl = '';
@@ -47,7 +48,15 @@ class ApiConfig {
 
     final savedHubUrl = prefs.getString(_customPusherHubUrlKey);
     if (savedHubUrl != null && savedHubUrl.trim().isNotEmpty) {
-      _currentPusherHubBaseUrl = savedHubUrl.trim();
+      String cleanHub = savedHubUrl.trim();
+      if (cleanHub.contains('192.168.') || cleanHub.contains('localhost') || cleanHub.contains('127.0.0.1')) {
+        // Automatically migrate away from local LAN URL to official PusherHub API
+        cleanHub = pusherHubDefaultHost;
+        await prefs.setString(_customPusherHubUrlKey, cleanHub);
+      }
+      _currentPusherHubBaseUrl = cleanHub;
+    } else {
+      _currentPusherHubBaseUrl = pusherHubDefaultHost;
     }
   }
 
@@ -55,7 +64,7 @@ class ApiConfig {
     if (_currentPusherHubBaseUrl.isNotEmpty) {
       return _currentPusherHubBaseUrl;
     }
-    return baseUrl;
+    return pusherHubDefaultHost;
   }
 
   static Future<void> setPusherHubBaseUrl(String url) async {

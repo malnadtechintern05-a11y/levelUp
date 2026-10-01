@@ -1160,6 +1160,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     _buildCategoryChip(context, 'Study', Icons.school_rounded, Colors.blueAccent),
                     _buildCategoryChip(context, 'Fitness', Icons.fitness_center_rounded, Colors.redAccent),
                     _buildCategoryChip(context, 'Health', Icons.favorite_rounded, Colors.green),
+                    _buildCategoryChip(context, 'Hydration', Icons.water_drop_rounded, Colors.cyan),
                     _buildCategoryChip(context, 'Learning', Icons.lightbulb_rounded, Colors.indigoAccent),
                     _buildCategoryChip(context, 'Work', Icons.bolt_rounded, Colors.purpleAccent),
                     _buildCategoryChip(context, 'Coding', Icons.terminal_rounded, Colors.tealAccent),
@@ -1169,10 +1170,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     _buildCategoryChip(context, 'Social', Icons.people_rounded, Colors.pinkAccent),
                     _buildCategoryChip(context, 'Creative', Icons.palette_rounded, Colors.deepOrangeAccent),
                     _buildCategoryChip(context, 'Cleaning', Icons.cleaning_services_rounded, Colors.lightBlueAccent),
+                    _buildCategoryChip(context, 'Chores', Icons.home_work_rounded, Colors.deepOrange),
                     _buildCategoryChip(context, 'Habit', Icons.repeat_rounded, Colors.deepPurpleAccent),
                     _buildCategoryChip(context, 'Daily', Icons.today_rounded, Colors.orangeAccent),
                     _buildCategoryChip(context, 'Hobbies', Icons.sports_esports_rounded, Colors.amberAccent),
                     _buildCategoryChip(context, 'Personal', Icons.person_rounded, Colors.greenAccent),
+                    _buildCategoryChip(context, 'Other', Icons.category_rounded, Colors.blueGrey),
                   ],
                 ),
               ),
@@ -1246,7 +1249,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ),
               ),
 
-              if (todayCompletedTasks.isNotEmpty) ...[
+              if (todayCompletedTasks.isNotEmpty || state.completedTasks.isNotEmpty) ...[
                 const SizedBox(height: 24),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -1254,7 +1257,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "Completed Today", 
+                        todayCompletedTasks.isNotEmpty ? "Completed Today" : "Completed Quests", 
                         style: TextStyle(
                           fontSize: 18, 
                           fontWeight: FontWeight.bold, 
@@ -1262,7 +1265,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         ),
                       ),
                       Text(
-                        '${todayCompletedTasks.length} done',
+                        todayCompletedTasks.isNotEmpty
+                            ? '${todayCompletedTasks.length} done'
+                            : '${state.completedTasks.length} total',
                         style: TextStyle(
                           color: isDark ? const Color(0xFF4CAF50) : const Color(0xFF16A34A), 
                           fontSize: 13, 
@@ -1276,10 +1281,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: Column(
-                    children: todayCompletedTasks.map((task) => QuestCard(
-                          task: task,
-                          onComplete: () {},
-                        )).toList(),
+                    children: (todayCompletedTasks.isNotEmpty ? todayCompletedTasks : state.completedTasks.take(5).toList())
+                        .map((task) => QuestCard(
+                              task: task,
+                              onComplete: () {},
+                            )).toList(),
                   ),
                 ),
               ],

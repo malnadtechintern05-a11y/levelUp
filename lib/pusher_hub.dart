@@ -15,11 +15,11 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'services/notification_service.dart';
 
 @pragma('vm:entry-point')
 Future<void> pusherHubBackgroundMessageHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
-  _pusherHubLog('Background message received: ${message.messageId}');
+  await firebaseMessagingBackgroundHandler(message);
 }
 
 /// Every SDK log line goes through here, and only debug builds print — a
@@ -267,6 +267,11 @@ class PusherHub {
       FirebaseMessaging.onMessage.listen((message) {
         _pusherHubLog('Foreground message received: ${message.messageId}');
         _pusherHubLog('Foreground data: ${message.data}');
+        try {
+          NotificationService.instance.showForegroundNotification(message);
+        } catch (e) {
+          _pusherHubLog('Error showing foreground notification banner: $e');
+        }
       });
 
       // Fires when the app was backgrounded (not terminated) and the user

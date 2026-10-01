@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'providers/app_state.dart';
 import 'providers/admin_state.dart';
 import 'screens/splash_screen.dart';
@@ -20,7 +22,6 @@ import 'screens/rankings_screen.dart';
 import 'screens/alarm_sound_screen.dart';
 import 'screens/register_screen.dart';
 import 'services/api_client.dart';
-import 'services/firebase_service.dart';
 import 'services/analytics_service.dart';
 import 'services/notification_service.dart';
 import 'services/pusher_hub_service.dart';
@@ -35,14 +36,24 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ApiConfig.init();
 
-  // Initialize Local Notifications & High-Importance Channel immediately
+  // 1. Initialize Firebase Core first on mobile platforms
+  try {
+    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+      await Firebase.initializeApp();
+      debugPrint('[Firebase] Initialized successfully');
+    }
+  } catch (e) {
+    debugPrint('[Firebase] Initialization error: $e');
+  }
+
+  // 2. Initialize Local Notifications & High-Importance FCM Channels
   await NotificationService.instance.initialize();
 
-  // Initialize Firebase asynchronously in background
-  FirebaseService.instance.initialize();
+  // 3. Initialize PusherHub Client & Device Registration
+  await PusherHubService.instance.initialize();
 
-  // Initialize PusherHub for push notifications & in-app messaging
-  PusherHubService.instance.initialize();
+  // 4. Initialize Analytics in background
+  AnalyticsService.instance.initialize();
 
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     sqfliteFfiInit();

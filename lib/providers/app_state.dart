@@ -12,6 +12,7 @@ import '../services/auth_service.dart';
 import '../services/online_task_service.dart';
 import '../services/online_hydration_service.dart';
 import '../services/online_achievement_service.dart';
+import '../services/online_notification_service.dart';
 import '../services/api_client.dart';
 import '../services/analytics_service.dart';
 import '../services/notification_service.dart';
@@ -347,12 +348,19 @@ class AppState extends ChangeNotifier {
         if (onlineTasks.isNotEmpty) {
           final taskMap = {for (var t in _tasks) t.id: t};
           for (var ot in onlineTasks) {
+            ot.userId ??= currentUserId;
             if (taskMap.containsKey(ot.id)) {
               final existing = taskMap[ot.id]!;
               if (ot.taskType == 'hydration' && existing.waterLogs.isNotEmpty && ot.waterLogs.isEmpty) {
                 ot.waterLogs = existing.waterLogs;
                 ot.reminders = existing.reminders;
                 ot.currentWaterMl = existing.currentWaterMl;
+              }
+              if (existing.objectives.isNotEmpty && ot.objectives.isEmpty) {
+                ot.objectives = existing.objectives;
+              }
+              if (existing.personalNote != null && ot.personalNote == null) {
+                ot.personalNote = existing.personalNote;
               }
             }
             taskMap[ot.id] = ot;
@@ -604,7 +612,7 @@ class AppState extends ChangeNotifier {
     }
 
     try {
-      final tasksList = await dbHelper.getTasksForUser(cleanId);
+      final tasksList = await dbHelper.getTasksForUser(cleanId, _userProfile.username);
       if (tasksList.isNotEmpty) {
         _tasks = tasksList;
       } else {
@@ -704,8 +712,9 @@ class AppState extends ChangeNotifier {
         'Mon': 120, 'Tue': 80, 'Wed': 150, 'Thu': 200, 'Fri': 100, 'Sat': 0, 'Sun': 0,
       };
 
-      // Asynchronously fetch latest realm settings from online backend
+      // Asynchronously fetch latest realm settings & notifications from online backend
       fetchAppSettings();
+      fetchOnlineNotifications();
     } catch (e) {
       debugPrint("Critical error in _loadData: $e");
     } finally {
@@ -1712,11 +1721,42 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Fetch and merge notifications from the online server (Admin Web dispatches & user alerts)
+  Future<void> fetchOnlineNotifications() async {
+    try {
+      final onlineNotifs = await OnlineNotificationService.instance.fetchNotifications();
+      if (onlineNotifs.isNotEmpty) {
+        final dbHelper = DatabaseHelper.instance;
+        bool changed = false;
+        for (final n in onlineNotifs) {
+          final existingIdx = _notifications.indexWhere((loc) => loc.id == n.id);
+          if (existingIdx == -1) {
+            _notifications.add(n);
+            await dbHelper.saveNotification(n, currentUserId);
+            changed = true;
+          } else {
+            if (_notifications[existingIdx].isRead != n.isRead) {
+              _notifications[existingIdx].isRead = n.isRead;
+              changed = true;
+            }
+          }
+        }
+        if (changed) {
+          _notifications.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      debugPrint("Error syncing online notifications: $e");
+    }
+  }
+
   Future<void> markNotificationAsRead(String id) async {
     final idx = _notifications.indexWhere((n) => n.id == id);
     if (idx != -1) {
       _notifications[idx].isRead = true;
       await DatabaseHelper.instance.markNotificationAsRead(id, currentUserId);
+      OnlineNotificationService.instance.markAsRead(id);
       notifyListeners();
     }
   }
@@ -1726,12 +1766,14 @@ class AppState extends ChangeNotifier {
       n.isRead = true;
     }
     await DatabaseHelper.instance.markAllNotificationsAsRead(currentUserId);
+    OnlineNotificationService.instance.markAllAsRead();
     notifyListeners();
   }
 
   Future<void> clearAllNotifications() async {
     _notifications.clear();
     await DatabaseHelper.instance.clearAllNotifications(currentUserId);
+    OnlineNotificationService.instance.markAllAsRead();
     notifyListeners();
   }
 
