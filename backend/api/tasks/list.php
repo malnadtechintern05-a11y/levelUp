@@ -46,8 +46,12 @@ if (!empty($date)) {
     $params[] = $date;
 }
 if (!empty($category) && $category !== 'All') {
-    $query .= " AND LOWER(t.category) = LOWER(?)";
-    $params[] = $category;
+    if (strtolower($category) === 'hydration') {
+        $query .= " AND (t.task_type = 'hydration' OR LOWER(t.category) = 'hydration')";
+    } else {
+        $query .= " AND LOWER(t.category) = LOWER(?)";
+        $params[] = $category;
+    }
 }
 
 $query .= " ORDER BY t.scheduled_date ASC, t.id ASC";

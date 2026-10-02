@@ -372,11 +372,19 @@ class _QuestsScreenState extends State<QuestsScreen> with SingleTickerProviderSt
     } else if (_activeFilter == 'Overdue') {
       filtered = allActive.where((t) => state.isTaskPast(t)).toList();
     } else if (_activeFilter == 'Hydration') {
-      filtered = allActive.where((t) => t.taskType == 'hydration').toList();
+      filtered = allActive.where((t) => t.taskType == 'hydration' || t.category.trim().toLowerCase() == 'hydration').toList();
+    } else if (_activeFilter != 'All') {
+      filtered = allActive.where((t) => t.category.trim().toLowerCase() == _activeFilter.trim().toLowerCase()).toList();
     }
 
     // Sort by scheduled date
     filtered.sort((a, b) => a.dueDate.compareTo(b.dueDate));
+
+    final categories = [
+      'Study', 'Fitness', 'Health', 'Learning', 'Work', 'Coding', 'Reading',
+      'Meditation', 'Walking', 'Social', 'Creative', 'Cleaning', 'Chores',
+      'Habit', 'Daily', 'Hobbies', 'Personal', 'Other'
+    ];
 
     return RefreshIndicator(
       onRefresh: () => state.refreshAllData(),
@@ -399,7 +407,11 @@ class _QuestsScreenState extends State<QuestsScreen> with SingleTickerProviderSt
                   const SizedBox(width: 8),
                   _buildFilterChip('Overdue', allActive.where((t) => state.isTaskPast(t)).length, theme, isDark),
                   const SizedBox(width: 8),
-                  _buildFilterChip('Hydration', allActive.where((t) => t.taskType == 'hydration').length, theme, isDark),
+                  _buildFilterChip('Hydration', allActive.where((t) => t.taskType == 'hydration' || t.category.trim().toLowerCase() == 'hydration').length, theme, isDark),
+                  for (final cat in categories) ...[
+                    const SizedBox(width: 8),
+                    _buildFilterChip(cat, allActive.where((t) => t.category.trim().toLowerCase() == cat.toLowerCase()).length, theme, isDark),
+                  ],
                 ],
               ),
             ),

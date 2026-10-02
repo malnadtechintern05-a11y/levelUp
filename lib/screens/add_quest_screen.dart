@@ -28,6 +28,7 @@ class _AddQuestScreenState extends State<AddQuestScreen> {
     'Study',
     'Fitness',
     'Health',
+    'Hydration',
     'Learning',
     'Work',
     'Coding',
@@ -37,10 +38,12 @@ class _AddQuestScreenState extends State<AddQuestScreen> {
     'Social',
     'Creative',
     'Cleaning',
+    'Chores',
     'Habit',
     'Daily',
     'Hobbies',
     'Personal',
+    'Other',
   ];
   final List<int> _xpOptions = [20, 40, 50, 70, 100, 150, 200];
   final List<int> _durations = [0, 10, 15, 20, 30, 45, 60, 90];

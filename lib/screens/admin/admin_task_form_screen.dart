@@ -23,7 +23,27 @@ class _AdminTaskFormScreenState extends State<AdminTaskFormScreen> {
   int _selectedDuration = 30;
   bool _isActive = true;
 
-  final List<String> _categories = ['Study', 'Fitness', 'Health', 'Work', 'Personal'];
+  final List<String> _categories = [
+    'Study',
+    'Fitness',
+    'Health',
+    'Hydration',
+    'Learning',
+    'Work',
+    'Coding',
+    'Reading',
+    'Meditation',
+    'Walking',
+    'Social',
+    'Creative',
+    'Cleaning',
+    'Chores',
+    'Habit',
+    'Daily',
+    'Hobbies',
+    'Personal',
+    'Other',
+  ];
   final List<int> _durations = [1, 5, 10, 20, 30, 40, 45, 60, 90, 120];
 
   @override

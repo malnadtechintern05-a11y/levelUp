@@ -276,7 +276,20 @@ INSERT INTO `app_settings` (`setting_key`, `setting_value`) VALUES
 ('task_completion_notifications', '1'),
 ('streak_notifications', '1'),
 ('maintenance_mode', '0'),
-('hero_banner_image', '')
+('hero_banner_image', ''),
+('privacy_policy_last_updated', '28 September 2026'),
+('privacy_policy_intro', 'LevelUp: Real-Life RPG is an interactive gamified self-improvement and task-tracking app designed to help you build positive daily habits, maintain discipline, and level up your life.'),
+('privacy_policy_info_collected', 'We collect information you provide directly (such as your username, email address, chosen avatar, tasks, habit logs, and hydration records). This data is used solely to calculate your levels, XP, streaks, achievements, and leaderboard rankings.'),
+('privacy_policy_how_we_use', 'Your data is used exclusively to power your in-app RPG gameplay, calculate progress statistics, maintain streak counters, deliver milestone notifications, and sync your profile across authorized devices.'),
+('privacy_policy_data_security', 'We value your trust and implement industry-standard administrative, technical, and physical security safeguards to protect your personal data against unauthorized access, alteration, disclosure, or destruction.'),
+('privacy_policy_log_data', 'In case of an error in the app, we collect log data (through third-party products like Firebase Crashlytics) that may include your device Internet Protocol (IP) address, device name, OS version, app configuration, and timestamp of the error.'),
+('privacy_policy_cookies', 'This Service does not use cookies explicitly. However, the app may use third-party code and libraries that use cookies to collect information and improve their services.'),
+('privacy_policy_children', 'These Services do not address anyone under the age of 13. We do not knowingly collect personally identifiable information from children under 13.'),
+('privacy_policy_changes', 'We may update our Privacy Policy from time to time. Thus, you are advised to review this page periodically for any changes. We will notify you of any changes by posting the new Privacy Policy on this page.'),
+('pusherhub_last_updated', '28 September 2026'),
+('pusherhub_intro', 'This policy explains what personal data PusherHub collects, why, and what you can do about it. It covers the hosted PusherHub service — the website, dashboard, REST API, and SDKs. PusherHub is operated by Harsha, responsible under India\'s Digital Personal Data Protection Act, 2023.'),
+('pusherhub_grievance_officer', 'Harsha'),
+('pusherhub_grievance_email', 'harsha.malnadtech@gmail.com')
 ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`);
 
 -- Activity Logs

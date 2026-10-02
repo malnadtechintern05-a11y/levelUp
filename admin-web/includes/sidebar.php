@@ -60,6 +60,11 @@ $currentPage = $currentPage ?? '';
 
         <span class="nav-label mt-2">Configuration</span>
 
+        <a href="privacy-policy.php" class="nav-link-custom <?= ($currentPage === 'privacy-policy') ? 'active' : '' ?>">
+            <i class="bi bi-shield-check"></i>
+            <span>Privacy Policy</span>
+        </a>
+
         <a href="settings.php" class="nav-link-custom <?= ($currentPage === 'settings') ? 'active' : '' ?>">
             <i class="bi bi-gear-fill"></i>
             <span>Settings</span>

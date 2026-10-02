@@ -1,0 +1,21 @@
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# Allow direct file access
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Map extensionless endpoints
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^(.*)$ $1.php [QSA,L]
+
+# Specific convenience routes
+RewriteRule ^notifications/?$ notifications/list.php [QSA,L]
+RewriteRule ^notifications/list/?$ notifications/list.php [QSA,L]
+RewriteRule ^register-device/?$ register-device.php [QSA,L]
+RewriteRule ^fetch-in-app-messages/?$ fetch-in-app-messages.php [QSA,L]
+RewriteRule ^heartbeat/?$ heartbeat.php [QSA,L]
+</IfModule>
+
+Options +MultiViews

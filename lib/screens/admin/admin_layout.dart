@@ -6,6 +6,7 @@ import 'admin_users_screen.dart';
 import 'admin_tasks_screen.dart';
 import 'admin_achievements_screen.dart';
 import 'admin_analytics_screen.dart';
+import 'admin_privacy_policy_screen.dart';
 
 class AdminLayout extends StatefulWidget {
   const AdminLayout({super.key});
@@ -23,7 +24,7 @@ class _AdminLayoutState extends State<AdminLayout> {
     const AdminTasksScreen(),
     const AdminAchievementsScreen(),
     const AdminAnalyticsScreen(),
-    const Center(child: Text('Settings (Coming Soon)', style: TextStyle(color: Colors.white))),
+    const AdminPrivacyPolicyScreen(),
   ];
 
   final List<Map<String, dynamic>> _menuItems = [
@@ -32,7 +33,7 @@ class _AdminLayoutState extends State<AdminLayout> {
     {'title': 'Tasks', 'icon': Icons.task},
     {'title': 'Achievements', 'icon': Icons.emoji_events},
     {'title': 'Analytics', 'icon': Icons.analytics},
-    {'title': 'Settings', 'icon': Icons.settings},
+    {'title': 'Privacy Policy', 'icon': Icons.policy_outlined},
   ];
 
   void _logout() {

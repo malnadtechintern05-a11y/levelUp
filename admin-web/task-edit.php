@@ -152,12 +152,24 @@ require_once __DIR__ . '/includes/sidebar.php';
                         <label for="category" class="form-label-rpg">Category *</label>
                         <select name="category" id="category" class="form-select form-select-rpg" required>
                             <?php $curCat = $_POST['category'] ?? $task['category']; ?>
-                            <option value="Fitness" <?= $curCat === 'Fitness' ? 'selected' : '' ?>>Fitness</option>
                             <option value="Study" <?= $curCat === 'Study' ? 'selected' : '' ?>>Study</option>
+                            <option value="Fitness" <?= $curCat === 'Fitness' ? 'selected' : '' ?>>Fitness</option>
                             <option value="Health" <?= $curCat === 'Health' ? 'selected' : '' ?>>Health</option>
-                            <option value="Work" <?= $curCat === 'Work' ? 'selected' : '' ?>>Work</option>
-                            <option value="Personal" <?= $curCat === 'Personal' ? 'selected' : '' ?>>Personal</option>
                             <option value="Hydration" <?= $curCat === 'Hydration' ? 'selected' : '' ?>>Hydration</option>
+                            <option value="Learning" <?= $curCat === 'Learning' ? 'selected' : '' ?>>Learning</option>
+                            <option value="Work" <?= $curCat === 'Work' ? 'selected' : '' ?>>Work</option>
+                            <option value="Coding" <?= $curCat === 'Coding' ? 'selected' : '' ?>>Coding</option>
+                            <option value="Reading" <?= $curCat === 'Reading' ? 'selected' : '' ?>>Reading</option>
+                            <option value="Meditation" <?= $curCat === 'Meditation' ? 'selected' : '' ?>>Meditation</option>
+                            <option value="Walking" <?= $curCat === 'Walking' ? 'selected' : '' ?>>Walking</option>
+                            <option value="Social" <?= $curCat === 'Social' ? 'selected' : '' ?>>Social</option>
+                            <option value="Creative" <?= $curCat === 'Creative' ? 'selected' : '' ?>>Creative</option>
+                            <option value="Cleaning" <?= $curCat === 'Cleaning' ? 'selected' : '' ?>>Cleaning</option>
+                            <option value="Chores" <?= $curCat === 'Chores' ? 'selected' : '' ?>>Chores</option>
+                            <option value="Habit" <?= $curCat === 'Habit' ? 'selected' : '' ?>>Habit</option>
+                            <option value="Daily" <?= $curCat === 'Daily' ? 'selected' : '' ?>>Daily</option>
+                            <option value="Hobbies" <?= $curCat === 'Hobbies' ? 'selected' : '' ?>>Hobbies</option>
+                            <option value="Personal" <?= $curCat === 'Personal' ? 'selected' : '' ?>>Personal</option>
                             <option value="Other" <?= $curCat === 'Other' ? 'selected' : '' ?>>Other</option>
                         </select>
                     </div>

@@ -194,12 +194,24 @@ require_once __DIR__ . '/includes/sidebar.php';
                 <div class="col-6 col-md-2">
                     <select name="category" class="form-select form-select-rpg">
                         <option value="">All Categories</option>
-                        <option value="Fitness" <?= $categoryFilter === 'Fitness' ? 'selected' : '' ?>>Fitness</option>
                         <option value="Study" <?= $categoryFilter === 'Study' ? 'selected' : '' ?>>Study</option>
+                        <option value="Fitness" <?= $categoryFilter === 'Fitness' ? 'selected' : '' ?>>Fitness</option>
                         <option value="Health" <?= $categoryFilter === 'Health' ? 'selected' : '' ?>>Health</option>
-                        <option value="Work" <?= $categoryFilter === 'Work' ? 'selected' : '' ?>>Work</option>
-                        <option value="Personal" <?= $categoryFilter === 'Personal' ? 'selected' : '' ?>>Personal</option>
                         <option value="Hydration" <?= $categoryFilter === 'Hydration' ? 'selected' : '' ?>>Hydration</option>
+                        <option value="Learning" <?= $categoryFilter === 'Learning' ? 'selected' : '' ?>>Learning</option>
+                        <option value="Work" <?= $categoryFilter === 'Work' ? 'selected' : '' ?>>Work</option>
+                        <option value="Coding" <?= $categoryFilter === 'Coding' ? 'selected' : '' ?>>Coding</option>
+                        <option value="Reading" <?= $categoryFilter === 'Reading' ? 'selected' : '' ?>>Reading</option>
+                        <option value="Meditation" <?= $categoryFilter === 'Meditation' ? 'selected' : '' ?>>Meditation</option>
+                        <option value="Walking" <?= $categoryFilter === 'Walking' ? 'selected' : '' ?>>Walking</option>
+                        <option value="Social" <?= $categoryFilter === 'Social' ? 'selected' : '' ?>>Social</option>
+                        <option value="Creative" <?= $categoryFilter === 'Creative' ? 'selected' : '' ?>>Creative</option>
+                        <option value="Cleaning" <?= $categoryFilter === 'Cleaning' ? 'selected' : '' ?>>Cleaning</option>
+                        <option value="Chores" <?= $categoryFilter === 'Chores' ? 'selected' : '' ?>>Chores</option>
+                        <option value="Habit" <?= $categoryFilter === 'Habit' ? 'selected' : '' ?>>Habit</option>
+                        <option value="Daily" <?= $categoryFilter === 'Daily' ? 'selected' : '' ?>>Daily</option>
+                        <option value="Hobbies" <?= $categoryFilter === 'Hobbies' ? 'selected' : '' ?>>Hobbies</option>
+                        <option value="Personal" <?= $categoryFilter === 'Personal' ? 'selected' : '' ?>>Personal</option>
                         <option value="Other" <?= $categoryFilter === 'Other' ? 'selected' : '' ?>>Other</option>
                     </select>
                 </div>

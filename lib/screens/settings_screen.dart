@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../services/sound_service.dart';
 import '../screens/alarm_sound_screen.dart';
-import '../config/api_config.dart';
-import '../services/api_client.dart';
-import '../widgets/smooth_transitions.dart';
+import '../screens/privacy_policy_screen.dart';
+import '../screens/about_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -15,100 +16,188 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  void _showServerConfigDialog() {
-    final controller = TextEditingController(text: ApiConfig.baseUrl);
+  Future<void> _handleEmailSupport() async {
+    final uri = Uri(
+      scheme: 'mailto',
+      path: 'support@levelup-rpg.com',
+      query: 'subject=LevelUp RPG Support & Inquiries',
+    );
+    bool launched = false;
+    try {
+      if (await canLaunchUrl(uri)) {
+        launched = await launchUrl(uri);
+      }
+    } catch (_) {}
+
+    if (!launched && mounted) {
+      await Clipboard.setData(const ClipboardData(text: 'support@levelup-rpg.com'));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('📋 Email copied to clipboard: support@levelup-rpg.com'),
+            backgroundColor: Color(0xFF16A34A),
+          ),
+        );
+      }
+    }
+  }
+
+  void _showFeedbackDialog() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final messageController = TextEditingController();
+    String selectedCategory = 'Bug Report';
+    final categories = ['Bug Report', 'Feature Request', 'General Feedback', 'Help & Question'];
+
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF162033),
-        title: Row(
-          children: const [
-            Icon(Icons.dns_rounded, color: Color(0xFFF5B942)),
-            SizedBox(width: 8),
-            Text('Server Configuration', style: TextStyle(color: Colors.white, fontSize: 18)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Set the backend server URL. For physical phones, tap your Wi-Fi PC IP.',
-              style: TextStyle(color: Colors.white70, fontSize: 13),
+      builder: (ctx) => StatefulBuilder(
+        builder: (dialogCtx, setDialogState) => AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF162033) : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(
+              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
             ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5B942).withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.rate_review_rounded, color: Color(0xFFF5B942), size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Send Feedback',
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurface,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ActionChip(
-                  label: const Text('Emulator XAMPP (10.0.2.2)', style: TextStyle(fontSize: 11)),
-                  onPressed: () => controller.text = 'http://10.0.2.2/real-life-rpg/backend/api',
+                Text(
+                  'Category',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
-                ActionChip(
-                  label: const Text('Wi-Fi PC XAMPP (192.168.31.170)', style: TextStyle(fontSize: 11)),
-                  onPressed: () => controller.text = 'http://192.168.31.170/real-life-rpg/backend/api',
+                const SizedBox(height: 6),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedCategory,
+                  dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14),
+                  decoration: InputDecoration(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  items: categories.map((cat) {
+                    return DropdownMenuItem<String>(
+                      value: cat,
+                      child: Text(cat),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) {
+                      setDialogState(() {
+                        selectedCategory = val;
+                      });
+                    }
+                  },
                 ),
-                ActionChip(
-                  label: const Text('Localhost XAMPP (127.0.0.1)', style: TextStyle(fontSize: 11)),
-                  onPressed: () => controller.text = 'http://127.0.0.1/real-life-rpg/backend/api',
+                const SizedBox(height: 14),
+                Text(
+                  'Your Message',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
-                ActionChip(
-                  label: const Text('Dev Server (8080)', style: TextStyle(fontSize: 11)),
-                  onPressed: () => controller.text = 'http://10.0.2.2:8080/api',
+                const SizedBox(height: 6),
+                TextField(
+                  controller: messageController,
+                  maxLines: 4,
+                  style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: 'Describe your issue or suggestion...',
+                    hintStyle: TextStyle(
+                      color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                      fontSize: 13,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                labelText: 'API Base URL',
-                hintText: 'http://10.0.2.2/real-life-rpg/backend/api',
-                border: OutlineInputBorder(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Cancel', style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
+            ),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFF5B942),
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
+              onPressed: () async {
+                final message = messageController.text.trim();
+                if (message.isEmpty) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    const SnackBar(content: Text('Please enter a message before submitting.')),
+                  );
+                  return;
+                }
+                Navigator.pop(ctx);
+
+                final emailUri = Uri(
+                  scheme: 'mailto',
+                  path: 'support@levelup-rpg.com',
+                  query: 'subject=LevelUp Feedback: $selectedCategory&body=${Uri.encodeComponent(message)}',
+                );
+
+                bool launched = false;
+                try {
+                  if (await canLaunchUrl(emailUri)) {
+                    launched = await launchUrl(emailUri);
+                  }
+                } catch (_) {}
+
+                if (!launched && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('✅ Thank you for your feedback! It helps us level up the app.'),
+                      backgroundColor: Color(0xFF16A34A),
+                      duration: Duration(seconds: 3),
+                    ),
+                  );
+                }
+              },
+              icon: const Icon(Icons.send_rounded, size: 16),
+              label: const Text('Submit', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              await ApiConfig.resetToDefault();
-              if (ctx.mounted) Navigator.pop(ctx);
-              if (mounted) setState(() {});
-            },
-            child: const Text('Reset Default', style: TextStyle(color: Colors.white54)),
-          ),
-          BounceTap(
-            onTap: () async {
-              final newUrl = controller.text.trim();
-              if (newUrl.isNotEmpty) {
-                await ApiConfig.setBaseUrl(newUrl);
-                if (ctx.mounted) Navigator.pop(ctx);
-                if (mounted) setState(() {});
-                if (mounted) {
-                  context.read<AppState>().refreshAllData();
-                }
-              }
-            },
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF5B942), foregroundColor: Colors.black),
-              onPressed: () async {
-                final newUrl = controller.text.trim();
-                if (newUrl.isNotEmpty) {
-                  await ApiConfig.setBaseUrl(newUrl);
-                  if (ctx.mounted) Navigator.pop(ctx);
-                  if (mounted) setState(() {});
-                  if (mounted) {
-                    context.read<AppState>().refreshAllData();
-                  }
-                }
-              },
-              child: const Text('Save & Sync'),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -326,7 +415,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Padding(
             padding: const EdgeInsets.only(left: 4.0, bottom: 8.0),
             child: Text(
-              'SERVER & ONLINE SYNC',
+              'CONTACT US',
               style: TextStyle(
                 color: isDark ? const Color(0xFFF5B942) : const Color(0xFFD97706),
                 fontWeight: FontWeight.bold,
@@ -339,76 +428,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Column(
               children: [
                 ListTile(
-                  leading: const Icon(Icons.cloud_sync, color: Color(0xFFF5B942)),
-                  title: const Text('Server Connection URL', style: TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: Text(ApiConfig.baseUrl, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
-                  trailing: const Icon(Icons.edit_outlined, size: 20),
-                  onTap: _showServerConfigDialog,
-                ),
-                Divider(height: 1, color: theme.colorScheme.outline),
-                ListTile(
-                  leading: const Icon(Icons.network_check_rounded, color: Colors.greenAccent),
-                  title: const Text('Test Connection to PC', style: TextStyle(fontWeight: FontWeight.w500)),
-                  subtitle: Text('Check if your phone reaches the server', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
-                  trailing: const Icon(Icons.play_arrow_rounded, color: Colors.greenAccent),
-                  onTap: () async {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Testing connection to server...'), duration: Duration(seconds: 1)),
-                    );
-                    try {
-                      final res = await ApiClient.instance.get('/settings/get.php');
-                      if (context.mounted) {
-                        if (res['status'] == 'success') {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('✅ Connected to LevelUp server successfully!'),
-                              backgroundColor: Color(0xFF16A34A),
-                              duration: Duration(seconds: 3),
-                            ),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('⚠️ Server responded with error: ${res['message']}'),
-                              backgroundColor: Colors.orange,
-                            ),
-                          );
-                        }
-                      }
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('❌ Cannot connect: $e\nMake sure PC and Phone are on same Wi-Fi and use IP 192.168.31.170:8080'),
-                            backgroundColor: Colors.redAccent,
-                            duration: const Duration(seconds: 5),
-                          ),
-                        );
-                      }
-                    }
-                  },
-                ),
-                Divider(height: 1, color: theme.colorScheme.outline),
-                ListTile(
-                  leading: const Icon(Icons.sync_rounded, color: Color(0xFFF5B942)),
-                  title: const Text('Sync All Data Now', style: TextStyle(fontWeight: FontWeight.w500)),
-                  subtitle: Text('Pull latest XP, quests & admin settings', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
+                  leading: const Icon(Icons.mail_outline_rounded, color: Color(0xFFF5B942)),
+                  title: Text('Email Support', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
+                  subtitle: Text('support@levelup-rpg.com', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () async {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('🔄 Syncing with server...'), duration: Duration(milliseconds: 900)),
-                    );
-                    await context.read<AppState>().refreshAllData();
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('✨ Sync complete!'),
-                          backgroundColor: Color(0xFF16A34A),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    }
-                  },
+                  onTap: _handleEmailSupport,
+                ),
+                Divider(height: 1, color: theme.colorScheme.outline),
+                ListTile(
+                  leading: const Icon(Icons.rate_review_outlined, color: Color(0xFFF5B942)),
+                  title: Text('Send Feedback & Suggestions', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
+                  subtitle: Text('Report issues or request new RPG features', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: _showFeedbackDialog,
                 ),
               ],
             ),
@@ -431,11 +463,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Column(
               children: [
                 ListTile(
-                  leading: Icon(Icons.info_outline, color: theme.colorScheme.onSurface),
-                  title: Text('About LevelUp', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
+                  leading: const Icon(Icons.privacy_tip_outlined, color: Color(0xFFF5B942)),
+                  title: Text('Privacy Policy', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
+                  subtitle: Text('Review our privacy policy and data security', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
                   trailing: Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('LevelUp RPG v1.0.0. Level up your real life!')));
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()));
+                  },
+                ),
+                Divider(height: 1, color: theme.colorScheme.outline),
+                ListTile(
+                  leading: const Icon(Icons.info_outline, color: Color(0xFFF5B942)),
+                  title: Text('About LevelUp', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
+                  subtitle: Text('Mission, gameplay mechanics & app info', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
+                  trailing: Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutScreen()));
                   },
                 ),
                 Divider(height: 1, color: theme.colorScheme.outline),

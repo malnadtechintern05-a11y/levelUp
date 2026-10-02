@@ -32,6 +32,8 @@ class QuestCard extends StatelessWidget {
         return Colors.redAccent;
       case 'health':
         return Colors.green;
+      case 'hydration':
+        return Colors.cyan;
       case 'learning':
         return Colors.indigoAccent;
       case 'work':
@@ -50,6 +52,8 @@ class QuestCard extends StatelessWidget {
         return Colors.deepOrangeAccent;
       case 'cleaning':
         return Colors.lightBlueAccent;
+      case 'chores':
+        return Colors.deepOrange;
       case 'habit':
         return Colors.deepPurpleAccent;
       case 'daily':
@@ -57,8 +61,10 @@ class QuestCard extends StatelessWidget {
       case 'hobbies':
         return Colors.amberAccent;
       case 'personal':
-      default:
         return Colors.greenAccent;
+      case 'other':
+      default:
+        return const Color(0xFFF5B942);
     }
   }
 
@@ -70,7 +76,7 @@ class QuestCard extends StatelessWidget {
     if (title.contains('meditat') || title.contains('yoga') || title.contains('mindful') || title.contains('breath')) {
       return Icons.self_improvement_rounded;
     }
-    if (title.contains('water') || title.contains('hydrat')) {
+    if (title.contains('water') || title.contains('hydrat') || task.taskType == 'hydration') {
       return Icons.water_drop_rounded;
     }
     if (title.contains('read') || title.contains('book')) {
@@ -90,6 +96,8 @@ class QuestCard extends StatelessWidget {
         return Icons.fitness_center_rounded;
       case 'health':
         return Icons.favorite_rounded;
+      case 'hydration':
+        return Icons.water_drop_rounded;
       case 'learning':
         return Icons.lightbulb_rounded;
       case 'work':
@@ -108,6 +116,8 @@ class QuestCard extends StatelessWidget {
         return Icons.palette_rounded;
       case 'cleaning':
         return Icons.cleaning_services_rounded;
+      case 'chores':
+        return Icons.home_work_rounded;
       case 'habit':
         return Icons.repeat_rounded;
       case 'daily':
@@ -115,6 +125,8 @@ class QuestCard extends StatelessWidget {
       case 'hobbies':
         return Icons.sports_esports_rounded;
       case 'personal':
+        return Icons.person_rounded;
+      case 'other':
       default:
         return Icons.stars_rounded;
     }

@@ -152,6 +152,477 @@ class AppState extends ChangeNotifier {
     ];
   }
 
+  List<RPGTask> _getDefaultTasks([String? userId, DateTime? date]) {
+    final uid = (userId ?? currentUserId).trim().toLowerCase();
+    final now = date ?? DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    return [
+      RPGTask(
+        id: 'task_hydro_${today.year}_${today.month}_${today.day}',
+        userId: uid,
+        title: 'Daily Drinking Water',
+        description: 'Stay hydrated throughout the day! Daily target: 2.5 L',
+        category: 'Hydration',
+        xpReward: 50,
+        coinReward: 25,
+        dueDate: today,
+        time: '08:00 AM',
+        durationMinutes: 0,
+        remainingSeconds: 0,
+        timerStatus: 'Not Started',
+        isCompleted: false,
+        taskType: 'hydration',
+        waterGoalMl: _dailyWaterGoalMl,
+        currentWaterMl: 0,
+        waterLogs: [],
+        reminders: createDefaultDrinkingSchedule(drinkAmountMl: 250),
+        difficulty: 'Easy',
+        tips: [
+          'Drink a full glass of water right after waking up.',
+          'Keep a refillable water bottle at your study/work desk.',
+          'Log each glass you drink to maintain your hydration streak!'
+        ],
+      ),
+      RPGTask(
+        id: 'task_study_${today.year}_${today.month}_${today.day}',
+        userId: uid,
+        title: 'Deep Focus Study Session',
+        description: 'Study core subjects, review notes, and solve challenging practice problems.',
+        category: 'Study',
+        xpReward: 60,
+        coinReward: 30,
+        dueDate: today,
+        time: '10:00 AM',
+        durationMinutes: 45,
+        remainingSeconds: 45 * 60,
+        timerStatus: 'Not Started',
+        isCompleted: false,
+        difficulty: 'Medium',
+        objectives: [
+          QuestObjective(id: 'obj_std_1', text: 'Set up quiet study desk and remove phone distractions', isCompleted: false),
+          QuestObjective(id: 'obj_std_2', text: 'Execute 45-min active recall & problem solving', isCompleted: false),
+          QuestObjective(id: 'obj_std_3', text: 'Synthesize key insights and review formula notes', isCompleted: false),
+        ],
+        tips: [
+          'Use the countdown timer mode for uninterrupted focus.',
+          'Test yourself with active recall rather than passive re-reading.',
+        ],
+      ),
+      RPGTask(
+        id: 'task_fitness_${today.year}_${today.month}_${today.day}',
+        userId: uid,
+        title: 'Full Body Strength Workout',
+        description: 'Complete 30-min bodyweight and core strength fitness routine.',
+        category: 'Fitness',
+        xpReward: 75,
+        coinReward: 35,
+        dueDate: today,
+        time: '07:30 AM',
+        durationMinutes: 30,
+        remainingSeconds: 30 * 60,
+        timerStatus: 'Not Started',
+        isCompleted: false,
+        difficulty: 'Medium',
+        objectives: [
+          QuestObjective(id: 'obj_fit_1', text: 'Dynamic warm-up & joint mobility', isCompleted: false),
+          QuestObjective(id: 'obj_fit_2', text: 'Complete 4 sets of push-ups, squats, and planks', isCompleted: false),
+          QuestObjective(id: 'obj_fit_3', text: 'Full body cool-down stretching & hydration', isCompleted: false),
+        ],
+        tips: [
+          'Focus on controlled reps and proper form over speed.',
+          'Breathe rhythmically during each exercise set.',
+        ],
+      ),
+      RPGTask(
+        id: 'task_health_${today.year}_${today.month}_${today.day}',
+        userId: uid,
+        title: 'Posture & Spine Mobility Routine',
+        description: 'Perform posture alignment, neck & shoulder stretches, and deep breathing.',
+        category: 'Health',
+        xpReward: 40,
+        coinReward: 20,
+        dueDate: today,
+        time: '09:00 AM',
+        durationMinutes: 15,
+        remainingSeconds: 15 * 60,
+        timerStatus: 'Not Started',
+        isCompleted: false,
+        difficulty: 'Easy',
+        objectives: [
+          QuestObjective(id: 'obj_hlth_1', text: 'Perform shoulder rolls, chin tucks & spine twists', isCompleted: false),
+          QuestObjective(id: 'obj_hlth_2', text: 'Cat-cow pose and lower back decompression', isCompleted: false),
+          QuestObjective(id: 'obj_hlth_3', text: 'Adjust chair and monitor to ergonomic height', isCompleted: false),
+        ],
+        tips: [
+          'Keep eyes level with the top third of your display screen.',
+          'Take standing micro-breaks every 45 minutes.',
+        ],
+      ),
+      RPGTask(
+        id: 'task_learning_${today.year}_${today.month}_${today.day}',
+        userId: uid,
+        title: 'Learn a New Skill or Framework',
+        description: 'Watch a masterclass, read technical documentation, and practice new concepts.',
+        category: 'Learning',
+        xpReward: 55,
+        coinReward: 25,
+        dueDate: today,
+        time: '02:00 PM',
+        durationMinutes: 30,
+        remainingSeconds: 30 * 60,
+        timerStatus: 'Not Started',
+        isCompleted: false,
+        difficulty: 'Medium',
+        objectives: [
+          QuestObjective(id: 'obj_lrn_1', text: 'Pick a high-value skill or technology topic', isCompleted: false),
+          QuestObjective(id: 'obj_lrn_2', text: 'Complete tutorial or documentation chapter', isCompleted: false),
+          QuestObjective(id: 'obj_lrn_3', text: 'Apply concepts in a practical hands-on test', isCompleted: false),
+        ],
+        tips: [
+          'Teach or write down what you learned to solidify mastery.',
+        ],
+      ),
+      RPGTask(
+        id: 'task_work_${today.year}_${today.month}_${today.day}',
+        userId: uid,
+        title: 'Sprint Priority Deliverables',
+        description: 'Focus deeply on your highest priority work item and sprint objectives.',
+        category: 'Work',
+        xpReward: 70,
+        coinReward: 35,
+        dueDate: today,
+        time: '11:00 AM',
+        durationMinutes: 45,
+        remainingSeconds: 45 * 60,
+        timerStatus: 'Not Started',
+        isCompleted: false,
+        difficulty: 'Hard',
+        objectives: [
+          QuestObjective(id: 'obj_wrk_1', text: 'Define top work milestone for today', isCompleted: false),
+          QuestObjective(id: 'obj_wrk_2', text: 'Execute uninterrupted focus block', isCompleted: false),
+          QuestObjective(id: 'obj_wrk_3', text: 'Review deliverable, commit changes & update status', isCompleted: false),
+        ],
+        tips: [
+          'Tackle the most important task first when energy is highest.',
+        ],
+      ),
+      RPGTask(
+        id: 'task_coding_${today.year}_${today.month}_${today.day}',
+        userId: uid,
+        title: 'Clean Code & Architecture Sprint',
+        description: 'Implement new features, refactor components, and test application logic.',
+        category: 'Coding',
+        xpReward: 80,
+        coinReward: 40,
+        dueDate: today,
+        time: '03:30 PM',
+        durationMinutes: 45,
+        remainingSeconds: 45 * 60,
+        timerStatus: 'Not Started',
+        isCompleted: false,
+        difficulty: 'Hard',
+        objectives: [
+          QuestObjective(id: 'obj_code_1', text: 'Review architecture & module interfaces', isCompleted: false),
+          QuestObjective(id: 'obj_code_2', text: 'Write clean, modular code with error handling', isCompleted: false),
+          QuestObjective(id: 'obj_code_3', text: 'Run unit tests and verify behavior', isCompleted: false),
+        ],
+        tips: [
+          'Write self-documenting code with descriptive names.',
+          'Keep functions concise with single responsibilities.',
+        ],
+      ),
+      RPGTask(
+        id: 'task_reading_${today.year}_${today.month}_${today.day}',
+        userId: uid,
+        title: 'Read 20 Pages of a Book',
+        description: 'Read non-fiction, personal growth, or architectural book chapters.',
+        category: 'Reading',
+        xpReward: 45,
+        coinReward: 20,
+        dueDate: today,
+        time: '08:30 PM',
+        durationMinutes: 25,
+        remainingSeconds: 25 * 60,
+        timerStatus: 'Not Started',
+        isCompleted: false,
+        difficulty: 'Easy',
+        objectives: [
+          QuestObjective(id: 'obj_read_1', text: 'Open book and settle into comfortable reading spot', isCompleted: false),
+          QuestObjective(id: 'obj_read_2', text: 'Read 20 pages with active comprehension', isCompleted: false),
+          QuestObjective(id: 'obj_read_3', text: 'Highlight 3 actionable ideas or quotes', isCompleted: false),
+        ],
+        tips: [
+          'Reading 20 pages a day adds up to 30 books a year!',
+        ],
+      ),
+      RPGTask(
+        id: 'task_meditation_${today.year}_${today.month}_${today.day}',
+        userId: uid,
+        title: 'Mindfulness & Breathwork Session',
+        description: '15 minutes of mindful meditation to reset focus and reduce mental stress.',
+        category: 'Meditation',
+        xpReward: 35,
+        coinReward: 15,
+        dueDate: today,
+        time: '07:00 AM',
+        durationMinutes: 15,
+        remainingSeconds: 15 * 60,
+        timerStatus: 'Not Started',
+        isCompleted: false,
+        difficulty: 'Easy',
+        objectives: [
+          QuestObjective(id: 'obj_med_1', text: 'Sit upright in quiet space with eyes closed', isCompleted: false),
+          QuestObjective(id: 'obj_med_2', text: 'Follow steady box-breathing or diaphragmatic rhythm', isCompleted: false),
+          QuestObjective(id: 'obj_med_3', text: 'Acknowledge thoughts without judgment and return to breath', isCompleted: false),
+        ],
+        tips: [
+          'Even 10 minutes of daily meditation strengthens prefrontal cortex focus.',
+        ],
+      ),
+      RPGTask(
+        id: 'task_walking_${today.year}_${today.month}_${today.day}',
+        userId: uid,
+        title: 'Evening 5,000 Steps Walk',
+        description: 'Brisk outdoor walk for daily movement, cardiovascular health, and fresh air.',
+        category: 'Walking',
+        xpReward: 50,
+        coinReward: 25,
+        dueDate: today,
+        time: '06:00 PM',
+        durationMinutes: 30,
+        remainingSeconds: 30 * 60,
+        timerStatus: 'Not Started',
+        isCompleted: false,
+        difficulty: 'Easy',
+        objectives: [
+          QuestObjective(id: 'obj_wlk_1', text: 'Put on walking shoes & head outdoors', isCompleted: false),
+          QuestObjective(id: 'obj_wlk_2', text: 'Walk at brisk cadence for 30 minutes', isCompleted: false),
+          QuestObjective(id: 'obj_wlk_3', text: 'Log step count and cool down', isCompleted: false),
+        ],
+        tips: [
+          'Walking outdoors in nature significantly lowers cortisol and stress levels.',
+        ],
+      ),
+      RPGTask(
+        id: 'task_social_${today.year}_${today.month}_${today.day}',
+        userId: uid,
+        title: 'Connect with a Friend or Family',
+        description: 'Reach out to a close friend, colleague, or loved one for a meaningful chat.',
+        category: 'Social',
+        xpReward: 30,
+        coinReward: 15,
+        dueDate: today,
+        time: '07:30 PM',
+        durationMinutes: 15,
+        remainingSeconds: 15 * 60,
+        timerStatus: 'Not Started',
+        isCompleted: false,
+        difficulty: 'Easy',
+        objectives: [
+          QuestObjective(id: 'obj_soc_1', text: 'Message or call a friend or family member', isCompleted: false),
+          QuestObjective(id: 'obj_soc_2', text: 'Ask how they are doing and listen actively', isCompleted: false),
+          QuestObjective(id: 'obj_soc_3', text: 'Share positive encouragement', isCompleted: false),
+        ],
+        tips: [
+          'Strong social connections are key predictors of long-term happiness.',
+        ],
+      ),
+      RPGTask(
+        id: 'task_creative_${today.year}_${today.month}_${today.day}',
+        userId: uid,
+        title: 'Creative Design & Sketching',
+        description: 'Brainstorm creative concepts, sketch UI designs, or produce artistic work.',
+        category: 'Creative',
+        xpReward: 45,
+        coinReward: 20,
+        dueDate: today,
+        time: '05:00 PM',
+        durationMinutes: 30,
+        remainingSeconds: 30 * 60,
+        timerStatus: 'Not Started',
+        isCompleted: false,
+        difficulty: 'Medium',
+        objectives: [
+          QuestObjective(id: 'obj_crt_1', text: 'Brainstorm creative visual ideas & references', isCompleted: false),
+          QuestObjective(id: 'obj_crt_2', text: 'Draft sketches, UI wireframes, or artwork', isCompleted: false),
+          QuestObjective(id: 'obj_crt_3', text: 'Refine composition, typography, and colors', isCompleted: false),
+        ],
+        tips: [
+          'Allow yourself to explore wild ideas before filtering.',
+        ],
+      ),
+      RPGTask(
+        id: 'task_cleaning_${today.year}_${today.month}_${today.day}',
+        userId: uid,
+        title: 'Clean & Declutter Workspace',
+        description: 'Clear desk clutter, organize study accessories, and wipe surfaces clean.',
+        category: 'Cleaning',
+        xpReward: 30,
+        coinReward: 15,
+        dueDate: today,
+        time: '06:30 PM',
+        durationMinutes: 15,
+        remainingSeconds: 15 * 60,
+        timerStatus: 'Not Started',
+        isCompleted: false,
+        difficulty: 'Easy',
+        objectives: [
+          QuestObjective(id: 'obj_cln_1', text: 'Clear loose papers, mugs, and trash from desk', isCompleted: false),
+          QuestObjective(id: 'obj_cln_2', text: 'Wipe down desktop, keyboard, and screen', isCompleted: false),
+          QuestObjective(id: 'obj_cln_3', text: 'Organize charging cables and stationery', isCompleted: false),
+        ],
+        tips: [
+          'A clean physical workspace directly reduces mental fatigue.',
+        ],
+      ),
+      RPGTask(
+        id: 'task_chores_${today.year}_${today.month}_${today.day}',
+        userId: uid,
+        title: 'Complete Household Chores',
+        description: 'Organize living area, wash dishes, and complete daily household chores.',
+        category: 'Chores',
+        xpReward: 35,
+        coinReward: 15,
+        dueDate: today,
+        time: '01:00 PM',
+        durationMinutes: 20,
+        remainingSeconds: 20 * 60,
+        timerStatus: 'Not Started',
+        isCompleted: false,
+        difficulty: 'Easy',
+        objectives: [
+          QuestObjective(id: 'obj_chr_1', text: 'Wash dishes and clear kitchen counter', isCompleted: false),
+          QuestObjective(id: 'obj_chr_2', text: 'Fold laundry or organize wardrobe', isCompleted: false),
+          QuestObjective(id: 'obj_chr_3', text: 'Tidy common living room areas', isCompleted: false),
+        ],
+        tips: [
+          'Put on an energetic soundtrack or podcast while doing chores.',
+        ],
+      ),
+      RPGTask(
+        id: 'task_habit_${today.year}_${today.month}_${today.day}',
+        userId: uid,
+        title: 'Morning Discipline Routine',
+        description: 'Wake up on schedule, make your bed, hydrate, and prepare for an epic day.',
+        category: 'Habit',
+        xpReward: 40,
+        coinReward: 20,
+        dueDate: today,
+        time: '06:45 AM',
+        durationMinutes: 15,
+        remainingSeconds: 15 * 60,
+        timerStatus: 'Not Started',
+        isCompleted: false,
+        difficulty: 'Easy',
+        objectives: [
+          QuestObjective(id: 'obj_hbt_1', text: 'Get out of bed at first alarm (no snooze)', isCompleted: false),
+          QuestObjective(id: 'obj_hbt_2', text: 'Make bed neatly to win your first task of the day', isCompleted: false),
+          QuestObjective(id: 'obj_hbt_3', text: 'Drink 500ml water and do 5 deep breaths', isCompleted: false),
+        ],
+        tips: [
+          'Winning the morning sets a winning momentum for the entire day.',
+        ],
+      ),
+      RPGTask(
+        id: 'task_daily_${today.year}_${today.month}_${today.day}',
+        userId: uid,
+        title: 'Daily Goal Review & Planning',
+        description: 'Review today’s achievements, log XP, and set top 3 priorities for tomorrow.',
+        category: 'Daily',
+        xpReward: 35,
+        coinReward: 15,
+        dueDate: today,
+        time: '09:30 PM',
+        durationMinutes: 15,
+        remainingSeconds: 15 * 60,
+        timerStatus: 'Not Started',
+        isCompleted: false,
+        difficulty: 'Easy',
+        objectives: [
+          QuestObjective(id: 'obj_dly_1', text: 'Review today’s completed quests and XP gained', isCompleted: false),
+          QuestObjective(id: 'obj_dly_2', text: 'Note key accomplishments and reflections', isCompleted: false),
+          QuestObjective(id: 'obj_dly_3', text: 'Plan top 3 quests for tomorrow morning', isCompleted: false),
+        ],
+        tips: [
+          'Planning tomorrow the night before reduces morning decision fatigue.',
+        ],
+      ),
+      RPGTask(
+        id: 'task_hobbies_${today.year}_${today.month}_${today.day}',
+        userId: uid,
+        title: 'Dedicated Hobby & Gaming Time',
+        description: 'Spend dedicated time practicing your musical instrument, hobby, or game.',
+        category: 'Hobbies',
+        xpReward: 40,
+        coinReward: 20,
+        dueDate: today,
+        time: '08:00 PM',
+        durationMinutes: 30,
+        remainingSeconds: 30 * 60,
+        timerStatus: 'Not Started',
+        isCompleted: false,
+        difficulty: 'Easy',
+        objectives: [
+          QuestObjective(id: 'obj_hob_1', text: 'Set up instrument, gaming setup, or craft tools', isCompleted: false),
+          QuestObjective(id: 'obj_hob_2', text: 'Immerse in joyful hobby practice for 30 minutes', isCompleted: false),
+          QuestObjective(id: 'obj_hob_3', text: 'Pack up setup neatly when done', isCompleted: false),
+        ],
+        tips: [
+          'Scheduled play and creative leisure prevent burnout.',
+        ],
+      ),
+      RPGTask(
+        id: 'task_personal_${today.year}_${today.month}_${today.day}',
+        userId: uid,
+        title: 'Self-Reflection & Gratitude Journaling',
+        description: 'Write 3 accomplishments and 3 reflections in your personal growth journal.',
+        category: 'Personal',
+        xpReward: 35,
+        coinReward: 15,
+        dueDate: today,
+        time: '09:00 PM',
+        durationMinutes: 15,
+        remainingSeconds: 15 * 60,
+        timerStatus: 'Not Started',
+        isCompleted: false,
+        difficulty: 'Easy',
+        objectives: [
+          QuestObjective(id: 'obj_prs_1', text: 'Open notebook or digital notes', isCompleted: false),
+          QuestObjective(id: 'obj_prs_2', text: 'Write down 3 things you are genuinely grateful for', isCompleted: false),
+          QuestObjective(id: 'obj_prs_3', text: 'Write 1 key personal growth reflection for today', isCompleted: false),
+        ],
+        tips: [
+          'Gratitude journaling shifts focus toward abundance and resilience.',
+        ],
+      ),
+      RPGTask(
+        id: 'task_other_${today.year}_${today.month}_${today.day}',
+        userId: uid,
+        title: 'Custom Adventure Challenge',
+        description: 'Step outside your comfort zone and accomplish a spontaneous mini-quest.',
+        category: 'Other',
+        xpReward: 40,
+        coinReward: 20,
+        dueDate: today,
+        time: '04:00 PM',
+        durationMinutes: 20,
+        remainingSeconds: 20 * 60,
+        timerStatus: 'Not Started',
+        isCompleted: false,
+        difficulty: 'Medium',
+        objectives: [
+          QuestObjective(id: 'obj_oth_1', text: 'Define your spontaneous challenge or task', isCompleted: false),
+          QuestObjective(id: 'obj_oth_2', text: 'Execute with full energy and focus', isCompleted: false),
+          QuestObjective(id: 'obj_oth_3', text: 'Celebrate completing your custom quest', isCompleted: false),
+        ],
+        tips: [
+          'Variety and spontaneity keep your real-life RPG adventure exciting!',
+        ],
+      ),
+    ];
+  }
+
   Future<Map<String, dynamic>> loginUser(String identifier, [String? password]) async {
     // If password provided, use online backend / local auth
     if (password != null && password.isNotEmpty) {
@@ -476,7 +947,7 @@ class AppState extends ChangeNotifier {
     _isLoggedIn = false;
     _userRole = null;
     _userProfile = UserProfile(username: 'Hero', userId: 'hero');
-    _tasks = [];
+    _tasks = _getDefaultTasks('hero');
     _achievements = _getDefaultAchievements('hero');
     _notifications = [];
     _weeklyXp = {};
@@ -616,11 +1087,13 @@ class AppState extends ChangeNotifier {
       if (tasksList.isNotEmpty) {
         _tasks = tasksList;
       } else {
-        _tasks = [];
+        _tasks = _getDefaultTasks(cleanId);
+        await dbHelper.saveAllTasks(_tasks, cleanId);
       }
       _ensureDailyTasks(cleanId);
     } catch (e) {
       debugPrint("Error loading tasks from DB: $e");
+      _tasks = _getDefaultTasks(cleanId);
       _ensureDailyTasks(cleanId);
     }
 
@@ -728,30 +1201,54 @@ class AppState extends ChangeNotifier {
     final now = DateTime.now();
     bool added = false;
 
-    // Only ensure a clean daily hydration quest exists for today if not already present
-    bool hasHydrationToday = _tasks.any((t) => t.taskType == 'hydration' && _isSameDay(t.dueDate, now));
-    if (!hasHydrationToday) {
-      _tasks.add(
-        RPGTask(
-          id: 'task_hydro_${now.year}_${now.month}_${now.day}',
-          title: 'Daily Drinking Water',
-          description: 'Stay hydrated! Daily goal: 2.5 L',
-          category: 'Health',
-          xpReward: 50,
-          coinReward: 25,
-          dueDate: now,
-          durationMinutes: 0,
-          remainingSeconds: 0,
-          timerStatus: 'Not Started',
-          isCompleted: false,
-          taskType: 'hydration',
-          waterGoalMl: _dailyWaterGoalMl,
-          currentWaterMl: 0,
-          waterLogs: [],
-          userId: effectiveUserId,
-        ),
-      );
-      added = true;
+    // Check existing tasks for today
+    final todayTasks = _tasks.where((t) => _isSameDay(t.dueDate, now)).toList();
+    if (_tasks.isEmpty || todayTasks.isEmpty) {
+      final defaults = _getDefaultTasks(effectiveUserId, now);
+      for (final def in defaults) {
+        if (!_tasks.any((t) => t.id == def.id || (t.title == def.title && _isSameDay(t.dueDate, now)))) {
+          _tasks.add(def);
+          added = true;
+        }
+      }
+    } else {
+      // Ensure hydration exists for today
+      bool hasHydrationToday = _tasks.any((t) => t.taskType == 'hydration' && _isSameDay(t.dueDate, now));
+      if (!hasHydrationToday) {
+        _tasks.add(
+          RPGTask(
+            id: 'task_hydro_${now.year}_${now.month}_${now.day}',
+            title: 'Daily Drinking Water',
+            description: 'Stay hydrated! Daily goal: 2.5 L',
+            category: 'Hydration',
+            xpReward: 50,
+            coinReward: 25,
+            dueDate: now,
+            durationMinutes: 0,
+            remainingSeconds: 0,
+            timerStatus: 'Not Started',
+            isCompleted: false,
+            taskType: 'hydration',
+            waterGoalMl: _dailyWaterGoalMl,
+            currentWaterMl: 0,
+            waterLogs: [],
+            userId: effectiveUserId,
+            reminders: createDefaultDrinkingSchedule(),
+          ),
+        );
+        added = true;
+      }
+
+      // Check each default category and ensure at least one active/completed quest exists for today so no category is blank
+      final defaults = _getDefaultTasks(effectiveUserId, now);
+      for (final def in defaults) {
+        final hasCategoryToday = _tasks.any((t) =>
+            t.category.trim().toLowerCase() == def.category.trim().toLowerCase() && _isSameDay(t.dueDate, now));
+        if (!hasCategoryToday) {
+          _tasks.add(def);
+          added = true;
+        }
+      }
     }
 
     // Ensure all hydration tasks have a populated drinking schedule
@@ -785,7 +1282,7 @@ class AppState extends ChangeNotifier {
     ];
   }
 
-  void addWater(String taskId, int amountMl, [BuildContext? context]) {
+  void addWater(String taskId, int amountMl, [BuildContext? context, bool autoMarkReminder = true]) {
     final idx = _tasks.indexWhere((t) => t.id == taskId);
     if (idx != -1) {
       final task = _tasks[idx];
@@ -818,8 +1315,8 @@ class AppState extends ChangeNotifier {
       task.waterLogs.insert(0, newLog);
       task.currentWaterMl += amountMl;
 
-      // Smart Reminder Completion: mark nearest scheduled drink as completed
-      if (task.reminders.isNotEmpty) {
+      // Smart Reminder Completion: mark nearest scheduled drink as completed only if not triggered for a specific reminder
+      if (autoMarkReminder && task.reminders.isNotEmpty) {
         final nowTime = DateTime.now();
         final currentMins = nowTime.hour * 60 + nowTime.minute;
         
@@ -1018,9 +1515,11 @@ class AppState extends ChangeNotifier {
       final remIdx = task.reminders.indexWhere((r) => r.id == reminderId);
       if (remIdx != -1) {
         final reminder = task.reminders[remIdx];
-        reminder.isCompleted = true;
-        reminder.completedAt = DateTime.now();
-        addWater(taskId, reminder.amountMl, context);
+        if (!reminder.isCompleted) {
+          reminder.isCompleted = true;
+          reminder.completedAt = DateTime.now();
+          addWater(taskId, reminder.amountMl, context, false);
+        }
       }
     }
   }

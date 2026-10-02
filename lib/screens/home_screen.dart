@@ -9,6 +9,7 @@ import '../screens/add_quest_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/notifications_screen.dart';
 import '../screens/privacy_policy_screen.dart';
+import '../screens/about_screen.dart';
 import '../screens/rankings_screen.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -23,6 +24,19 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   String _selectedCategory = 'All';
+
+  String _getTimeGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour >= 5 && hour < 12) {
+      return 'Good morning';
+    } else if (hour >= 12 && hour < 17) {
+      return 'Good afternoon';
+    } else if (hour >= 17 && hour < 22) {
+      return 'Good evening';
+    } else {
+      return 'Welcome';
+    }
+  }
 
   @override
   void initState() {
@@ -670,44 +684,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               title: Text('About', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
               onTap: () {
                 Navigator.pop(context);
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    title: Row(
-                      children: [
-                        const Icon(Icons.emoji_events, color: Color(0xFFF5B942), size: 28),
-                        const SizedBox(width: 8),
-                        Text('LevelUp RPG', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Version 1.0.0',
-                          style: TextStyle(color: Color(0xFFF5B942), fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Turn your daily chores and habits into an epic quest! Complete tasks, earn XP, unlock achievements, and become the hero of your own life.',
-                          style: TextStyle(color: theme.colorScheme.onSurfaceVariant, height: 1.5),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Keep grinding and leveling up!',
-                          style: TextStyle(color: theme.colorScheme.onSurface, fontStyle: FontStyle.italic, fontWeight: FontWeight.w500),
-                        ),
-                      ],
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('CLOSE', style: TextStyle(color: Color(0xFFF5B942), fontWeight: FontWeight.bold)),
-                      ),
-                    ],
-                  ),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AboutScreen()),
                 );
               },
             ),
@@ -828,32 +807,47 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 fit: BoxFit.contain,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
+              child: Consumer<AppState>(
+                builder: (context, state, _) {
+                  final rawUsername = state.userProfile.username.trim();
+                  final name = (rawUsername.isNotEmpty && rawUsername.toLowerCase() != 'hero')
+                      ? rawUsername
+                      : 'Champion';
+                  final greeting = _getTimeGreeting();
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Flexible(
-                        child: Text(
-                          'Hey Hero! ',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: theme.colorScheme.onSurface),
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              '$greeting, $name!',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                                color: theme.colorScheme.onSurface,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Text('⚡', style: TextStyle(fontSize: 14)),
+                        ],
                       ),
-                      const Text('🔥', style: TextStyle(fontSize: 16)),
+                      Text(
+                        "Let's conquer your goals today",
+                        style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ],
-                  ),
-                  Text(
-                    "Let's crush your goals today.",
-                    style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                ],
+                  );
+                },
               ),
             ),
           ],
@@ -950,7 +944,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
           final filteredTasks = _selectedCategory == 'All'
               ? activeTasks
-              : activeTasks.where((t) => t.category.trim().toLowerCase() == _selectedCategory.trim().toLowerCase()).toList();
+              : activeTasks.where((t) {
+                  final cat = t.category.trim().toLowerCase();
+                  final sel = _selectedCategory.trim().toLowerCase();
+                  if (sel == 'hydration') {
+                    return t.taskType == 'hydration' || cat == 'hydration';
+                  }
+                  if (sel == 'health') {
+                    return (cat == 'health' && t.taskType != 'hydration') || cat == 'health';
+                  }
+                  return cat == sel;
+                }).toList();
 
           return RefreshIndicator(
             onRefresh: () async {

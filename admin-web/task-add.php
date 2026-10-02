@@ -129,12 +129,24 @@ require_once __DIR__ . '/includes/sidebar.php';
                     <div class="col-12 col-md-4">
                         <label for="category" class="form-label-rpg">Category *</label>
                         <select name="category" id="category" class="form-select form-select-rpg" required>
-                            <option value="Fitness" <?= ($_POST['category'] ?? '') === 'Fitness' ? 'selected' : '' ?>>Fitness</option>
                             <option value="Study" <?= ($_POST['category'] ?? '') === 'Study' ? 'selected' : '' ?>>Study</option>
+                            <option value="Fitness" <?= ($_POST['category'] ?? '') === 'Fitness' ? 'selected' : '' ?>>Fitness</option>
                             <option value="Health" <?= ($_POST['category'] ?? '') === 'Health' ? 'selected' : '' ?>>Health</option>
-                            <option value="Work" <?= ($_POST['category'] ?? '') === 'Work' ? 'selected' : '' ?>>Work</option>
-                            <option value="Personal" <?= ($_POST['category'] ?? 'Personal') === 'Personal' ? 'selected' : '' ?>>Personal</option>
                             <option value="Hydration" <?= ($_POST['category'] ?? '') === 'Hydration' ? 'selected' : '' ?>>Hydration</option>
+                            <option value="Learning" <?= ($_POST['category'] ?? '') === 'Learning' ? 'selected' : '' ?>>Learning</option>
+                            <option value="Work" <?= ($_POST['category'] ?? '') === 'Work' ? 'selected' : '' ?>>Work</option>
+                            <option value="Coding" <?= ($_POST['category'] ?? '') === 'Coding' ? 'selected' : '' ?>>Coding</option>
+                            <option value="Reading" <?= ($_POST['category'] ?? '') === 'Reading' ? 'selected' : '' ?>>Reading</option>
+                            <option value="Meditation" <?= ($_POST['category'] ?? '') === 'Meditation' ? 'selected' : '' ?>>Meditation</option>
+                            <option value="Walking" <?= ($_POST['category'] ?? '') === 'Walking' ? 'selected' : '' ?>>Walking</option>
+                            <option value="Social" <?= ($_POST['category'] ?? '') === 'Social' ? 'selected' : '' ?>>Social</option>
+                            <option value="Creative" <?= ($_POST['category'] ?? '') === 'Creative' ? 'selected' : '' ?>>Creative</option>
+                            <option value="Cleaning" <?= ($_POST['category'] ?? '') === 'Cleaning' ? 'selected' : '' ?>>Cleaning</option>
+                            <option value="Chores" <?= ($_POST['category'] ?? '') === 'Chores' ? 'selected' : '' ?>>Chores</option>
+                            <option value="Habit" <?= ($_POST['category'] ?? '') === 'Habit' ? 'selected' : '' ?>>Habit</option>
+                            <option value="Daily" <?= ($_POST['category'] ?? '') === 'Daily' ? 'selected' : '' ?>>Daily</option>
+                            <option value="Hobbies" <?= ($_POST['category'] ?? '') === 'Hobbies' ? 'selected' : '' ?>>Hobbies</option>
+                            <option value="Personal" <?= ($_POST['category'] ?? 'Personal') === 'Personal' ? 'selected' : '' ?>>Personal</option>
                             <option value="Other" <?= ($_POST['category'] ?? '') === 'Other' ? 'selected' : '' ?>>Other</option>
                         </select>
                     </div>

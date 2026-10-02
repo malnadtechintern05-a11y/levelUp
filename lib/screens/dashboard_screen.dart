@@ -70,7 +70,27 @@ class DashboardScreen extends StatelessWidget {
                         child: DropdownButtonFormField<String>(
                           initialValue: category,
                           decoration: const InputDecoration(labelText: 'Category'),
-                          items: ['Fitness', 'Learning', 'Chores', 'Work', 'Health']
+                          items: [
+                            'Study',
+                            'Fitness',
+                            'Health',
+                            'Hydration',
+                            'Learning',
+                            'Work',
+                            'Coding',
+                            'Reading',
+                            'Meditation',
+                            'Walking',
+                            'Social',
+                            'Creative',
+                            'Cleaning',
+                            'Chores',
+                            'Habit',
+                            'Daily',
+                            'Hobbies',
+                            'Personal',
+                            'Other',
+                          ]
                               .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                               .toList(),
                           onChanged: (val) => category = val ?? 'Fitness',

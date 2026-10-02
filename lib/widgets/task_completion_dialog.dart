@@ -409,7 +409,7 @@ class LevelUpCelebrationDialog extends StatelessWidget {
             const SizedBox(height: 8),
 
             Text(
-              'Congratulations, Hero!',
+              'Congratulations, Champion!',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
